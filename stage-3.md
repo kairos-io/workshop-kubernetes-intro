@@ -1,7 +1,7 @@
 # Stage 3: Integrating OS builds into your CI/CD pipelines
 
 Docs:
-  - [Kairos Factory Action 🏭](https://github.com/kairos-io/kairos-factory-action/)
+  - [Kairos Factory reusable workflow 🏭](https://github.com/kairos-io/kairos/blob/master/.github/workflows/reusable-factory.yaml) (moved here from the now-archived `kairos-io/kairos-factory-action`)
   - [Example repository](https://github.com/jimmykarily/kairos-wireguard)
 
 ## Create a GitHub repository
@@ -38,7 +38,7 @@ jobs:
       actions: read
       security-events: write
       packages: write
-    uses: kairos-io/kairos-factory-action/.github/workflows/reusable-factory.yaml@main
+    uses: kairos-io/kairos/.github/workflows/reusable-factory.yaml@master
     with:
       dockerfile_path: Dockerfile
       base_image: ubuntu:24.04
