@@ -54,6 +54,8 @@ qemu-system-x86_64 \
     -chardev socket,path=/tmp/kairos.sock,server=on,wait=off,id=qga0 \
     -device virtio-serial \
     -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 \
+    -netdev user,id=net0,hostfwd=tcp::2222-:22,hostfwd=tcp::8080-:8080 \
+    -device virtio-net-pci,netdev=net0 \
     -drive id=disk1,if=none,media=disk,file="kairos.img" \
     -device virtio-blk-pci,drive=disk1,bootindex=0 \
     -drive id=cdrom1,if=none,media=cdrom,file="kairos.iso" \
@@ -63,6 +65,15 @@ qemu-system-x86_64 \
 # To exit: CTRL^A -> x
 # To cleanup: rm kairos.img
 ```
+
+> [!NOTE]
+> Without an explicit `-netdev`/`-device` pair, QEMU still creates a default
+> NIC, but on QEMU's own internal `10.0.2.0/24` network with no port forwarded
+> to the host. The VM boots, gets an address on that internal network, and the
+> host still has no route to it, so `ssh kairos@IP` and the web installer
+> below cannot reach it. The `-netdev user,...,hostfwd=...` line above forwards
+> the guest's SSH and web-installer ports to the host instead, so the next two
+> steps connect through `localhost`.
 
 The first thing you will see is the bootloader menu, which will offer different options to install, recover or debug a system. Either select (press enter) or it will be automatically selected after a few seconds.
 
@@ -80,16 +91,16 @@ If the system booted correctly, you should see a screen like this:
 <img width="554" height="711" alt="Screenshot 2026-01-27 at 20 35 01" src="https://github.com/user-attachments/assets/6e5e0a15-1453-4435-9878-449afd7070a4" />
 
 > [!TIP]
-> The default installer also starts a web installer in the background, depending on the network you have configured in your virtualization system, you should be able to access http://IP:8080 and do the installation from there
-
-Annotate the IP at the bottom to ssh into the system in the next step
+> The default installer also starts a web installer in the background. With
+> the port forwarding from the command above, you should be able to access
+> http://localhost:8080 and do the installation from there.
 
 ## Manual Installation
 
-SSH to the virtual machine with the IP from the previous step using the password "kairos" (without the quotes)
+SSH to the virtual machine through the forwarded port, using the password "kairos" (without the quotes):
 
 ```
-ssh kairos@IP
+ssh -p 2222 kairos@localhost
 ```
 
 Create a basic Kairos config:

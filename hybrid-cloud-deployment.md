@@ -1,9 +1,9 @@
 # Perform a hybrid-cloud deployment
 
 Docs:
-  - https://kairos.io/v3.7.1/docs/installation/aws/
-  - https://kairos.io/v3.7.1/docs/installation/gce/
-  - https://kairos.io/v3.7.1/docs/installation/azure/
+  - https://kairos.io/docs/installation/aws/
+  - https://kairos.io/docs/installation/gce/
+  - https://kairos.io/docs/installation/azure/
 
 In this exercise we are going to spin up a control plane on a public cloud provider
 virtual machine (AWS, GCE or Azure) and a worker locally. We will form one cluster with them, demonstrating that it's possible to create hybrid cluster, utilizing resource where they are available, cheap and suitable.
