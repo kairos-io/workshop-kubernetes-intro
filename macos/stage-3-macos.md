@@ -18,7 +18,7 @@ Instead of GitHub + GitHub Actions, we use:
 
 ## Prerequisites
 
-- Kairos VM running with K3s (from [Stage 1](stage-1-macos.md))
+- Kairos VM running with K3s (from [Stage 1](../stage-1.md))
 - Local infrastructure running (Gitea + Registry from [Phase 0](local-infra/README.md))
 - `kubectl` configured to access your K3s cluster
 
@@ -27,7 +27,7 @@ Instead of GitHub + GitHub Actions, we use:
 
 ### Verify K3s Access
 
-If you haven't already set up kubectl access from your Mac, follow the [Access from Mac](stage-1-macos.md#3-access-from-mac-optional) section in Stage 1.
+If you haven't already set up kubectl access from your host, follow [Access the cluster from your host](../stage-1.md#access-the-cluster-from-your-host-optional) in Stage 1.
 
 ```bash
 export KUBECONFIG=~/.kube/config-kairos

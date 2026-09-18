@@ -3,77 +3,61 @@
 Docs:
   - [Manual Single-Node Cluster](https://kairos.io/docs/examples/single-node/)
 
-## Get a pre-built ISO
+This stage uses [`kairos-lab`](https://github.com/kairos-io/kairos-lab), a small CLI that downloads a Kairos ISO and boots a VM for you. It works the same way on Linux and macOS, so the rest of this workshop has one set of instructions instead of a platform fork.
 
-aarch64:
-  - [kairos-hadron-0.0.1-standard-arm64-generic-v3.7.1-k3sv1.35.0+k3s1.iso](https://github.com/kairos-io/kairos/releases/download/v3.7.1/kairos-hadron-0.0.1-standard-arm64-generic-v3.7.1-k3sv1.35.0+k3s1.iso) (357M)
-  - [kairos-fedora-40-standard-arm64-generic-v3.7.1-k3sv1.35.0+k3s1.iso](https://github.com/kairos-io/kairos/releases/download/v3.7.1/kairos-fedora-40-standard-arm64-generic-v3.7.1-k3sv1.35.0+k3s1.iso) (514M)
+## Install kairos-lab
 
-amd64:
-  - [kairos-hadron-0.0.1-standard-amd64-generic-v3.7.1-k3sv1.35.0+k3s1.iso](https://github.com/kairos-io/kairos/releases/download/v3.7.1/kairos-hadron-0.0.1-standard-amd64-generic-v3.7.1-k3sv1.35.0+k3s1.iso) (380M)
-  - [kairos-fedora-40-standard-amd64-generic-v3.7.1-k3sv1.35.0+k3s1.iso](https://github.com/kairos-io/kairos/releases/download/v3.7.1/kairos-fedora-40-standard-amd64-generic-v3.7.1-k3sv1.35.0+k3s1.iso) (535M)
-
-## Create a Virtual Machine
-
-> [!IMPORTANT]
-> The hadron images used here are BIOS only. When creating the VM, make sure the firmware is set to BIOS and not to UEFI. If you want to use UEFI images, check out hadron Trusted Boot
-
-Options:
-
-1. qemu/libvirt
-2. VirtualBox
-3. Host Proxmox locally?
-4. Public cloud provider
-
-## Quickest path to success:
-
-> [!NOTE]
-> In order to run the following scripts `qemu` and `qemu-img` must be installed. 
-
-> [!IMPORTANT]
-> On MacOS/UTM you have to select the default virtio-gpu-pci Display. When booting, edit the Grub config and remove the `nomodeset` option. Then it shold boot fine. 
-
-> [!WARNING]
-> When running this script, you get initiated in a serial console. Services like the interactive installer only run on the graphical console, so even if you select it, you will land on a new terminal and not the installer. If this is the case, just follow the manual installion instructions below.
-
-Create a disk and boot a VM with the disk and iso attached:
+macOS (recommended):
 
 ```bash
-# Create a disk image
-qemu-img create -f qcow2 kairos.img 60g
+brew tap kairos-io/kairos
+brew install kairos-lab
+```
 
-# Start the VM (assuming ISO is named "kairos.iso")
-qemu-system-x86_64 \
-    -enable-kvm \
-    -cpu host \
-    -nographic \
-    -serial mon:stdio \
-    -m 4096 \
-    -smp 2 \
-    -rtc base=utc,clock=rt \
-    -chardev socket,path=/tmp/kairos.sock,server=on,wait=off,id=qga0 \
-    -device virtio-serial \
-    -device virtserialport,chardev=qga0,name=org.qemu.guest_agent.0 \
-    -netdev user,id=net0,hostfwd=tcp::2222-:22,hostfwd=tcp::8080-:8080 \
-    -device virtio-net-pci,netdev=net0 \
-    -drive id=disk1,if=none,media=disk,file="kairos.img" \
-    -device virtio-blk-pci,drive=disk1,bootindex=0 \
-    -drive id=cdrom1,if=none,media=cdrom,file="kairos.iso" \
-    -device ide-cd,drive=cdrom1,bootindex=1 \
-    -boot menu=on
+Linux, and macOS without Homebrew: download a binary from the [releases page](https://github.com/kairos-io/kairos-lab/releases), or build from source:
 
-# To exit: CTRL^A -> x
-# To cleanup: rm kairos.img
+```bash
+go build -o kairos-lab ./cmd/kairos-lab
 ```
 
 > [!NOTE]
-> Without an explicit `-netdev`/`-device` pair, QEMU still creates a default
-> NIC, but on QEMU's own internal `10.0.2.0/24` network with no port forwarded
-> to the host. The VM boots, gets an address on that internal network, and the
-> host still has no route to it, so `ssh kairos@IP` and the web installer
-> below cannot reach it. The `-netdev user,...,hostfwd=...` line above forwards
-> the guest's SSH and web-installer ports to the host instead, so the next two
-> steps connect through `localhost`.
+> On macOS, the downloaded binary is not signed. Authorize it in System Settings > Privacy & Security after the first run.
+
+## Set up dependencies
+
+```bash
+kairos-lab setup
+```
+
+Detects your package manager and installs `qemu` if it is missing.
+
+## Download a Kairos ISO
+
+```bash
+kairos-lab download
+```
+
+Interactive selection of:
+- Image type: `core` (base OS) or `standard` (with K3s)
+- K3s version (if `standard`)
+
+The ISO is fetched for your architecture and cached; `kairos-lab` tracks it for cleanup later.
+
+> [!IMPORTANT]
+> The hadron images are BIOS only. `kairos-lab` boots with BIOS firmware by default, so this only matters if you point it at a UEFI image with `-iso`.
+
+## Create and boot the VM
+
+```bash
+kairos-lab start
+```
+
+This creates a new disk (named after the ISO plus a timestamp, or pass `-name <name>` to choose one), attaches the ISO, and boots with **bridged networking** — the VM gets a real IP from your network's DHCP server, the same way on Linux and macOS.
+
+- Linux bridged networking needs NetworkManager. If it is not available, add `-network user` for port-forwarded access instead (SSH via `localhost:2222`).
+- macOS bridged networking needs `sudo` to reach the vmnet stack; `kairos-lab` asks for it when needed.
+
+**Exit the VM console with `Ctrl-a x`.**
 
 The first thing you will see is the bootloader menu, which will offer different options to install, recover or debug a system. Either select (press enter) or it will be automatically selected after a few seconds.
 
@@ -90,17 +74,23 @@ If the system booted correctly, you should see a screen like this:
 
 <img width="554" height="711" alt="Screenshot 2026-01-27 at 20 35 01" src="https://github.com/user-attachments/assets/6e5e0a15-1453-4435-9878-449afd7070a4" />
 
-> [!TIP]
-> The default installer also starts a web installer in the background. With
-> the port forwarding from the command above, you should be able to access
-> http://localhost:8080 and do the installation from there.
+## Find the VM's IP address
+
+With bridged networking the VM is a normal device on your LAN. Find its address from your host:
+
+```bash
+# QEMU's virtual NICs use the 52:54 MAC prefix
+arp -a | grep -i "52:54"
+```
+
+(works the same on Linux and macOS; give the VM a few seconds after boot to show up)
 
 ## Manual Installation
 
-SSH to the virtual machine through the forwarded port, using the password "kairos" (without the quotes):
+SSH to the VM using the password "kairos" (without the quotes):
 
-```
-ssh -p 2222 kairos@localhost
+```bash
+ssh kairos@<VM_IP>
 ```
 
 Create a basic Kairos config:
@@ -125,10 +115,10 @@ EOF
 Install Kairos:
 
 ```bash
-kairos-agent manual-install config.yaml
+sudo kairos-agent manual-install config.yaml
 ```
 
-If the installation was successful the machine should auto-reboot and menu should look differently. The first item is the active image and default one, that's all you need to know for now. Select it (press enter) or let it auto select after a few seconds.
+If the installation was successful the machine should auto-reboot and the menu should look different. The first item is the active image and the default one, that's all you need to know for now. Select it (press enter) or let it auto-select after a few seconds.
 
 ```
  │*Kairos                                                                     │
@@ -138,11 +128,22 @@ If the installation was successful the machine should auto-reboot and menu shoul
  │ Kairos remote recovery
 ```
 
-Log in with the user we created (user: kairos, password: kairos).
+## Boot the installed system
 
-Turn into root
+After installation, start the VM again — no ISO needed this time:
 
 ```bash
+kairos-lab start
+```
+
+Select your existing disk when prompted (or pass `-name <name>` / `-no-iso` to skip the prompt) and it boots straight from disk.
+
+## Verify
+
+Find the VM's IP again if it changed, then log in (user: kairos, password: kairos):
+
+```bash
+ssh kairos@<VM_IP>
 sudo su -i
 ```
 
@@ -161,4 +162,25 @@ You should see an output like this one:
 NAME          STATUS   ROLES                  AGE     VERSION
 kairos-e0a8   Ready    control-plane,master   6m38s   v1.32.10+k3s1
 ```
+
+### Access the cluster from your host (optional)
+
+Later stages (CI/CD pipelines, the Kairos Operator) are easier to drive from your host than over SSH. Copy the kubeconfig out of the VM:
+
+```bash
+scp kairos@<VM_IP>:/etc/rancher/k3s/k3s.yaml ~/.kube/config-kairos
+sed -i.bak "s/127.0.0.1/<VM_IP>/" ~/.kube/config-kairos
+
+export KUBECONFIG=~/.kube/config-kairos
+kubectl get nodes
+```
+
+## Cleanup
+
+```bash
+kairos-lab reset
+```
+
+Removes the VM's disk. Downloaded ISOs and `kairos-lab` setup stay in place — use `kairos-lab cleanup` to remove everything the tool created.
+
 ✅ Done! 🎉

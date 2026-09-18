@@ -28,7 +28,7 @@ mkdir -p macos/local-infra/custom-image && cd macos/local-infra/custom-image
 
 ### 2. Create the Dockerfile
 
-Add packages you want in your custom OS. Keep `git` — it's needed for [Stage 6](stage-6-macos.md).
+Add packages you want in your custom OS. Keep `git` — it's needed for [Stage 6](../stage-6.md).
 
 ```bash
 cat > Dockerfile <<'EOF'
@@ -170,21 +170,13 @@ podman volume rm kairos-build
 
 ## Run It
 
-Boot a VM with your custom ISO using the [QEMU command from Stage 1](stage-1-macos.md#2-boot-from-iso), with these changes:
+Boot a VM with your custom ISO using [`kairos-lab`](../stage-1.md), pointed at the ISO you just built:
 
 ```bash
-cd macos/local-infra
-
-# Create a new disk for the custom image
-qemu-img create -f qcow2 kairos-custom.qcow2 60G
+kairos-lab start -new -name custom -iso macos/local-infra/build/*.iso
 ```
 
-Then run the QEMU command with:
-- `-drive file=kairos-custom.qcow2,if=virtio,format=qcow2`
-- `-cdrom build/*.iso`
-- `-boot menu=on`
-
-Follow the [Stage 1 installation steps](stage-1-macos.md#install-kairos) to install Kairos.
+Follow the [Stage 1 installation steps](../stage-1.md#manual-installation) to install Kairos.
 
 After reboot, boot from disk (remove `-cdrom` and `-boot` flags) and verify your custom packages:
 
@@ -200,7 +192,7 @@ which vim htop git
 If you prefer a smaller base image, use [Hadron](https://github.com/kairos-io/hadron) instead of Ubuntu. Hadron has no package manager, resulting in significantly smaller images.
 
 > [!NOTE]
-> Since Hadron has no package manager, you cannot install additional packages like `git`. For [Stage 6](stage-6-macos.md), you'll need the alternative method to deploy the kairos-operator.
+> Since Hadron has no package manager, you cannot install additional packages like `git`. For [Stage 6](../stage-6.md), you'll need the alternative method to deploy the kairos-operator.
 
 ```bash
 cat > Dockerfile.hadron <<'EOF'
