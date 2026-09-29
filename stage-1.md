@@ -3,22 +3,35 @@
 Docs:
   - [Manual Single-Node Cluster](https://kairos.io/docs/examples/single-node/)
 
-This stage uses [`kairos-lab`](https://github.com/kairos-io/kairos-lab), a small CLI that downloads a Kairos ISO and boots a VM for you. It works the same way on Linux and macOS, so the rest of this workshop has one set of instructions instead of a platform fork.
+## Before we begin
 
-## Install kairos-lab
+You'll need virtualization software to run the VMs in this workshop. You're free to use whatever you're comfortable with, but these instructions use [`kairos-lab`](https://github.com/kairos-io/kairos-lab), a small CLI that downloads a Kairos ISO and boots a VM for you, so we don't have to walk through setting up VMs and networking on every possible virtualization stack.
 
-macOS (recommended):
+`kairos-lab` only works on Linux and macOS, so you'll need a host machine running one of those. If you know your way around your own virtualization software, you're welcome to use that instead, and should still be able to follow along on Windows, but you're on your own for that part.
+
+## Installing kairos-lab
+
+### Homebrew (macOS only)
 
 ```bash
 brew tap kairos-io/kairos
 brew install kairos-lab
 ```
 
-Linux, and macOS without Homebrew: download a binary from the [releases page](https://github.com/kairos-io/kairos-lab/releases), or build from source:
+### YOLO script from the internet (Linux only)
 
 ```bash
+curl -sSL https://raw.githubusercontent.com/kairos-io/kairos-lab/main/install.sh | sh
+```
+
+### Build from source (MacOS or Linux)
+
+```bash
+git clone https://github.com/kairos-io/kairos-lab.git && cd kairos-lab
 go build -o kairos-lab ./cmd/kairos-lab
 ```
+
+### Or download the binaries from the [releases page](https://github.com/kairos-io/kairos-lab/releases) (MacOS or Linux)
 
 > [!NOTE]
 > On macOS, the downloaded binary is not signed. Authorize it in System Settings > Privacy & Security after the first run.
@@ -37,9 +50,22 @@ Detects your package manager and installs `qemu` if it is missing.
 kairos-lab download
 ```
 
-Interactive selection of:
-- Image type: `core` (base OS) or `standard` (with K3s)
-- K3s version (if `standard`)
+For this lab we'll be using the `standard` image, which includes `K3s`.
+
+```
+No ISO specified. Fetching latest Kairos releases...
+
+Kairos v4.3.0 - Select image type:
+  [1] core     - Base OS only (no Kubernetes)
+  [2] standard - Includes K3s Kubernetes
+Choice [1-2]: 2
+
+Select K3s version:
+  [1] k3sv1.36.4+k3s1 (latest)
+  [2] k3sv1.35.8+k3s1
+  [3] k3sv1.34.11+k3s1
+Choice [1-3]: 1
+```
 
 The ISO is fetched for your architecture and cached; `kairos-lab` tracks it for cleanup later.
 
@@ -52,12 +78,49 @@ The ISO is fetched for your architecture and cached; `kairos-lab` tracks it for 
 kairos-lab start
 ```
 
-This creates a new disk (named after the ISO plus a timestamp, or pass `-name <name>` to choose one), attaches the ISO, and boots with **bridged networking** — the VM gets a real IP from your network's DHCP server, the same way on Linux and macOS.
+This creates a new disk, go ahead and give it a name like `kairos-stage1`:
 
-- Linux bridged networking needs NetworkManager. If it is not available, add `-network user` for port-forwarded access instead (SSH via `localhost:2222`).
-- macOS bridged networking needs `sudo` to reach the vmnet stack; `kairos-lab` asks for it when needed.
+```
+❯ /tmp/claude/kairos-lab-main/kairos-lab start
+Using the only downloaded ISO: kairos-hadron-v0.5.1-standard-arm64-generic-v4.3.0-k3sv1.36.4+k3s1.iso
 
-**Exit the VM console with `Ctrl-a x`.**
+Suggested disk name: kairos-hadron-v0.5.1-standard-arm64-generic-v4.3.0-k3sv1.36.4+k3s1-20260929-111913
+Press Enter to accept, or type a new name: kairos-stage1
+```
+
+If you have enough resources go with the pre-selected options, if not, then you can reduce the disk size or memory. Hadron uses very small resources, these values were just assigned as a "safe" option.
+
+> [!WARNING]
+> The one option you should not change for this workshop is "Network: shared". If you do, keep in mind that you are in charge of how to access the machine via IP, reverse tunnel or any other mechanism you can setup.
+
+```
+VM Configuration:
+  1) Disk name:    kairos-stage1
+  2) Disk path:    /Users/mauro/Library/Caches/kairos-lab/vm/kairos-stage1.qcow2
+  3) Disk size:    60 GB  (131 GB free)
+  4) ISO:          kairos-hadron-v0.5.1-standard-arm64-generic-v4.3.0-k3sv1.36.4+k3s1.iso
+  5) Memory:       8 GB  (24 GB available)
+  6) CPUs:         2  (12 logical CPUs on host)
+  7) Network:      shared
+  8) Net interface: (n/a)
+  9) Display:      window
+
+Press Enter to continue, or enter a number to edit:
+```
+
+Hit Enter to continue
+
+> [!IMPORTANT]
+> At any point you can exit the console and kill the machine with `Ctrl-a x`
+
+Network setup requires `sudo` permissions, so make sure to say `y` in this section
+
+```
+[1/3] Preparing networking
+shared vmnet mode runs qemu with sudo [y/N]: y
+```
+
+You will be prompted for your password and you can see exactly the command that kairos-lab is about to run.
 
 The first thing you will see is the bootloader menu, which will offer different options to install, recover or debug a system. Either select (press enter) or it will be automatically selected after a few seconds.
 
@@ -70,30 +133,38 @@ The first thing you will see is the bootloader menu, which will offer different 
  │ Kairos (debug)
 ```
 
-If the system booted correctly, you should see a screen like this:
+If the system booted correctly, you should see a login like the following. Go ahead and enter kairos as the user and password:
 
-<img width="554" height="711" alt="Screenshot 2026-01-27 at 20 35 01" src="https://github.com/user-attachments/assets/6e5e0a15-1453-4435-9878-449afd7070a4" />
+```
+kairos-525c login: kairos
+Password:
+Welcome to Kairos!
 
-## Find the VM's IP address
-
-With bridged networking the VM is a normal device on your LAN. Find its address from your host:
-
-```bash
-# QEMU's virtual NICs use the 52:54 MAC prefix
-arp -a | grep -i "52:54"
+Refer to https://kairos.io for documentation.
+[kairos@kairos-525c ~]$
 ```
 
-(works the same on Linux and macOS; give the VM a few seconds after boot to show up)
+Now you should be able to determine the IP of the machine using `ip a`.
+
+If you enabled graphical mode (as it is by default) you should also see a QR code, and the IP of the machine at the bottom of it.
+
+## Installing Kairos
+
+To install kairos in your system you have a bunch of options, we are going to use the manual installation for this stage and introduce you to other options in further stages.
 
 ## Manual Installation
 
-SSH to the VM using the password "kairos" (without the quotes):
+In the console we logged in from the previous step, run the following command:
 
-```bash
-ssh kairos@<VM_IP>
-```
+> [!INFO]
+> If you prefer so, you can also ssh into the machine with the IP we recently saw via the command `ssh kairos@IP` where you will have to log in again.
 
-Create a basic Kairos config:
+Here's the right moment to introduce Kairos' Cloud Configuration Files.
+
+> [!WARNING]
+> Kairos' Cloud Configuration Files look like Cloud Init files, but they are not. They can modify the system much earlier than cloud init, solving the problem of how to modify a configuration during an early dracut stage. If you want to learn more about them go ahead and check https://github.com/mudler/yip
+
+Start by creating a basic Kairos config:
 
 ```bash
 cat > config.yaml <<EOF
@@ -112,6 +183,11 @@ k3s:
 EOF
 ```
 
+What this config does beyond the obvious:
+
+- The header is important, do not skip it otherwise your config file will be ignored
+- A Kairos system doesn't require you to have users. But if you plan to have them, at least one of them needs to be in the "admin" group
+
 Install Kairos:
 
 ```bash
@@ -128,26 +204,21 @@ If the installation was successful the machine should auto-reboot and the menu s
  │ Kairos remote recovery
 ```
 
-## Boot the installed system
+> [!WARNING]
+> If you did this through SSH, you need to reconnect. In the process your system might give you a warning because the machine doesn't have the same known host fingerprint. This is expected because the installed system is not the same as the LiveCD one.
 
-After installation, start the VM again — no ISO needed this time:
+> [!WARNING]
+> If you turned off the machine, you can start it again with the following command `kairos-lab start -name kairos-stage1`
 
-```bash
-kairos-lab start
-```
+## Check K3s is running
 
-Select your existing disk when prompted (or pass `-name <name>` / `-no-iso` to skip the prompt) and it boots straight from disk.
-
-## Verify
-
-Find the VM's IP again if it changed, then log in (user: kairos, password: kairos):
+Using `kubectl` out of the box requires `sudo` permissions
 
 ```bash
-ssh kairos@<VM_IP>
 sudo su -i
 ```
 
-Check that Kubernetes is running (from within the VM):
+Then run the following to confirm Kubernetes is running:
 
 > [!TIP]
 > k3s configuration is located under `/etc/rancher/k3s/k3s.yaml`
@@ -165,10 +236,19 @@ kairos-e0a8   Ready    control-plane,master   6m38s   v1.32.10+k3s1
 
 ### Access the cluster from your host (optional)
 
-Later stages (CI/CD pipelines, the Kairos Operator) are easier to drive from your host than over SSH. Copy the kubeconfig out of the VM:
+Later stages (CI/CD pipelines, the Kairos Operator) are easier to drive from your host than over SSH. The kubeconfig is only readable by root, so copy it to somewhere `kairos` can read first:
 
 ```bash
-scp kairos@<VM_IP>:/etc/rancher/k3s/k3s.yaml ~/.kube/config-kairos
+ssh kairos@<VM_IP>
+sudo cp /etc/rancher/k3s/k3s.yaml ~/k3s.yaml
+sudo chown kairos:kairos ~/k3s.yaml
+exit
+```
+
+Then pull it to your host:
+
+```bash
+scp kairos@<VM_IP>:~/k3s.yaml ~/.kube/config-kairos
 sed -i.bak "s/127.0.0.1/<VM_IP>/" ~/.kube/config-kairos
 
 export KUBECONFIG=~/.kube/config-kairos
@@ -177,10 +257,20 @@ kubectl get nodes
 
 ## Cleanup
 
+The ISO you downloaded and the VM you created will be useful for future stages. If you don't want to download the ISO again or reinstall Kairos, you can leave them as they are and continue.
+
+If you want to clean up everything from this stage, run:
+
 ```bash
 kairos-lab reset
 ```
 
-Removes the VM's disk. Downloaded ISOs and `kairos-lab` setup stay in place — use `kairos-lab cleanup` to remove everything the tool created.
+This removes the VM's disk, but keeps the downloaded ISO and `kairos-lab` setup so you can reuse them in later stages.
+
+If you want to remove everything, including the ISO and `kairos-lab` itself, before uninstalling it completely, run:
+
+```bash
+kairos-lab cleanup
+```
 
 ✅ Done! 🎉
