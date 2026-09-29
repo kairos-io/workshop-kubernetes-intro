@@ -72,6 +72,14 @@ your own image; the number is entirely up to you. We're going to use
 docker build --progress plain --build-arg VERSION=v1.0.0 -t stage-2:v1.0.0 .
 ```
 
+If everything went as expected, you should see your new image listed:
+
+```
+❯ docker images
+REPOSITORY                            TAG                                    IMAGE ID       CREATED             SIZE
+stage-2                               v1.0.0                                 5d849e8ca7aa   2 minutes ago       3.27GB
+```
+
 ## Alternative: Using Podman on MacOS
 
 Restart the Podman machine with rootful access.
