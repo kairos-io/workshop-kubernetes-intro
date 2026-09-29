@@ -64,6 +64,10 @@ your own image; the number is entirely up to you. We're going to use
 > to the Kairos image itself, its content. The `-t stage-2:v1.0.0` assigns it
 > to the tag, the package you get out of the build.
 
+> [!NOTE]
+> `--progress plain` just lets you see what kairos-init is doing and scroll
+> back through it in your terminal. It is not required.
+
 ```bash
 docker build --progress plain --build-arg VERSION=v1.0.0 -t stage-2:v1.0.0 .
 ```
