@@ -44,6 +44,16 @@ kairos-lab setup
 
 Detects your package manager and installs `qemu` if it is missing.
 
+## Hadron and K3s
+
+The ISO you download next bundles two choices worth knowing about.
+
+**Hadron** is the Linux distribution underneath. It's a minimal system built from scratch by the Kairos team out of vanilla upstream components, so there's little in the image beyond what it needs to boot and run containers.
+
+**K3s** is the Kubernetes distribution on top. It's lightweight, fully conformant, and ships as a single binary, which suits a laptop VM and an edge node equally well.
+
+We make both choices for you in this stage so that everyone starts from the same place. Neither is a requirement of Kairos. It can also take an existing distribution such as Ubuntu, Fedora or openSUSE and turn it into an immutable, image-based system with the same upgrade and rollback behaviour. You'll do exactly that in [stage 2](stage-2.md).
+
 ## Download a Kairos ISO
 
 ```bash
