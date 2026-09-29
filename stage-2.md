@@ -38,6 +38,7 @@ bootable artifact. Wow, that was a mouthful. You can just say kairosify it.
 
 ```Dockerfile
 FROM ubuntu:24.04
+ARG VERSION=v1.0.0
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl vim htop git && \
@@ -46,17 +47,11 @@ RUN apt-get update && \
 
 # "Kairosify" the image
 RUN --mount=type=bind,from=quay.io/kairos/kairos-init:v4.3.0,src=/kairos-init,dst=/kairos-init \
-    /kairos-init --stage install \
+    /kairos-init --stage all \
       --level debug \
       --provider k3s \
       --provider-k3s-version "v1.36.4+k3s1" \
-      --version "v1.0.0" \
-    && \
-    /kairos-init --stage init \
-      --level debug \
-      --provider k3s \
-      --provider-k3s-version "v1.36.4+k3s1" \
-      --version "v1.0.0"
+      --version "${VERSION}"
 ```
 
 ```bash
