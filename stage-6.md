@@ -3,60 +3,83 @@
 Docs:
   - [Kairos Operator README](https://github.com/kairos-io/kairos-operator)
 
-For this exercise, you can use any of the clusters you created in the previous
-stages (multi-node or single-node).
+## Overview
 
-## Deploy the kairos operator
+In this final stage, we'll use the **Kairos Operator** to manage OS upgrades through Kubernetes. Instead of manually running `kairos-agent upgrade` on each node ([Stage 4](stage-4.md)), the operator automates the process:
 
-The following command needs `git` to be in the PATH. If you added `git` to your
-Kairos image as per the example on [stage-2](stage-2.md), you should be able to
-issue this command from withing the master node. Otherwise, you'll need to copy
-the k3s kubeconfig (`/etc/rancher/k3s/k3s.yaml`) to your host machine (assuming
-`git` is available there), change the values in the file to point to the IP address
-of the master node and issue the command from your host machine.
+1. Cordons the node (prevents new workloads)
+2. Performs the upgrade
+3. Reboots the node
+4. Uncordons the node
 
-Depending on your network setup, hypervisor, etc, your mileage might vary.
+This is ideal for managing upgrades across multiple nodes in a cluster. You can use any of the clusters you created in the previous stages (single-node or multi-node).
 
-If you have `git` available, you can install the Kairos operator with the following command:
+## Prerequisites
+
+- A working Kairos cluster (single- or multi-node) from previous stages
+- `kubectl` access, either from inside the master VM or from your host machine via its kubeconfig
+- Cluster nodes can reach external registries (quay.io)
+
+## Step 1: Deploy the Kairos Operator
+
+### Option A: With `git` available
+
+The following command needs `git` in the `PATH`. If you added `git` to your Kairos image as in [Stage 2](stage-2.md), you can run this from within the master node — otherwise copy `/etc/rancher/k3s/k3s.yaml` to a host that has `git` and point it at the master's IP.
 
 ```bash
 kubectl apply -k https://github.com/kairos-io/kairos-operator/config/default
 ```
 
-### Alternative: Without git (e.g., Hadron-based images)
-
-If you're using a Hadron-based image (or any image without `git`), you can download
-the kairos-operator tarball directly with `curl` and apply it:
+### Option B: Without `git` (e.g. Hadron-based images)
 
 ```bash
-# Download and extract the kairos-operator
+ssh kairos@<MASTER_IP>
+
 curl -sL https://github.com/kairos-io/kairos-operator/archive/refs/heads/main.tar.gz | tar -xz -C /tmp
-
-# Deploy the operator
-kubectl apply -k /tmp/kairos-operator-main/config/default
+sudo kubectl apply -k /tmp/kairos-operator-main/config/default
 ```
 
-This method uses `curl` (which is available on Hadron) instead of `git`.
-
-### Alternative: Copy from host
-
-Another workaround is to clone the [kairos-operator repository](https://github.com/kairos-io/kairos-operator) to your host system and then `scp` the directory inside the virtual machine. Then install the kairos-operator using the following command from the root directory of the repository:
+### Verify the deployment
 
 ```bash
-kubectl apply -k config/default
+kubectl -n kairos-operator-system get pods
 ```
 
-## Upgrading using Kubernetes Resources
+Expected output:
+```
+NAME                                               READY   STATUS    RESTARTS   AGE
+kairos-operator-controller-manager-xxxxx-xxxxx     2/2     Running   0          30s
+```
 
-The operator acts on 2 types of Custom Resources: NodeOp and NodeOpUpgrade. In this
-example, we'll use the NodeOpUpgrade which is specifically designed for upgrading
-Kairos.
+Wait for the pod to be `Running` before proceeding.
 
-Create a yaml file similar to the following, replacing the `spec.image` value
-with the image you intend to upgrade to. Also check the rest of the options to see
-what's possible.
+## Step 2: Label nodes for upgrade
 
-```yaml
+The operator uses labels to select which nodes to upgrade:
+
+```bash
+kubectl label nodes --all kairos.io/managed=true
+kubectl get nodes --show-labels | grep kairos.io/managed
+```
+
+## Step 3: Create the upgrade resource
+
+The operator acts on two Custom Resources: `NodeOp` and `NodeOpUpgrade`. This example uses `NodeOpUpgrade`, built specifically for upgrading Kairos.
+
+Check what upgrade images are available for each node first:
+
+```bash
+ssh kairos@<MASTER_IP> "sudo kairos-agent upgrade list-releases"
+ssh kairos@<WORKER_IP> "sudo kairos-agent upgrade list-releases"  # if multi-node
+```
+
+> [!NOTE]
+> Different nodes can show different available images based on their OS flavor (e.g. Ubuntu vs Fedora) — the operator can upgrade each node to its own flavor's latest version.
+
+Create the upgrade manifest, replacing `spec.image` with the image you intend to upgrade to:
+
+```bash
+cat > upgrade.yaml <<'EOF'
 apiVersion: operator.kairos.io/v1alpha1
 kind: NodeOpUpgrade
 metadata:
@@ -64,7 +87,7 @@ metadata:
   namespace: default
 spec:
   # The container image containing the new Kairos version
-  image: quay.io/kairos/opensuse:leap-15.6-standard-amd64-generic-v3.4.2-k3sv1.30.11-k3s1
+  image: quay.io/kairos/ubuntu:22.04-standard-amd64-generic-v3.7.2-k3s-v1.35.0-k3s3
 
   # NodeSelector to target specific nodes (optional)
   nodeSelector:
@@ -76,7 +99,6 @@ spec:
   concurrency: 1
 
   # Whether to stop creating new jobs when a job fails
-  # Useful for canary deployments
   stopOnFailure: true
 
   # Whether to upgrade the active partition (defaults to true)
@@ -87,17 +109,177 @@ spec:
 
   # Whether to force the upgrade without version checks
   # force: false
+EOF
 ```
 
-Start the upgrade by applying the above yaml file:
+## Step 4: Apply the upgrade
 
 ```bash
 kubectl apply -f upgrade.yaml
 ```
 
-If everything works as expected, you should see the Node being cordoned, upgraded,
-rebooted and eventually un-cordoned and ready to be used again. It's important to
-upgrade to an image that has a compatible kubernetes version otherwise the node
-may fail to connect to the cluster (e.g. downgrading kubernetes version might not work).
+Watch it progress:
 
-✅ Done! 🎉
+```bash
+kubectl get nodeopupgrade -w
+kubectl get nodes -w
+kubectl -n kairos-operator-system logs -f deployment/kairos-operator-controller-manager
+```
+
+What happens:
+
+1. **Node cordoned** — no new pods scheduled
+2. **Upgrade job created** — pulls the new image and writes it to the passive partition
+3. **Node reboots** — boots into the upgraded OS
+4. **Node uncordoned** — returns to `Ready`
+
+```
+NAME            STATUS                     AGE
+kairos-479e     Ready,SchedulingDisabled   0s    # Cordoned
+kairos-479e     NotReady                   30s   # Rebooting
+kairos-479e     Ready                      90s   # Upgrade complete
+```
+
+## Step 5: Verify the upgrade
+
+```bash
+kubectl get nodes -o wide
+ssh kairos@<VM_IP> "cat /etc/kairos-release | grep KAIROS_VERSION"
+```
+
+## Upgrade strategies
+
+### Single-node cluster
+
+```yaml
+spec:
+  concurrency: 1  # Only option for single node
+```
+
+The cluster is briefly unavailable during the reboot.
+
+### Multi-node cluster
+
+```yaml
+spec:
+  # Upgrade one at a time (safest)
+  concurrency: 1
+
+  # Or upgrade all at once (faster but riskier)
+  # concurrency: 0
+```
+
+### Canary deployment
+
+Upgrade a subset of nodes first:
+
+```bash
+kubectl label node kairos-worker-xxxxx kairos.io/canary=true
+
+cat > upgrade-canary.yaml <<'EOF'
+apiVersion: operator.kairos.io/v1alpha1
+kind: NodeOpUpgrade
+metadata:
+  name: kairos-canary-upgrade
+spec:
+  image: quay.io/kairos/ubuntu:22.04-standard-amd64-generic-v3.7.2-k3s-v1.35.0-k3s3
+  nodeSelector:
+    matchLabels:
+      kairos.io/canary: "true"
+  concurrency: 1
+  stopOnFailure: true
+EOF
+
+kubectl apply -f upgrade-canary.yaml
+```
+
+## Troubleshooting
+
+### Upgrade job fails
+
+```bash
+kubectl get jobs -A | grep upgrade
+kubectl logs job/<job-name> -n <namespace>
+```
+
+### Node stuck in `NotReady`
+
+1. Check the VM console for boot errors.
+2. Try booting the fallback partition (GRUB menu).
+3. Check K3s logs after boot: `sudo journalctl -u k3s-agent -f` (worker) or `sudo journalctl -u k3s -f` (master).
+
+### Rollback an upgrade
+
+The Kairos operator has no automatic rollback. To roll back manually: reboot the node, select **"Kairos (fallback)"** at the GRUB menu — it rejoins the cluster on the previous version.
+
+### Delete a stuck upgrade
+
+```bash
+kubectl delete nodeopupgrade kairos-upgrade
+```
+
+### Upgrade completed but `rebootStatus` stuck on `pending`
+
+The node reboots and the upgrade completes, but the operator doesn't detect it:
+
+```bash
+kubectl get nodes
+# kairos-worker-ec386546   Ready,SchedulingDisabled   <none>   10h   # Still cordoned!
+
+kubectl get nodeopupgrade kairos-upgrade -o yaml | grep -A8 'status:'
+#   nodeStatuses:
+#     kairos-worker-ec386546:
+#       phase: Completed
+#       rebootStatus: pending    # Stuck here despite successful reboot!
+```
+
+**Root cause:** the reboot pod sets a `kairos.io/reboot-state: completed` annotation on itself just before triggering the reboot. If the reboot happens too fast, the annotation may not be persisted before the pod terminates.
+
+**Diagnosis:**
+
+```bash
+kubectl get pods -l kairos.io/reboot=true
+kubectl get pod <reboot-pod> -o jsonpath='{.metadata.annotations}'
+kubectl -n operator-system logs deployment/operator-kairos-operator --tail=20
+# DEBUG  No available slots for new jobs  {"running": 1, "maxConcurrency": 1}
+```
+
+**Resolution:** patch the reboot pod with the missing annotation:
+
+```bash
+REBOOT_POD=$(kubectl get pods -l kairos.io/reboot=true -o jsonpath='{.items[0].metadata.name}')
+kubectl patch pod $REBOOT_POD -p '{"metadata":{"annotations":{"kairos.io/reboot-state":"completed"}}}'
+```
+
+The operator then updates `rebootStatus` to `completed`, the upgrade `phase` to `Completed`, and uncordons the node.
+
+> [!NOTE]
+> This appears to be an edge case in the Kairos Operator. Consider reporting it to the [kairos-operator repository](https://github.com/kairos-io/kairos-operator/issues) if you hit it.
+
+## Cleanup
+
+```bash
+kubectl delete -k https://github.com/kairos-io/kairos-operator/config/default
+```
+
+## Summary
+
+| Feature | Benefit |
+|---------|---------|
+| **Automated upgrades** | No manual SSH to each node |
+| **Controlled rollout** | Concurrency settings for safe upgrades |
+| **Kubernetes native** | Manage the OS like any other K8s resource |
+| **Node cordoning** | Graceful workload migration |
+
+### Complete workshop flow
+
+1. **Stage 1**: Boot and install a Kairos VM
+2. **Stage 2**: Build a custom Kairos image
+3. **Stage 3**: CI/CD for image builds
+4. **Stage 4**: Manual upgrade with `kairos-agent`
+5. **Stage 5**: Multi-node cluster setup
+6. **Stage 6**: Kubernetes-based upgrades with the operator
+
+---
+
+✅ Workshop Complete! 🎉
