@@ -25,7 +25,7 @@ Add some packages to the Dockerfile below and then build the image (better keep
 ```Dockerfile
 ARG BASE_IMAGE=ubuntu:24.04
 
-FROM quay.io/kairos/kairos-init:v0.17.3 AS kairos-init
+FROM quay.io/kairos/kairos-init:v4.3.0 AS kairos-init
 
 FROM ${BASE_IMAGE} AS base-kairos
 
