@@ -38,7 +38,7 @@ bootable artifact. Wow, that was a mouthful. You can just say kairosify it.
 
 ```Dockerfile
 FROM ubuntu:24.04
-ARG VERSION=v1.0.0
+ARG VERSION
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl vim htop git && \
@@ -55,7 +55,7 @@ RUN --mount=type=bind,from=quay.io/kairos/kairos-init:v4.3.0,src=/kairos-init,ds
 ```
 
 ```bash
-docker build --progress plain -t kairos-custom:latest .
+docker build --progress plain --build-arg VERSION=v1.0.0 -t kairos-custom:latest .
 ```
 
 ## Alternative: Using Podman on MacOS
