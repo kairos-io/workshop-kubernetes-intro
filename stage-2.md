@@ -3,14 +3,16 @@
 Docs:
   - [The Kairos Factory](https://kairos.io/docs/reference/kairos-factory/)
 
-Stage 1 used a ready-made Hadron ISO. This stage shows you can build a Kairos
-image from a different base distribution too, Ubuntu here, though the same
-approach works for Fedora, openSUSE and others.
+> [!NOTE]
+> Stage 1 used a ready-made Hadron ISO. This stage shows you can build a
+> Kairos image from a different base distribution too, Ubuntu here, though
+> the same approach works for Fedora, openSUSE and others.
 
-You can also build a Hadron image yourself. Keep in mind Hadron has no
-package manager, so adding software works differently. See
-[Extending Hadron with extensions](https://kairos.io/docs/advanced/sys-extensions/)
-for how.
+> [!TIP]
+> You can also build a Hadron image yourself. Keep in mind Hadron has no
+> package manager, so adding software works differently. See
+> [Extending Hadron with extensions](https://kairos.io/docs/advanced/sys-extensions/)
+> for how.
 
 ## Prepare your base image
 
