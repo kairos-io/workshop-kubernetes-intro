@@ -82,6 +82,9 @@ The ISO is fetched for your architecture and cached; `kairos-lab` tracks it for 
 > [!IMPORTANT]
 > The hadron images are BIOS only. `kairos-lab` boots with BIOS firmware by default, so this only matters if you point it at a UEFI image with `-iso`.
 
+> [!TIP]
+> You can also download the ISO yourself from the [Kairos releases page](https://github.com/kairos-io/kairos/releases) and pass it to `kairos-lab` with `-iso <path>` instead of the interactive picker above.
+
 ## Create and boot the VM
 
 ```bash
