@@ -19,35 +19,44 @@ Docs:
 > [!NOTE]
 > This step has to be run locally or in your pipeline, not in the Kairos VM.
 
-Add some packages to the Dockerfile below and then build the image (better keep
-`git` in the package list. That will prove useful in [stage-6](stage-6.md)).
+Let's imagine you have an Ubuntu 24.04 image that installs `curl`, `vim`,
+`htop` and `git` (better keep `git` in the package list, that will prove
+useful in [stage-6](stage-6.md)):
 
 ```Dockerfile
-ARG BASE_IMAGE=ubuntu:24.04
+FROM ubuntu:24.04
 
-FROM quay.io/kairos/kairos-init:v4.3.0 AS kairos-init
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl vim htop git && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+```
 
-FROM ${BASE_IMAGE} AS base-kairos
+Now we can convert that image into a Kairos image, that is, one that
+contains everything necessary to produce an immutable, image-based,
+bootable artifact. Wow, that was a mouthful. You can just say kairosify it.
 
-# Add your packages here. These are some examples:
+```Dockerfile
+FROM ubuntu:24.04
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl vim htop git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
 # "Kairosify" the image
-RUN --mount=type=bind,from=kairos-init,src=/kairos-init,dst=/kairos-init \
+RUN --mount=type=bind,from=quay.io/kairos/kairos-init:v4.3.0,src=/kairos-init,dst=/kairos-init \
     /kairos-init --stage install \
       --level debug \
       --provider k3s \
-      --provider-k3s-version "v1.35.0+k3s1" \
-      --version "v0.0.1" \
+      --provider-k3s-version "v1.36.4+k3s1" \
+      --version "v1.0.0" \
     && \
     /kairos-init --stage init \
       --level debug \
       --provider k3s \
-      --provider-k3s-version "v1.35.0+k3s1" \
-      --version "v0.0.1"
+      --provider-k3s-version "v1.36.4+k3s1" \
+      --version "v1.0.0"
 ```
 
 ```bash
