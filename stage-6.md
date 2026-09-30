@@ -1,285 +1,214 @@
-# Stage 6: Upgrading your cluster through Kubernetes
+# Stage 6: Deploying a multi-node cluster
 
 Docs:
-  - [Kairos Operator README](https://github.com/kairos-io/kairos-operator)
+  - [Manual Multi-Node Cluster](https://kairos.io/docs/examples/multi-node/)
 
-## Overview
+In this stage, we'll create a 2-node Kubernetes cluster:
+- **Master node**: control plane (reuse the VM from [Stage 2](stage-2.md), or create a fresh one)
+- **Worker node**: a new VM that joins the cluster
 
-In this final stage, we'll use the **Kairos Operator** to manage OS upgrades through Kubernetes. Instead of manually running `kairos-agent upgrade` on each node ([Stage 4](stage-4.md)), the operator automates the process:
-
-1. Cordons the node (prevents new workloads)
-2. Performs the upgrade
-3. Reboots the node
-4. Uncordons the node
-
-This is ideal for managing upgrades across multiple nodes in a cluster. You can use any of the clusters you created in the previous stages (single-node or multi-node).
+`kairos-lab`'s bridged networking (see [Stage 2](stage-2.md#create-and-boot-the-vm)) gives both VMs real IPs on your local network, so they can talk to each other directly — same on Linux and macOS.
 
 ## Prerequisites
 
-- A working Kairos cluster (single- or multi-node) from previous stages
-- `kubectl` access, either from inside the master VM or from your host machine via its kubeconfig
-- Cluster nodes can reach external registries (quay.io)
+- A working master VM, per [Stage 2](stage-2.md)
+- At least ~12GB RAM free (8GB master + 4GB worker is a comfortable split)
+- A Kairos ISO for the worker — reuse the one you already downloaded, or run `kairos-lab download` again to try a different flavor (the operator in [Stage 7](stage-7.md) can mix flavors across nodes)
 
-## Step 1: Deploy the Kairos Operator
+## Select your installation source
 
-### Option A: With `git` available
+You can use an image you built in [Stage 3](stage-3.md), or pick one from https://quay.io/organization/kairos. Make sure it has k3s and matches your architecture.
 
-The following command needs `git` in the `PATH`. If you added `git` to your Kairos image as in [Stage 2](stage-2.md), you can run this from within the master node — otherwise copy `/etc/rancher/k3s/k3s.yaml` to a host that has `git` and point it at the master's IP.
+## Prepare the master node
+
+If your master VM from Stage 2 is not running:
 
 ```bash
-kubectl apply -k https://github.com/kairos-io/kairos-operator/config/default
+kairos-lab start -name master
 ```
 
-### Option B: Without `git` (e.g. Hadron-based images)
+If it is a fresh disk, install with a config like the following (`k3s.enabled` makes it the control plane):
+
+```yaml
+#cloud-config
+
+hostname: metal-{{ trunc 4 .MachineID }}
+users:
+  - name: kairos
+    passwd: kairos
+    groups:
+      - admin
+
+k3s:
+  enabled: true
+```
+
+## Find the master's IP and join token
+
+Find the master's IP the same way as in [Stage 2](stage-2.md#find-the-vms-ip-address):
+
+```bash
+arp -a | grep -i "52:54"
+```
+
+SSH in and note the join token — you'll need it for the worker:
 
 ```bash
 ssh kairos@<MASTER_IP>
-
-curl -sL https://github.com/kairos-io/kairos-operator/archive/refs/heads/main.tar.gz | tar -xz -C /tmp
-sudo kubectl apply -k /tmp/kairos-operator-main/config/default
+sudo cat /var/lib/rancher/k3s/server/node-token
 ```
 
-### Verify the deployment
+## Prepare the worker node
+
+Start a second VM with its own disk name:
 
 ```bash
-kubectl -n kairos-operator-system get pods
+kairos-lab start -name worker
 ```
 
-Expected output:
+Install it with a config like this (note: `k3s-agent`, not `k3s` — the key is different from the master):
+
+```yaml
+#cloud-config
+
+hostname: metal-{{ trunc 4 .MachineID }}
+users:
+  - name: kairos
+    passwd: kairos
+    groups:
+      - admin
+
+k3s-agent: # Warning: the key is different from the master node one
+  enabled: true
+  args:
+    - --with-node-id # configures the agent to use the node ID to communicate with the master node
+  env:
+    K3S_TOKEN: "<MASTER_SERVER_TOKEN>" # from /var/lib/rancher/k3s/server/node-token on the master
+    K3S_URL: https://<MASTER_SERVER_IP>:6443 # the master's IP
 ```
-NAME                                               READY   STATUS    RESTARTS   AGE
-kairos-operator-controller-manager-xxxxx-xxxxx     2/2     Running   0          30s
-```
 
-Wait for the pod to be `Running` before proceeding.
-
-## Step 2: Label nodes for upgrade
-
-The operator uses labels to select which nodes to upgrade:
+Replace `<MASTER_SERVER_IP>` and `<MASTER_SERVER_TOKEN>` with the values from the previous step, then install:
 
 ```bash
-kubectl label nodes --all kairos.io/managed=true
-kubectl get nodes --show-labels | grep kairos.io/managed
+sudo kairos-agent manual-install config.yaml
 ```
 
-## Step 3: Create the upgrade resource
-
-The operator acts on two Custom Resources: `NodeOp` and `NodeOpUpgrade`. This example uses `NodeOpUpgrade`, built specifically for upgrading Kairos.
-
-Check what upgrade images are available for each node first:
+The worker reboots after installation. Boot it from disk the same way as in [Stage 2](stage-2.md#boot-the-installed-system):
 
 ```bash
-ssh kairos@<MASTER_IP> "sudo kairos-agent upgrade list-releases"
-ssh kairos@<WORKER_IP> "sudo kairos-agent upgrade list-releases"  # if multi-node
+kairos-lab start -name worker
 ```
 
-> [!NOTE]
-> Different nodes can show different available images based on their OS flavor (e.g. Ubuntu vs Fedora) — the operator can upgrade each node to its own flavor's latest version.
+## Verify the cluster
 
-Create the upgrade manifest, replacing `spec.image` with the image you intend to upgrade to:
+On the master node:
 
 ```bash
-cat > upgrade.yaml <<'EOF'
-apiVersion: operator.kairos.io/v1alpha1
-kind: NodeOpUpgrade
-metadata:
-  name: kairos-upgrade
-  namespace: default
-spec:
-  # The container image containing the new Kairos version
-  image: quay.io/kairos/ubuntu:22.04-standard-amd64-generic-v3.7.2-k3s-v1.35.0-k3s3
-
-  # NodeSelector to target specific nodes (optional)
-  nodeSelector:
-    matchLabels:
-      kairos.io/managed: "true"
-
-  # Maximum number of nodes that can run the upgrade simultaneously
-  # 0 means run on all nodes at once
-  concurrency: 1
-
-  # Whether to stop creating new jobs when a job fails
-  stopOnFailure: true
-
-  # Whether to upgrade the active partition (defaults to true)
-  # upgradeActive: true
-
-  # Whether to upgrade the recovery partition (defaults to false)
-  # upgradeRecovery: false
-
-  # Whether to force the upgrade without version checks
-  # force: false
-EOF
+ssh kairos@<MASTER_IP>
+sudo su -i
 ```
 
-## Step 4: Apply the upgrade
-
-```bash
-kubectl apply -f upgrade.yaml
-```
-
-Watch it progress:
-
-```bash
-kubectl get nodeopupgrade -w
-kubectl get nodes -w
-kubectl -n kairos-operator-system logs -f deployment/kairos-operator-controller-manager
-```
-
-What happens:
-
-1. **Node cordoned** — no new pods scheduled
-2. **Upgrade job created** — pulls the new image and writes it to the passive partition
-3. **Node reboots** — boots into the upgraded OS
-4. **Node uncordoned** — returns to `Ready`
-
-```
-NAME            STATUS                     AGE
-kairos-479e     Ready,SchedulingDisabled   0s    # Cordoned
-kairos-479e     NotReady                   30s   # Rebooting
-kairos-479e     Ready                      90s   # Upgrade complete
-```
-
-## Step 5: Verify the upgrade
+> [!TIP]
+> k3s configuration is located under `/etc/rancher/k3s/k3s.yaml`
 
 ```bash
 kubectl get nodes -o wide
-ssh kairos@<VM_IP> "cat /etc/kairos-release | grep KAIROS_VERSION"
 ```
 
-## Upgrade strategies
+You should see both nodes:
 
-### Single-node cluster
-
-```yaml
-spec:
-  concurrency: 1  # Only option for single node
+```
+NAME                     STATUS   ROLES           AGE     VERSION        INTERNAL-IP      OS-IMAGE
+kairos-xxxx              Ready    control-plane   1d      v1.35.0+k3s1   192.168.20.150   Ubuntu 22.04.5 LTS
+kairos-worker-xxxx       Ready    <none>          5m      v1.35.0+k3s1   192.168.20.151   Fedora Linux 40
 ```
 
-The cluster is briefly unavailable during the reboot.
-
-### Multi-node cluster
-
-```yaml
-spec:
-  # Upgrade one at a time (safest)
-  concurrency: 1
-
-  # Or upgrade all at once (faster but riskier)
-  # concurrency: 0
-```
-
-### Canary deployment
-
-Upgrade a subset of nodes first:
+### Test workload distribution
 
 ```bash
-kubectl label node kairos-worker-xxxxx kairos.io/canary=true
-
-cat > upgrade-canary.yaml <<'EOF'
-apiVersion: operator.kairos.io/v1alpha1
-kind: NodeOpUpgrade
-metadata:
-  name: kairos-canary-upgrade
-spec:
-  image: quay.io/kairos/ubuntu:22.04-standard-amd64-generic-v3.7.2-k3s-v1.35.0-k3s3
-  nodeSelector:
-    matchLabels:
-      kairos.io/canary: "true"
-  concurrency: 1
-  stopOnFailure: true
-EOF
-
-kubectl apply -f upgrade-canary.yaml
+kubectl create deployment nginx --image=nginx --replicas=4
+kubectl get pods -o wide
 ```
+
+You should see pods scheduled on both nodes.
+
+## Adding more workers
+
+Repeat the worker steps with a different `-name` (e.g. `kairos-lab start -name worker2`). Each worker gets its own disk and its own IP from DHCP.
 
 ## Troubleshooting
 
-### Upgrade job fails
+### Worker not joining the cluster
 
 ```bash
-kubectl get jobs -A | grep upgrade
-kubectl logs job/<job-name> -n <namespace>
+ssh kairos@<WORKER_IP>
+sudo journalctl -u k3s-agent -f
 ```
 
-### Node stuck in `NotReady`
-
-1. Check the VM console for boot errors.
-2. Try booting the fallback partition (GRUB menu).
-3. Check K3s logs after boot: `sudo journalctl -u k3s-agent -f` (worker) or `sudo journalctl -u k3s -f` (master).
-
-### Rollback an upgrade
-
-The Kairos operator has no automatic rollback. To roll back manually: reboot the node, select **"Kairos (fallback)"** at the GRUB menu — it rejoins the cluster on the previous version.
-
-### Delete a stuck upgrade
+Check connectivity to the master and the agent's cached environment:
 
 ```bash
-kubectl delete nodeopupgrade kairos-upgrade
+curl -sk https://<MASTER_IP>:6443/cacerts
+sudo cat /etc/systemd/system/k3s-agent.service.env
 ```
 
-### Upgrade completed but `rebootStatus` stuck on `pending`
+### Worker can't reach master
 
-The node reboots and the upgrade completes, but the operator doesn't detect it:
+Both VMs use the same `kairos-lab` bridged network, so they should reach each other directly:
 
 ```bash
-kubectl get nodes
-# kairos-worker-ec386546   Ready,SchedulingDisabled   <none>   10h   # Still cordoned!
-
-kubectl get nodeopupgrade kairos-upgrade -o yaml | grep -A8 'status:'
-#   nodeStatuses:
-#     kairos-worker-ec386546:
-#       phase: Completed
-#       rebootStatus: pending    # Stuck here despite successful reboot!
+# From the worker
+ping <MASTER_IP>
 ```
 
-**Root cause:** the reboot pod sets a `kairos.io/reboot-state: completed` annotation on itself just before triggering the reboot. If the reboot happens too fast, the annotation may not be persisted before the pod terminates.
+If ping fails, check `kairos-lab status` on the host running each VM.
 
-**Diagnosis:**
+### TLS certificate errors
+
+The master's K3s certificates include its IP by default. If the master's IP changed, regenerate them:
 
 ```bash
-kubectl get pods -l kairos.io/reboot=true
-kubectl get pod <reboot-pod> -o jsonpath='{.metadata.annotations}'
-kubectl -n operator-system logs deployment/operator-kairos-operator --tail=20
-# DEBUG  No available slots for new jobs  {"running": 1, "maxConcurrency": 1}
+# On the master
+sudo rm /var/lib/rancher/k3s/server/tls/serving-kube-apiserver.*
+sudo systemctl restart k3s
 ```
 
-**Resolution:** patch the reboot pod with the missing annotation:
+### Wrong K3S_URL cached on the worker
 
 ```bash
-REBOOT_POD=$(kubectl get pods -l kairos.io/reboot=true -o jsonpath='{.items[0].metadata.name}')
-kubectl patch pod $REBOOT_POD -p '{"metadata":{"annotations":{"kairos.io/reboot-state":"completed"}}}'
+# On the worker
+sudo rm -rf /var/lib/rancher/k3s/agent
+sudo systemctl restart k3s-agent
 ```
-
-The operator then updates `rebootStatus` to `completed`, the upgrade `phase` to `Completed`, and uncordons the node.
-
-> [!NOTE]
-> This appears to be an edge case in the Kairos Operator. Consider reporting it to the [kairos-operator repository](https://github.com/kairos-io/kairos-operator/issues) if you hit it.
 
 ## Cleanup
 
+To remove a worker:
+
 ```bash
-kubectl delete -k https://github.com/kairos-io/kairos-operator/config/default
+# On the master
+ssh kairos@<MASTER_IP>
+sudo kubectl delete node kairos-worker-xxxx
+```
+
+```bash
+# On the host
+kairos-lab reset --disk worker
 ```
 
 ## Summary
 
-| Feature | Benefit |
-|---------|---------|
-| **Automated upgrades** | No manual SSH to each node |
-| **Controlled rollout** | Concurrency settings for safe upgrades |
-| **Kubernetes native** | Manage the OS like any other K8s resource |
-| **Node cordoning** | Graceful workload migration |
+| Node | Role | Memory |
+|------|------|--------|
+| Master | control-plane | ~8GB |
+| Worker | worker | ~4GB |
 
-### Complete workshop flow
+With bridged networking, VMs get real IPs and can communicate directly — no port forwarding or host gateway workarounds needed.
 
-1. **Stage 1**: Boot and install a Kairos VM
-2. **Stage 2**: Build a custom Kairos image
-3. **Stage 3**: CI/CD for image builds
-4. **Stage 4**: Manual upgrade with `kairos-agent`
-5. **Stage 5**: Multi-node cluster setup
-6. **Stage 6**: Kubernetes-based upgrades with the operator
+## Next Steps
+
+→ [Stage 7: Kubernetes-based Upgrades](stage-7.md)
 
 ---
 
-✅ Workshop Complete! 🎉
+✅ Done! 🎉
