@@ -1,0 +1,10 @@
+# expect-error: a text field holds a raw HTML block
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    text: |
+      Before.
+
+      <div class="x">hello</div>

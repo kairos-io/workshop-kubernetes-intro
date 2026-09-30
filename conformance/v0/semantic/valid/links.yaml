@@ -1,0 +1,14 @@
+format: kairos-workshop/v0
+id: links
+title: Links that are allowed
+sections:
+  - title: X
+    text: |
+      A link to [a markdown stage](stage-3.md#alternative-using-podman-on-macos),
+      a link to [a converted stage](stage-1.md#set-up-dependencies),
+      an [external link](https://example.com/page.md),
+      an [in page link](#x) and inline code `<div>` and `> [!NOTE]`.
+
+      ```html
+      <div>fenced code may hold HTML</div>
+      ```

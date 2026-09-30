@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=schema/v0/workshop.schema.json
+format: kairos-workshop/v0
+id: kubernetes-intro
+title: "From Zero to Immutable Kubernetes: Your First Cluster, Step by Step"
+subtitle: "CfgMgmtCamp 2026 Ghent, Feb. 4th 2026, 09:00-13:00, B.3.0.13"
+repository: kairos-io/workshop-kubernetes-intro
+intro: |
+  A hands-on workshop. You go through the stages at your own pace and type every
+  command yourself.
+stages:
+  - file: stages/stage-1.yaml
+  - { id: stage-2, title: "Stage 2: Deploying a single node cluster", markdown: stage-2.md }
+  - { id: stage-3, title: "Stage 3: Build your own immutable OS", markdown: stage-3.md }
+  - { id: stage-4, title: "Stage 4: Integrating OS builds into your CI/CD pipelines", markdown: stage-4.md }
+  - { id: stage-5, title: "Stage 5: Upgrading your cluster manually", markdown: stage-5.md }
+  - { id: stage-6, title: "Stage 6: Deploying a multi-node cluster", markdown: stage-6.md }
+  - { id: stage-7, title: "Stage 7: Upgrading your cluster through Kubernetes", markdown: stage-7.md }

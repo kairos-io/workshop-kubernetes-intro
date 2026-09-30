@@ -1,0 +1,7 @@
+# expect-error: two sections have the same anchor
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: Same title
+  - title: Same title

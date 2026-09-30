@@ -1,0 +1,7 @@
+# expect-error: a relative link names a markdown file that does not exist
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    text: See [nothing](does-not-exist.md).

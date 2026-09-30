@@ -81,7 +81,7 @@ Every reader renders a block in this order. Warnings come before commands.
 
 A condition label goes below a heading. It never goes inside the heading text, so a heading keeps the same anchor for every reader.
 
-A section anchor is the GitHub slug of its title. A stage page and the generated markdown file give the same anchor for the same section.
+A section anchor is the GitHub slug of its title. Two sections of one stage cannot have the same anchor. A stage page and the generated markdown file give the same anchor for the same section.
 
 ## Commands
 

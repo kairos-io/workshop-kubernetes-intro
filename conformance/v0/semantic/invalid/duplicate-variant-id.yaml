@@ -1,0 +1,11 @@
+# expect-error: two variants of a step share an id
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    steps:
+      - id: s
+        variants:
+          - { id: v, title: A, commands: [ls] }
+          - { id: v, title: B, commands: [ls] }
