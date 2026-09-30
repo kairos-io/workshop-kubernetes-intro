@@ -14,6 +14,36 @@ Docs:
 > [Extending Hadron with extensions](https://kairos.io/docs/advanced/sys-extensions/)
 > for how.
 
+## Getting AuroraBoot
+
+At the end of this stage you turn your image into an ISO with the
+`auroraboot` command.
+
+If you are following this workshop with kairos-lab, `auroraboot` was installed
+for you when you ran `kairos-lab setup`. There is nothing to do here, and you
+can skip to the next section.
+
+If you are using your own virtualization software, you need the AuroraBoot
+container image instead. Pull it now:
+
+```bash
+docker pull quay.io/kairos/auroraboot:latest
+```
+
+Wherever this stage says `auroraboot build-iso ...`, run the container instead.
+For the command at the end of this stage, that looks like this:
+
+```bash
+mkdir -p build && docker run -it --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v $PWD/build:/result \
+  quay.io/kairos/auroraboot:latest \
+  build-iso --output /result stage-2:v1.0.0
+```
+
+The Docker socket lets AuroraBoot find the image you built locally, and
+`$PWD/build` is where the ISO ends up.
+
 ## Kairosifying an image
 
 > [!NOTE]
@@ -110,6 +140,9 @@ mkdir build && sudo podman run -it --rm -v /var/run/docker.sock:/var/run/docker.
 ```bash
 auroraboot build-iso --output ./build stage-2:v1.0.0
 ```
+
+If you are not using kairos-lab, use the `docker run` form from
+[Getting AuroraBoot](#getting-auroraboot) above instead.
 
 If the build is successful, you should find the ISO file in the `./build` directory.
 
