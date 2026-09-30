@@ -14,5 +14,5 @@ Create a control plane node by following the instructions for the cloud provider
 
 ## Step 2: Create a local VM worker
 
-Follow the instructions of [stage-5](stage-5.md) to create a worker node running
+Follow the instructions of [stage-6](stage-6.md) to create a worker node running
 as a local virtual machine.

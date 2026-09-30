@@ -1,127 +1,252 @@
-# Stage 2: Build your own immutable OS
+# Stage 2: Deploying a single node cluster
 
 Docs:
-  - [The Kairos Factory](https://kairos.io/docs/reference/kairos-factory/)
+  - [Manual Single-Node Cluster](https://kairos.io/docs/examples/single-node/)
 
-> [!NOTE]
-> Stage 1 used a ready-made Hadron ISO. This stage shows you can build a
-> Kairos image from a different base distribution too, Ubuntu here, though
-> the same approach works for Fedora, openSUSE and others.
+This stage uses `kairos-lab`, which you set up in [stage 1](stage-1.md).
+
+## Hadron and K3s
+
+The ISO you download next bundles two choices worth knowing about.
+
+**Hadron** is the Linux distribution underneath. It's a minimal system built from scratch by the Kairos team out of vanilla upstream components, so there's little in the image beyond what it needs to boot and run containers.
+
+**K3s** is the Kubernetes distribution on top. It's lightweight, fully conformant, and ships as a single binary, which suits a laptop VM and an edge node equally well.
+
+We make both choices for you in this stage so that everyone starts from the same place. Neither is a requirement of Kairos. It can also take an existing distribution such as Ubuntu, Fedora or openSUSE and turn it into an immutable, image-based system with the same upgrade and rollback behaviour. You'll do exactly that in [stage 3](stage-3.md).
+
+## Download a Kairos ISO
+
+```bash
+kairos-lab download
+```
+
+For this lab we'll be using the `standard` image, which includes `K3s`.
+
+```
+No ISO specified. Fetching latest Kairos releases...
+
+Kairos v4.3.0 - Select image type:
+  [1] core     - Base OS only (no Kubernetes)
+  [2] standard - Includes K3s Kubernetes
+Choice [1-2]: 2
+
+Select K3s version:
+  [1] k3sv1.36.4+k3s1 (latest)
+  [2] k3sv1.35.8+k3s1
+  [3] k3sv1.34.11+k3s1
+Choice [1-3]: 1
+```
+
+The ISO is fetched for your architecture and cached; `kairos-lab` tracks it for cleanup later.
+
+> [!IMPORTANT]
+> The hadron images are BIOS only. `kairos-lab` boots with BIOS firmware by default, so this only matters if you point it at a UEFI image with `-iso`.
 
 > [!TIP]
-> You can also build a Hadron image yourself. Keep in mind Hadron has no
-> package manager, so adding software works differently. See
-> [Extending Hadron with extensions](https://kairos.io/docs/advanced/sys-extensions/)
-> for how.
+> You can also download the ISO yourself from the [Kairos releases page](https://github.com/kairos-io/kairos/releases) and pass it to `kairos-lab` with `-iso <path>` instead of the interactive picker above.
 
-## Kairosifying an image
+## Create and boot the VM
 
-> [!NOTE]
-> This step has to be run locally or in your pipeline, not in the Kairos VM.
-
-Let's imagine you have an Ubuntu 24.04 image that installs `curl`, `vim`,
-`htop` and `git` (better keep `git` in the package list, that will prove
-useful in [stage-6](stage-6.md)):
-
-```Dockerfile
-FROM ubuntu:24.04
-
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl vim htop git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+```bash
+kairos-lab start
 ```
 
-Now we can convert that image into a Kairos image, that is, one that
-contains everything necessary to produce an immutable, image-based,
-bootable artifact. Wow, that was a mouthful. You can just say kairosify it.
+This creates a new disk, go ahead and give it a name like `kairos-stage1`:
 
-```Dockerfile
-FROM ubuntu:24.04
-ARG VERSION
+```
+❯ /tmp/claude/kairos-lab-main/kairos-lab start
+Using the only downloaded ISO: kairos-hadron-v0.5.1-standard-arm64-generic-v4.3.0-k3sv1.36.4+k3s1.iso
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl vim htop git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# "Kairosify" the image
-RUN --mount=type=bind,from=quay.io/kairos/kairos-init:v4.3.0,src=/kairos-init,dst=/kairos-init \
-    /kairos-init --stage all \
-      --level debug \
-      --provider k3s \
-      --provider-k3s-version "v1.36.4+k3s1" \
-      --version "${VERSION}"
+Suggested disk name: kairos-hadron-v0.5.1-standard-arm64-generic-v4.3.0-k3sv1.36.4+k3s1-20260929-111913
+Press Enter to accept, or type a new name: kairos-stage1
 ```
 
-Let's build the image. The `VERSION` build arg is the version you assign to
-your own image; the number is entirely up to you. We're going to use
-`v1.0.0`, just because it's the first image we're building for this stack.
+If you have enough resources go with the pre-selected options, if not, then you can reduce the disk size or memory. Hadron uses very small resources, these values were just assigned as a "safe" option.
+
+> [!WARNING]
+> The one option you should not change for this workshop is "Network: shared". If you do, keep in mind that you are in charge of how to access the machine via IP, reverse tunnel or any other mechanism you can setup.
+
+```
+VM Configuration:
+  1) Disk name:    kairos-stage1
+  2) Disk path:    /Users/mauro/Library/Caches/kairos-lab/vm/kairos-stage1.qcow2
+  3) Disk size:    60 GB  (131 GB free)
+  4) ISO:          kairos-hadron-v0.5.1-standard-arm64-generic-v4.3.0-k3sv1.36.4+k3s1.iso
+  5) Memory:       8 GB  (24 GB available)
+  6) CPUs:         2  (12 logical CPUs on host)
+  7) Network:      shared
+  8) Net interface: (n/a)
+  9) Display:      window
+
+Press Enter to continue, or enter a number to edit:
+```
+
+Hit Enter to continue
+
+> [!IMPORTANT]
+> At any point you can exit the console and kill the machine with `Ctrl-a x`
+
+Network setup requires `sudo` permissions, so make sure to say `y` in this section
+
+```
+[1/3] Preparing networking
+shared vmnet mode runs qemu with sudo [y/N]: y
+```
+
+You will be prompted for your password and you can see exactly the command that kairos-lab is about to run.
+
+The first thing you will see is the bootloader menu, which will offer different options to install, recover or debug a system. Either select (press enter) or it will be automatically selected after a few seconds.
+
+```
+ │*Kairos                                                                     │
+ │ Kairos (manual)                                                            │
+ │ kairos (interactive install)                                               │
+ │ Kairos (remote recovery mode)                                              │
+ │ Kairos (boot local node from livecd)                                       │
+ │ Kairos (debug)
+```
+
+If the system booted correctly, you should see a login like the following. Go ahead and enter kairos as the user and password:
+
+```
+kairos-525c login: kairos
+Password:
+Welcome to Kairos!
+
+Refer to https://kairos.io for documentation.
+[kairos@kairos-525c ~]$
+```
+
+Now you should be able to determine the IP of the machine using `ip a`.
+
+If you enabled graphical mode (as it is by default) you should also see a QR code, and the IP of the machine at the bottom of it.
+
+## Installing Kairos
+
+To install kairos in your system you have a bunch of options, we are going to use the manual installation for this stage and introduce you to other options in further stages.
+
+## Manual Installation
+
+In the console we logged in from the previous step, run the following command:
+
+> [!INFO]
+> If you prefer so, you can also ssh into the machine with the IP we recently saw via the command `ssh kairos@IP` where you will have to log in again.
+
+Here's the right moment to introduce Kairos' Cloud Configuration Files.
+
+> [!WARNING]
+> Kairos' Cloud Configuration Files look like Cloud Init files, but they are not. They can modify the system much earlier than cloud init, solving the problem of how to modify a configuration during an early dracut stage. If you want to learn more about them go ahead and check https://github.com/mudler/yip
+
+Start by creating a basic Kairos config:
+
+```bash
+cat > config.yaml <<EOF
+#cloud-config
+users:
+  - name: kairos
+    passwd: kairos
+    groups:
+      - admin
+
+install:
+  reboot: true
+
+k3s:
+  enabled: true
+EOF
+```
+
+What this config does beyond the obvious:
+
+- The header is important, do not skip it otherwise your config file will be ignored
+- A Kairos system doesn't require you to have users. But if you plan to have them, at least one of them needs to be in the "admin" group
+
+Install Kairos:
+
+```bash
+sudo kairos-agent manual-install config.yaml
+```
+
+If the installation was successful the machine should auto-reboot and the menu should look different. The first item is the active image and the default one, that's all you need to know for now. Select it (press enter) or let it auto-select after a few seconds.
+
+```
+ │*Kairos                                                                     │
+ │ Kairos (fallback)                                                          │
+ │ Kairos recovery                                                            │
+ │ Kairos state reset (auto)                                                  │
+ │ Kairos remote recovery
+```
+
+> [!WARNING]
+> If you did this through SSH, you need to reconnect. In the process your system might give you a warning because the machine doesn't have the same known host fingerprint. This is expected because the installed system is not the same as the LiveCD one.
+
+> [!WARNING]
+> If you turned off the machine, you can start it again with the following command `kairos-lab start -name kairos-stage1`
+
+## Check K3s is running
+
+Using `kubectl` out of the box requires `sudo` permissions
+
+```bash
+sudo su -i
+```
+
+Then run the following to confirm Kubernetes is running:
 
 > [!TIP]
-> Passing `v1.0.0` twice below looks like a duplicate, but each one means
-> something different. The `--build-arg VERSION=v1.0.0` assigns that version
-> to the Kairos image itself, its content. The `-t stage-2:v1.0.0` assigns it
-> to the tag, the package you get out of the build.
-
-> [!NOTE]
-> `--progress plain` just lets you see what kairos-init is doing and scroll
-> back through it in your terminal. It is not required.
+> k3s configuration is located under `/etc/rancher/k3s/k3s.yaml`
 
 ```bash
-docker build --progress plain --build-arg VERSION=v1.0.0 -t stage-2:v1.0.0 .
+kubectl get nodes
 ```
 
-If everything went as expected, you should see your new image listed:
+You should see an output like this one:
 
 ```
-❯ docker images
-REPOSITORY                            TAG                                    IMAGE ID       CREATED             SIZE
-stage-2                               v1.0.0                                 5d849e8ca7aa   2 minutes ago       3.27GB
+NAME          STATUS   ROLES                  AGE     VERSION
+kairos-e0a8   Ready    control-plane,master   6m38s   v1.32.10+k3s1
 ```
 
-## Alternative: Using Podman on MacOS
+### Access the cluster from your host (optional)
 
-Restart the Podman machine with rootful access.
+Later stages (CI/CD pipelines, the Kairos Operator) are easier to drive from your host than over SSH. The kubeconfig is only readable by root, so copy it to somewhere `kairos` can read first:
 
 ```bash
-podman machine stop
-podman machine set --rootful
-podman machine start
+ssh kairos@<VM_IP>
+sudo cp /etc/rancher/k3s/k3s.yaml ~/k3s.yaml
+sudo chown kairos:kairos ~/k3s.yaml
+exit
 ```
 
-If you have build the `stage-2` Image before, you have to rebuild it after switching to rootful as seen above.
-
-Since Podman has issues using the local image, we will temporarily push it to a public registry.
+Then pull it to your host:
 
 ```bash
-podman tag localhost/stage-2:v1.0.0 ttl.sh/stage-2:24h
-podman push ttl.sh/stage-2:24h
+scp kairos@<VM_IP>:~/k3s.yaml ~/.kube/config-kairos
+sed -i.bak "s/127.0.0.1/<VM_IP>/" ~/.kube/config-kairos
+
+export KUBECONFIG=~/.kube/config-kairos
+kubectl get nodes
 ```
 
-Then we can use the public images to build the ISO
+## Cleanup
+
+The ISO you downloaded and the VM you created will be useful for future stages. If you don't want to download the ISO again or reinstall Kairos, you can leave them as they are and continue.
+
+If you want to clean up everything from this stage, run:
 
 ```bash
-mkdir build && sudo podman run -it --rm -v /var/run/docker.sock:/var/run/docker.sock:Z -v $PWD/build:/result quay.io/kairos/auroraboot:latest build-iso --output /result ttl.sh/stage-2:24h
+kairos-lab reset
 ```
 
-## Create an ISO using AuroraBoot
+This removes the VM's disk, but keeps the downloaded ISO and `kairos-lab` setup so you can reuse them in later stages.
+
+If you want to remove everything, including the ISO and `kairos-lab` itself, before uninstalling it completely, run:
 
 ```bash
-auroraboot build-iso --output ./build stage-2:v1.0.0
+kairos-lab cleanup
 ```
 
-The `auroraboot` command comes from [stage 1.5](stage-1.5.md). If you use
-`kairos-lab` you already have it. Otherwise, run the AuroraBoot container as
-shown there.
-
-If the build is successful, you should find the ISO file in the `./build` directory.
-
-## Run it
-
-Use the instructions in [stage-1](stage-1.md) to create a VM and run the ISO
-you just created.
-
-You should be able to find your modifications when you boot the image.
+This also removes the `auroraboot` command and the AuroraBoot image that `kairos-lab setup` added in [stage 1](stage-1.md). It leaves a container runtime alone if you already had one before `kairos-lab setup`.
 
 ✅ Done! 🎉
