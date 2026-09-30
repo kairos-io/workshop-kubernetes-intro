@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="kai-engine.js"></script>
+<script src="kai-term.js"></script>
+<style>body{margin:0;background:#1a1d1a;}a{color:#9BBC0F;}a:hover{color:#E6EFC8;}</style>
+</helmet>
+<div style="padding:48px;display:flex;flex-direction:column;gap:64px;background:#1a1d1a;color:#E6EFC8;font-family:'IBM Plex Sans',sans-serif;min-width:1200px;">
+  <div style="display:flex;flex-direction:column;gap:10px;max-width:900px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:20px;line-height:28px;color:#9BBC0F;">KAI · every screen, every state</div>
+    <div style="font-size:17px;line-height:1.55;">Live instances of <a href="KAI Workshop.dc.html">KAI Workshop</a>, seeded to each state. Frames scroll. Terminal frames come from kai-term.js, which uses the same layout as tui/main.go. The state list is at the bottom and in STATES.md.</div>
+  </div>
+
+  <sc-for list="{{ groups }}" as="grp" hint-placeholder-count="3">
+    <section style="display:flex;flex-direction:column;gap:20px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:14px;line-height:20px;color:#9BBC0F;">{{ grp.title }}</div>
+        <div style="font-size:16px;max-width:900px;">{{ grp.note }}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;">
+        <sc-for list="{{ grp.items }}" as="it" hint-placeholder-count="3">
+          <div id="{{ it.id }}" style="display:flex;flex-direction:column;gap:10px;width:{{ it.w }}px;">
+            <div style="display:flex;gap:10px;align-items:baseline;">
+              <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9BBC0F;color:#0F380F;padding:4px 6px;">{{ it.id }}</span>
+              <span style="font-size:16px;font-weight:600;">{{ it.label }}</span>
+            </div>
+            <div style="height:{{ it.h }}px;overflow:auto;border:3px solid #9BBC0F;background:#0F380F;">
+              <dc-import name="KAI Workshop" view="{{ it.view }}" stage="{{ it.stage }}" step="{{ it.step }}" status="{{ it.status }}" seed="{{ it.seed }}" copy="{{ it.copy }}" clear="{{ it.clear }}" settings-open="{{ it.settingsOpen }}" name-draft="{{ it.nameDraft }}" skip-ask="{{ it.skipAsk }}" palette="{{ it.palette }}" reduce-motion="{{ it.reduce }}" persist="{{ false }}" keys="{{ false }}" hint-size="100%,800px"></dc-import>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-family:'Press Start 2P',monospace;font-size:14px;line-height:20px;color:#9BBC0F;">TERMINAL</div>
+      <div style="font-size:16px;max-width:900px;">80×24 and 120×40. Keyboard only. Command lines are plain, indented text with no borders beside them, so terminal selection copies them cleanly. c copies with OSC 52 and o prints the command unwrapped. Truecolor unless labeled.</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;">
+      <sc-for list="{{ terms }}" as="t" hint-placeholder-count="6">
+        <div id="{{ t.id }}" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:10px;align-items:baseline;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9BBC0F;color:#0F380F;padding:4px 6px;">{{ t.id }}</span>
+            <span style="font-size:16px;font-weight:600;">{{ t.label }}</span>
+          </div>
+          <pre ref="{{ t.ref }}" style="margin:0;padding:12px;background:#101414;color:#D8DEE0;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;line-height:15px;border:3px solid #3a403a;"></pre>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px;max-width:1100px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:14px;line-height:20px;color:#9BBC0F;">STATES</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+      <sc-for list="{{ stateNotes }}" as="n" hint-placeholder-count="9">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-weight:600;font-size:17px;">{{ n.screen }}</div>
+          <sc-for list="{{ n.states }}" as="x" hint-placeholder-count="3"><div style="font-size:15px;line-height:1.45;">· {{ x }}</div></sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() { window.KAIE.load().then(() => this.setState({ ready: true })).catch(e => console.error(e)); }
+  renderVals() {
+    const E = window.KAIE;
+    const macos = { virtualization: 'kairos-lab', os: 'macos', arch: 'arm64', runtime: 'docker' };
+    const linux = { virtualization: 'own', os: 'linux', arch: 'amd64', runtime: 'podman' };
+    const who = { name: 'Ana', character: 'cap' };
+    const D = (id, label, o) => ({ id, label, w: 1000, h: 860, view: 'stage', stage: 'kairos-lab', step: 0, status: 'todo', seed: { started: true, ...who }, copy: {}, clear: null, settingsOpen: false, palette: null, reduce: null, nameDraft: null, skipAsk: null, ...o, ...(o && o.seed ? { seed: { ...who, ...o.seed } } : {}) });
+    const Mb = (id, label, o) => D(id, label, { w: 390, h: 800, ...o });
+    const groups = [
+      { title: 'NEW IN ROUND 2 · PLAYER, MENTORS, ROUTE, ITEMS, BADGE', note: 'The mentor for each stop comes from the player\'s name through a stable hash, so “Ana” always gets the same mentors in the web and the terminal. The item and badge frames are seeded with finished progress.', items: [
+        D('10a', 'Name entry', { view: 'name', seed: { started: true, name: '' }, nameDraft: 'Ana' }),
+        D('10b', 'Choose your character', { view: 'character', seed: { started: true, character: '' } }),
+        D('10c', 'Mentor intro (start of stage)', { view: 'mentor', stage: 'build-image', seed: { cleared: 2, facts: macos } }),
+        D('10d', 'Route with a skipped stop', { view: 'map', stage: 'fleet', seed: { cleared: 2, skipped: ['build-image'], facts: macos } }),
+        D('10e', 'Skip confirm', { view: 'map', stage: 'fleet', seed: { cleared: 3, facts: macos }, skipAsk: 'fleet' }),
+        D('10f', 'Stage clear with the mentor', { view: 'clear-stage', stage: 'build-image', seed: { cleared: 3, facts: macos } }),
+        D('10g', 'Items, with the AuroraBoot mega item at 1/3', { view: 'items', stage: 'build-image', seed: { cleared: 3, facts: macos } }),
+        D('10h', 'Items: AuroraBoot 2/3, part 3 coming soon', { view: 'items', stage: 'fleet', seed: { cleared: 4, facts: macos } }),
+        D('10i', 'Complete: skipped stops show ??????', { view: 'complete', stage: 'edgevpn', seed: { cleared: 9, skipped: [], facts: macos, done: [] }, _skipTwo: true }),
+        D('10j', 'Badge', { view: 'badge', stage: 'edgevpn', seed: { cleared: 9, facts: macos, completedAt: '2026-09-30' } })
+      ] },
+      { title: '1–3 · TITLE, LOADOUT, ROUTE', note: 'The menus sit inside the game screen, and plain buttons below repeat them.', items: [
+        D('1a', 'Title, new player', { view: 'title', seed: { started: false, name: '', character: '' } }),
+        D('1b', 'Title, saved game', { view: 'title', seed: { cleared: 1, done: ['first-node/build-iso'], facts: macos } }),
+        D('2a', 'Loadout, all “Not sure yet”', { view: 'loadout' }),
+        D('3a', 'Route: cleared, current, locked', { view: 'map', stage: 'build-image', seed: { cleared: 2, done: ['kairos-lab/runtime'], facts: macos } })
+      ] },
+      { title: '4 · STAGE SCREEN', note: 'Viewport on top, instructions below. You and KAI both point at commands and both read when the step is text only.', items: [
+        D('4a', 'Not sure yet: everything labeled “Only if”', {}),
+        D('4b', 'macOS loadout, copied', { seed: { facts: macos }, copy: { 'kairos-lab/install/2/0/0': 'copied' } }),
+        D('4c', 'Linux loadout, copy failed', { seed: { facts: linux }, copy: { 'kairos-lab/install/2/1/0': 'failed' } }),
+        D('4e', 'Long command wraps (Podman)', { stage: 'first-node', seed: { cleared: 1, facts: linux } }),
+        D('4g', 'It did not work: tips from KAI', { status: 'failed', seed: { facts: macos } }),
+        D('6a', 'Empty state: none of the options match', { seed: { facts: { ...macos, os: 'windows' } } })
+      ] },
+      { title: '5, 7, 8 · TRANSITIONS, SETTINGS, MOBILE', note: '', items: [
+        D('5a', 'Step cleared', { view: 'clear-step', seed: { facts: macos, done: ['kairos-lab/install'] }, clear: { xp: 50, optional: false, stageCleared: false } }),
+        D('7a', 'Settings', { settingsOpen: true, seed: { facts: macos } }),
+        D('7b', 'Kairos palette, reduced motion', { palette: 'kairos', reduce: true, view: 'map', stage: 'fleet', seed: { cleared: 3, facts: macos } }),
+        D('7c', 'Color palette', { palette: 'gbc', view: 'mentor', stage: 'pipelines', seed: { cleared: 4, facts: macos } }),
+        Mb('8a', 'Mobile: route', { view: 'map', stage: 'build-image', seed: { cleared: 2, facts: macos } }),
+        Mb('8b', 'Mobile: stage', { seed: { facts: macos } }),
+        Mb('8c', 'Mobile: badge', { view: 'badge', seed: { cleared: 9, facts: macos, completedAt: '2026-09-30' } })
+      ] }
+    ];
+    groups[0].items.forEach(it => { if (it._skipTwo) it.seed = { ...it.seed, cleared: 9 }; });
+    groups[0].items[8].seed = { ...who, facts: macos, cleared: 0, done: [], skipped: [] , _custom: true };
+    const ready = this.state.ready && E.ready();
+    if (ready) {
+      const ids = E.stageIds(), done = [];
+      ids.forEach(id => { if (id !== 'pipelines' && id !== 'multi-node') E.stage(id).steps.forEach(s => { if (!s.optional) done.push(E.stepKey(id, s.id)); }); });
+      groups[0].items[8].seed = { ...who, facts: macos, cleared: 0, done, skipped: ['pipelines', 'multi-node'], completedAt: '2026-09-30' };
+    }
+    const S = o => ready ? E.seedProgress({ ...who, ...o }) : null;
+    const spec = [
+      ['9a', 'Title · 80×24', 80, 24, { view: 'title', p: S({ cleared: 2, facts: macos }), cursor: 1 }],
+      ['9n', 'Name entry · 80×24', 80, 24, { view: 'name', p: S({}), nameText: 'ANA' }],
+      ['9o', 'Character · 80×24', 80, 24, { view: 'character', p: S({ character: '' }), charCursor: 1 }],
+      ['9c', 'Loadout · 80×24', 80, 24, { view: 'loadout', p: S({ facts: macos }), factCursor: 1 }],
+      ['9e', 'Route · 80×24 (scrolls)', 80, 24, { view: 'map', p: S({ cleared: 2, skipped: ['build-image'], facts: macos }), mapCursor: 3 }],
+      ['9f', 'Route · 120×40, Europe', 120, 40, { view: 'map', p: S({ cleared: 2, skipped: ['build-image'], facts: macos }), mapCursor: 3 }],
+      ['9s', 'Skip confirm · 80×24', 80, 24, { view: 'map', p: S({ cleared: 3, facts: macos }), mapCursor: 3, skipAsk: true }],
+      ['9m', 'Mentor intro · 80×24', 80, 24, { view: 'mentor', p: S({ cleared: 2, facts: macos }), stage: 'build-image' }],
+      ['9g', 'Stage · 80×24', 80, 24, { view: 'stage', p: S({ facts: macos }), stage: 'kairos-lab', step: 0 }],
+      ['9h', 'Stage · 120×40, long command', 120, 40, { view: 'stage', p: S({ cleared: 1, facts: macos }), stage: 'first-node', step: 0 }],
+      ['9j', 'Stage · 80×24 · ASCII, no color', 80, 24, { view: 'stage', p: S({}), stage: 'kairos-lab', step: 0, ascii: true, scroll: 4 }],
+      ['9k', 'Stage clear with mentor · 80×24', 80, 24, { view: 'clear-stage', p: S({ cleared: 3, facts: macos }), stage: 'build-image' }],
+      ['9l', 'Items · 80×24', 80, 24, { view: 'items', p: S({ cleared: 4, facts: macos }), stage: 'fleet' }],
+      ['9p', 'Complete · 120×40', 120, 40, { view: 'complete', p: ready ? E.seedProgress(groups[0].items[8].seed) : null, stage: 'edgevpn' }],
+      ['9q', 'Badge · 80×24', 80, 24, { view: 'badge', p: S({ cleared: 9, facts: macos, completedAt: '2026-09-30' }) }]
+    ];
+    const terms = spec.map(([id, label, w, h, o]) => ({ id, label, ref: el => {
+      if (!el || !ready || !window.KAIT || !o.p) return;
+      el.innerHTML = window.KAIT.toHTML(window.KAIT.render(E, { w, h, palette: 'dmg', ...o }));
+    } }));
+    const stateNotes = [
+      { screen: 'Name entry', states: ['Empty (placeholder shows the default “Friend”)', 'Typing: web input, max 12; terminal keys, Backspace', 'Empty on confirm → default name'] },
+      { screen: 'Character', states: ['Hoodie, Cap, Beanie: named by style', 'Selected: inverted + ● (web), [brackets] (terminal)', 'Poses: idle, walk ×4, happy, sad, point, read, celebrate'] },
+      { screen: 'Mentor intro', states: ['Portrait, name, country card', '“{mentor} will teach us today how to {goal}.”', 'Shown each time you enter a stop'] },
+      { screen: 'Route', states: ['Europe map; N stops spread along one polyline', 'Viewport and terminal window scroll to the cursor', 'Stop states: locked, current, cleared, skipped', 'Mentor portrait for the stop under the cursor', 'Skip: confirm, then the next stop opens'] },
+      { screen: 'Stage clear', states: ['Mentor portrait + KAI jump (still if reduced)', '“Nice work, {name}! {mentor} is proud of you.”'] },
+      { screen: 'Items', states: ['One row per item the stage grants', 'Mega item: AURORABOOT n/3 with the next part', 'A part no stage grants: “coming soon”'] },
+      { screen: 'Complete', states: ['Recap per stop, with mentor and skipped marker', 'Inventory: owned, ?????? (skipped), coming soon', 'CTA: install kairos-lab for your loadout'] },
+      { screen: 'Badge', states: ['KAI face, player name, completion date', 'Download as PNG (web)', 'Skipping never blocks the badge'] }
+    ];
+    return { groups, terms, stateNotes };
+  }
+}
+</script>
+</body>
+</html>

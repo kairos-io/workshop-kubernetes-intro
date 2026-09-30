@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="kai-engine.js"></script>
+<style>
+body{margin:0;}
+a{color:inherit;text-underline-offset:3px;}
+a:hover{text-decoration-thickness:3px;}
+button:focus-visible,a:focus-visible{outline:3px solid currentColor;outline-offset:3px;}
+button:disabled{cursor:not-allowed;}
+</style>
+</helmet>
+<div style="min-height:100%;background:var(--bg,#0F380F);color:var(--onBg,#9BBC0F);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:var(--fs,18px);line-height:1.5;{{ rootVars }}">
+  <header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;max-width:960px;margin:0 auto;box-sizing:border-box;">
+    <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
+      <div style="font-weight:600;font-size:16px;">Kairos workshop</div>
+      <div style="font-size:14px;">{{ crumb }}</div>
+    </div>
+    <nav aria-label="Workshop" style="display:flex;flex-wrap:wrap;gap:8px;">
+      <sc-if value="{{ showMapBtn }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ goMap }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Route</button>
+      </sc-if>
+      <button onClick="{{ goLoadout }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Loadout</button>
+      <button onClick="{{ toggleSettings }}" aria-expanded="{{ settingsOpen }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Settings</button>
+    </nav>
+  </header>
+
+  <main style="max-width:960px;margin:0 auto;padding:0 20px 40px;display:flex;flex-direction:column;gap:20px;box-sizing:border-box;">
+    <div style="width:100%;">
+      <dc-import name="KAI Screen" screen="{{ vp.screen }}" palette="{{ vp.palette }}" reduce-motion="{{ vp.reduce }}" max-scale="{{ vp.maxScale }}" dialog="{{ vp.dialog }}" action="{{ vp.action }}" hud="{{ vp.hud }}" menu="{{ vp.menu }}" cursor="{{ vp.cursor }}" loadout="{{ vp.loadout }}" map="{{ vp.map }}" map-cursor="{{ vp.mapCursor }}" kind="{{ vp.kind }}" tool="{{ vp.tool }}" headline="{{ vp.headline }}" sub="{{ vp.sub }}" player="{{ vp.player }}" mentor="{{ vp.mentor }}" items="{{ vp.items }}" name-text="{{ vp.nameText }}" date="{{ vp.date }}" on-menu="{{ vp.onMenu }}" on-map="{{ vp.onMap }}" hint-size="100%,288px"></dc-import>
+    </div>
+
+    <section aria-live="polite" style="background:var(--surface,#E6EFC8);color:var(--ink,#0F380F);border:3px solid var(--ink,#0F380F);padding:24px clamp(16px,4vw,32px);display:flex;flex-direction:column;gap:20px;width:100%;max-width:820px;margin:0 auto;box-sizing:border-box;">
+
+      <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:22px;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Settings</h1>
+          <sc-for list="{{ settingGroups }}" as="g" hint-placeholder-count="4">
+            <div role="radiogroup" aria-label="{{ g.label }}" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-weight:600;">{{ g.label }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <sc-for list="{{ g.options }}" as="o" hint-placeholder-count="3">
+                  <button role="radio" aria-checked="{{ o.selected }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:10px;padding:10px 14px;min-height:44px;border:3px solid var(--ink);background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:16px;cursor:pointer;">
+                    <span aria-hidden="true">{{ o.mark }}</span>
+                    <sc-if value="{{ o.hasSwatch }}" hint-placeholder-val="{{ false }}">
+                      <span aria-hidden="true" style="display:flex;border:2px solid currentColor;">
+                        <sc-for list="{{ o.swatch }}" as="sw" hint-placeholder-count="4"><span style="width:12px;height:16px;background:{{ sw }};"></span></sc-for>
+                      </span>
+                    </sc-if>
+                    <span>{{ o.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="font-size:15px;">{{ g.hint }}</div>
+            </div>
+          </sc-for>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-weight:600;">Plain view</div>
+            <div style="font-size:16px;">The same workshop as a normal document, without the game. <a href="{{ plainUrl }}">Open plain view</a></div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <button onClick="{{ toggleSettings }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Done</button>
+            <button onClick="{{ resetProgress }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">{{ resetLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.title }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">A hands-on Kairos workshop</h1>
+          <p style="margin:0;max-width:62ch;text-wrap:pretty;">Seven stages, from your first node to rolling upgrades through Kubernetes. You type every command yourself. KAI keeps score, and failing a check costs nothing.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <button onClick="{{ newGame }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">New game</button>
+            <button onClick="{{ continueGame }}" disabled="{{ noSave }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">{{ continueLabel }}</button>
+            <a href="{{ plainUrl }}" style="display:inline-flex;align-items:center;padding:12px 8px;min-height:48px;box-sizing:border-box;font-size:16px;">Plain view</a>
+          </div>
+          <div style="font-size:15px;">Keyboard: ↑ ↓ to move, Enter to select.</div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.name }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">What's your name?</h1>
+          <p style="margin:0;max-width:60ch;">KAI calls you by this name, and it goes on your badge. Up to {{ nameMax }} characters.</p>
+          <label style="display:flex;flex-direction:column;gap:6px;max-width:420px;">
+            <span style="font-weight:600;font-size:16px;">Your name</span>
+            <input value="{{ nameVal }}" onInput="{{ onName }}" onKeyDown="{{ onNameKey }}" maxlength="12" autocomplete="nickname" placeholder="{{ nameDefault }}" style="font:600 20px 'IBM Plex Mono',monospace;padding:12px 14px;border:3px solid var(--ink);background:var(--surface);color:var(--ink);min-height:48px;box-sizing:border-box;">
+          </label>
+          <div style="font-size:15px;">{{ nameHint }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ nameDone }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Continue ▶</button></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.character }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Pick your look</h1>
+          <p style="margin:0;">You travel with KAI as this character. Keyboard: ← → and Enter.</p>
+          <div role="radiogroup" aria-label="Character" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+            <sc-for list="{{ characters }}" as="c" hint-placeholder-count="3">
+              <button role="radio" aria-checked="{{ c.selected }}" onClick="{{ c.pick }}" style="display:grid;grid-template-columns:64px minmax(0,1fr);gap:14px;align-items:center;text-align:left;padding:12px 14px;border:3px solid var(--ink);background:{{ c.bg }};color:{{ c.fg }};font:inherit;cursor:pointer;">
+                <canvas ref="{{ c.ref }}" width="16" height="16" aria-hidden="true" style="width:64px;height:64px;image-rendering:pixelated;background:var(--surface);"></canvas>
+                <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-weight:600;">{{ c.mark }} {{ c.label }}</span><span style="font-size:15px;">{{ c.desc }}</span></span>
+              </button>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ characterDone }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Continue ▶</button></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.mentor }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start;">
+          <canvas ref="{{ mentorCard.ref }}" width="24" height="24" aria-hidden="true" style="width:96px;height:96px;image-rendering:pixelated;border:3px solid var(--ink);"></canvas>
+          <div style="display:flex;flex-direction:column;gap:8px;min-width:0;">
+            <div style="font-size:15px;font-weight:600;">Mentor · stage {{ mentorCard.stageNo }} · {{ mentorCard.location }}</div>
+            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">{{ mentorCard.name }}</h1>
+            <div style="font-size:16px;">{{ mentorCard.country }}</div>
+            <p style="margin:6px 0 0;text-wrap:pretty;">{{ mentorCard.intro }}</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:6px;"><button onClick="{{ mentorDone }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Let's go ▶</button><button onClick="{{ goMap }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">Route</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.loadout }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:22px;">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Choose your loadout</h1>
+            <p style="margin:0;max-width:62ch;text-wrap:pretty;">Your answers hide the steps that don't apply to you. Pick “Not sure yet” to see every option, each with a label.</p>
+          </div>
+          <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
+            <div role="radiogroup" aria-label="{{ f.label }}" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;">
+                <span style="font-weight:600;">{{ f.label }}</span>
+                <span style="font-size:15px;">{{ f.question }}</span>
+              </div>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3">
+                  <button role="radio" aria-checked="{{ o.selected }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:8px;padding:10px 14px;min-height:44px;border:3px solid var(--ink);background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:16px;cursor:pointer;">
+                    <span aria-hidden="true">{{ o.mark }}</span><span>{{ o.label }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <button onClick="{{ loadoutDone }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ loadoutDoneLabel }}</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.map }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Your route, {{ playerName }}</h1>
+            <p style="margin:0;">{{ mapSummary }}</p>
+          </div>
+          <sc-if value="{{ skipAsk.open }}" hint-placeholder-val="{{ false }}">
+            <div role="alertdialog" aria-label="Skip stage" style="display:flex;flex-direction:column;gap:10px;border:3px dashed var(--ink);background:var(--surface2);padding:16px;">
+              <div style="font-weight:600;">Skip stage {{ skipAsk.no }}, {{ skipAsk.location }}?</div>
+              <div style="font-size:16px;">You can come back any time. Its items stay ?????? until you clear it. Skipping never blocks the next stops or your badge.</div>
+              <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ skipAsk.yes }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ skipAsk.yesLabel }}</button><button onClick="{{ skipAsk.no2 }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">{{ skipAsk.noLabel }}</button></div>
+            </div>
+          </sc-if>
+          <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ stages }}" as="s" hint-placeholder-count="9">
+              <li aria-current="{{ s.ariaCurrent }}" style="display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border:3px solid var(--ink);background:{{ s.bg }};">
+                <canvas ref="{{ s.iconRef }}" width="24" height="24" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;"></canvas>
+                <button onClick="{{ s.open }}" disabled="{{ s.locked }}" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;padding:0;border:0;background:transparent;color:var(--ink);font:inherit;cursor:{{ s.cursor }};">
+                  <span style="font-size:14px;font-weight:600;letter-spacing:.04em;">Stop {{ s.no }} · {{ s.location }}</span>
+                  <span style="font-weight:600;text-wrap:pretty;text-decoration:underline;text-underline-offset:3px;">{{ s.title }}</span>
+                  <span style="font-size:15px;">{{ s.detail }}</span>
+                </button>
+                <span style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                  <span style="border:2px solid var(--ink);padding:2px 8px;font-size:14px;font-weight:600;white-space:nowrap;">{{ s.stateLabel }}</span>
+                  <span aria-hidden="true" style="display:block;width:88px;height:10px;border:2px solid var(--ink);box-sizing:border-box;background:var(--surface);"><span style="display:block;height:100%;width:{{ s.pct }}%;background:var(--ink);"></span></span>
+                  <span style="font-size:14px;white-space:nowrap;">{{ s.count }}</span>
+                  <sc-if value="{{ s.canSkip }}" hint-placeholder-val="{{ false }}"><button onClick="{{ s.skip }}" style="background:transparent;color:var(--ink);border:2px solid var(--ink);padding:6px 10px;min-height:40px;font:inherit;font-size:14px;cursor:pointer;">{{ s.skipLabel }}</button></sc-if>
+                </span>
+              </li>
+            </sc-for>
+          </ol>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.stage }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
+            <div style="font-size:15px;font-weight:600;min-width:0;">Stage {{ stageId }} · {{ location }}: {{ stageTitle }}</div>
+            <div role="list" aria-label="Steps" style="display:flex;gap:6px;flex-wrap:wrap;">
+              <sc-for list="{{ pills }}" as="p" hint-placeholder-count="3">
+                <button role="listitem" onClick="{{ p.go }}" aria-current="{{ p.current }}" aria-label="{{ p.aria }}" style="min-width:44px;height:44px;padding:0 8px;border:3px solid var(--ink);background:{{ p.bg }};color:{{ p.fg }};font:600 16px 'IBM Plex Mono',monospace;cursor:pointer;">{{ p.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <sc-if value="{{ isOptional }}" hint-placeholder-val="{{ false }}">
+              <div style="align-self:flex-start;border:2px dashed var(--ink);padding:4px 10px;font-size:15px;font-weight:600;">☆ {{ sideQuestLabel }}</div>
+            </sc-if>
+            <h1 style="margin:0;font-size:calc(var(--fs) * 1.5);font-weight:600;line-height:1.2;text-wrap:pretty;">{{ stepTitle }}</h1>
+            <div style="font-size:15px;">Step {{ stepNum }} of {{ stepCount }}</div>
+          </div>
+
+          <div style="display:flex;flex-direction:column;">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="3">
+              <div style="padding-bottom:20px;padding-left:{{ r.pad }}px;border-left:{{ r.rail }}px solid var(--ink);min-width:0;">
+
+                <sc-if value="{{ r.isText }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;max-width:68ch;">
+                    <sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;border:2px dashed var(--ink);padding:2px 8px;font-size:15px;font-weight:600;">{{ r.only }}</div></sc-if>
+                    <sc-for list="{{ r.paras }}" as="pa" hint-placeholder-count="1">
+                      <p style="margin:0;line-height:1.6;text-wrap:pretty;"><sc-for list="{{ pa }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isText }}" hint-placeholder-val="{{ true }}"><span>{{ g.v }}</span></sc-if><sc-if value="{{ g.isB }}" hint-placeholder-val="{{ false }}"><strong style="font-weight:600;">{{ g.v }}</strong></sc-if><sc-if value="{{ g.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;background:var(--surface2);border:2px solid var(--surface2);padding:0 4px;overflow-wrap:anywhere;">{{ g.v }}</code></sc-if><sc-if value="{{ g.isA }}" hint-placeholder-val="{{ false }}"><a href="{{ g.href }}" target="_blank" rel="noopener">{{ g.v }}</a></sc-if></sc-for></p>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isHeading }}" hint-placeholder-val="{{ false }}">
+                  <h2 style="margin:0;font-size:calc(var(--fs) * 1.15);font-weight:600;">{{ r.text }}</h2>
+                </sc-if>
+
+                <sc-if value="{{ r.isTabs }}" hint-placeholder-val="{{ false }}">
+                  <div role="tablist" aria-label="Alternatives" style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <sc-for list="{{ r.tabs }}" as="tb" hint-placeholder-count="2">
+                      <button role="tab" aria-selected="{{ tb.selected }}" onClick="{{ tb.pick }}" style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;padding:10px 14px;min-height:44px;border:3px solid var(--ink);background:{{ tb.bg }};color:{{ tb.fg }};font:inherit;font-size:16px;cursor:pointer;text-align:left;">
+                        <span style="font-weight:600;">{{ tb.mark }} {{ tb.label }}</span>
+                        <sc-if value="{{ tb.hasOnly }}" hint-placeholder-val="{{ false }}"><span style="font-size:14px;">{{ tb.only }}</span></sc-if>
+                      </button>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isAltHeader }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                    <h3 style="margin:0;font-size:var(--fs);font-weight:600;">▸ {{ r.label }}</h3>
+                    <sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><span style="border:2px dashed var(--ink);padding:2px 8px;font-size:15px;font-weight:600;">{{ r.only }}</span></sc-if>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isCommand }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:8px;">
+                    <sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;border:2px dashed var(--ink);padding:2px 8px;font-size:15px;font-weight:600;">{{ r.only }}</div></sc-if>
+                    <div style="border:3px solid var(--ink);background:var(--codeBg);color:var(--codeInk);min-width:0;">
+                      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 6px 0 16px;">
+                        <span style="font-size:14px;font-family:'IBM Plex Mono',monospace;">{{ r.head }}</span>
+                        <button onClick="{{ r.copy }}" aria-label="{{ r.copyAria }}" style="font:600 15px 'IBM Plex Sans',sans-serif;padding:8px 14px;min-height:44px;border:2px solid var(--codeInk);background:{{ r.copyBg }};color:{{ r.copyFg }};cursor:pointer;white-space:nowrap;">{{ r.copyLabel }}</button>
+                      </div>
+                      <div ref="{{ r.preRef }}" style="margin:0;padding:8px 16px 16px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:var(--fsCode);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;"><sc-for list="{{ r.lines }}" as="l" hint-placeholder-count="1"><div style="padding-left:2ch;text-indent:-2ch;"><span aria-hidden="true" style="user-select:none;-webkit-user-select:none;">{{ l.pfx }}</span>{{ l.text }}</div></sc-for></div>
+                    </div>
+                    <sc-if value="{{ r.failed }}" hint-placeholder-val="{{ false }}"><div role="status" style="font-size:15px;font-weight:600;">✗ {{ r.failMsg }}</div></sc-if>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isOutput }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    <div style="font-size:15px;font-weight:600;">{{ r.outLabel }}<sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><span style="font-weight:400;"> · {{ r.only }}</span></sc-if></div>
+                    <div style="border:3px dashed var(--ink);background:var(--surface2);padding:12px 16px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:calc(var(--fsCode) * .9);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;">{{ r.text }}</div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isCallout }}" hint-placeholder-val="{{ false }}">
+                  <div role="note" style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px;align-items:start;border:{{ r.bw }}px solid var(--ink);background:var(--surface2);padding:12px 16px;">
+                    <canvas ref="{{ r.iconRef }}" width="8" height="8" aria-hidden="true" style="width:32px;height:32px;image-rendering:pixelated;margin-top:2px;"></canvas>
+                    <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
+                      <div style="font-weight:600;">{{ r.kindLabel }}<sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><span style="font-weight:400;font-size:15px;"> · {{ r.only }}</span></sc-if></div>
+                      <sc-for list="{{ r.paras }}" as="pa" hint-placeholder-count="1">
+                        <p style="margin:0;line-height:1.55;text-wrap:pretty;"><sc-for list="{{ pa }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isText }}" hint-placeholder-val="{{ true }}"><span>{{ g.v }}</span></sc-if><sc-if value="{{ g.isB }}" hint-placeholder-val="{{ false }}"><strong style="font-weight:600;">{{ g.v }}</strong></sc-if><sc-if value="{{ g.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;overflow-wrap:anywhere;">{{ g.v }}</code></sc-if><sc-if value="{{ g.isA }}" hint-placeholder-val="{{ false }}"><a href="{{ g.href }}" target="_blank" rel="noopener">{{ g.v }}</a></sc-if></sc-for></p>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isEmpty }}" hint-placeholder-val="{{ false }}">
+                  <div role="status" style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;border:3px dashed var(--ink);padding:16px;">
+                    <canvas ref="{{ r.iconRef }}" width="16" height="16" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;"></canvas>
+                    <div style="display:flex;flex-direction:column;gap:10px;min-width:0;">
+                      <div style="font-weight:600;">{{ r.emptyLabel }}</div>
+                      <div style="font-size:16px;">{{ r.emptyDetail }}</div>
+                      <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                        <button onClick="{{ r.showAll }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ r.showAllLabel }}</button>
+                        <button onClick="{{ goLoadout }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ r.changeLabel }}</button>
+                      </div>
+                    </div>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isNotice }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-size:15px;font-weight:600;">
+                    <span>{{ r.text }}</span>
+                    <button onClick="{{ r.hideAll }}" style="background:transparent;color:var(--ink);border:2px solid var(--ink);padding:6px 10px;min-height:40px;font:inherit;font-size:15px;cursor:pointer;">Match my loadout again</button>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ r.isTrouble }}" hint-placeholder-val="{{ false }}">
+                  <div role="status" style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;align-items:center;background:var(--ink);color:var(--surface);padding:12px 16px;">
+                    <canvas ref="{{ r.iconRef }}" width="16" height="16" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;background:var(--surface);"></canvas>
+                    <div style="display:flex;flex-direction:column;gap:2px;">
+                      <div style="font-weight:600;">{{ r.text }}</div>
+                      <div style="font-size:16px;">✗ {{ r.detail }}</div>
+                    </div>
+                  </div>
+                </sc-if>
+
+              </div>
+            </sc-for>
+          </div>
+
+          <div aria-label="Check" role="group" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;border:3px solid var(--ink);padding:16px;background:var(--surface2);">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:min(100%,260px);flex:1;">
+              <div style="font-size:15px;font-weight:600;">Check</div>
+              <div style="font-weight:600;text-wrap:pretty;">{{ checkPrompt }}</div>
+            </div>
+            <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-wrap:wrap;gap:10px;">
+                <button onClick="{{ didIt }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">✓ {{ didItLabel }}</button>
+                <button onClick="{{ didNot }}" aria-pressed="{{ isFailed }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">✗ {{ didNotLabel }}</button>
+              </div>
+            </sc-if>
+            <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+                <span style="font-weight:600;">✓ Cleared</span>
+                <button onClick="{{ nextStep }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ nextLabel }}</button>
+              </div>
+            </sc-if>
+          </div>
+
+          <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;">
+            <button onClick="{{ prevStep }}" disabled="{{ noPrev }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">◀ Previous step</button>
+            <button onClick="{{ skipNext }}" disabled="{{ noNext }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">Next step ▶</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.clearStep }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">{{ clear.title }}</h1>
+          <p style="margin:0;">{{ clear.detail }}</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <button onClick="{{ clear.next }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ clear.nextLabel }}</button>
+            <button onClick="{{ goMap }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">World map</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.clearStage }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start;">
+          <canvas ref="{{ clear.portraitRef }}" width="24" height="24" aria-hidden="true" style="width:72px;height:72px;image-rendering:pixelated;border:3px solid var(--ink);"></canvas>
+          <div style="display:flex;flex-direction:column;gap:12px;min-width:0;">
+            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">{{ clear.title }}</h1>
+            <p style="margin:0;font-weight:600;">{{ clear.outro }}</p>
+            <p style="margin:0;">{{ clear.detail }}</p>
+            <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+              <sc-for list="{{ clear.steps }}" as="st" hint-placeholder-count="3"><li style="display:flex;gap:10px;"><span aria-hidden="true" style="font-family:'IBM Plex Mono',monospace;font-weight:600;">{{ st.mark }}</span><span>{{ st.label }}</span></li></sc-for>
+            </ul>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ clear.next }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ clear.nextLabel }}</button></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.items }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">{{ clear.title }}</h1>
+          <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
+            <sc-for list="{{ clear.items }}" as="it" hint-placeholder-count="2">
+              <li style="display:grid;grid-template-columns:48px minmax(0,1fr);gap:14px;align-items:center;padding:10px 14px;border:3px solid var(--ink);">
+                <canvas ref="{{ it.ref }}" width="8" height="8" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;"></canvas>
+                <span style="display:flex;flex-direction:column;gap:2px;min-width:0;"><span style="font-weight:600;">{{ it.name }}</span><span style="font-size:16px;">{{ it.desc }}</span><sc-if value="{{ it.hasNote }}" hint-placeholder-val="{{ false }}"><span style="font-size:15px;">{{ it.note }}</span></sc-if></span>
+              </li>
+            </sc-for>
+          </ul>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ clear.next }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ clear.nextLabel }}</button></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.complete }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:20px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Workshop complete, {{ playerName }}</h1>
+            <p style="margin:0;">{{ recapSummary }}</p>
+          </div>
+          <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ recap }}" as="rc" hint-placeholder-count="9">
+              <li style="display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:12px;align-items:center;padding:8px 12px;border:3px solid var(--ink);">
+                <canvas ref="{{ rc.iconRef }}" width="24" height="24" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;"></canvas>
+                <span style="display:flex;flex-direction:column;min-width:0;"><span style="font-size:14px;font-weight:600;">Stop {{ rc.no }} · {{ rc.location }} · with {{ rc.mentor }}</span><span style="text-wrap:pretty;">{{ rc.title }}</span></span>
+                <span style="font-size:15px;text-align:right;">{{ rc.count }}</span>
+              </li>
+            </sc-for>
+          </ol>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <h2 style="margin:0;font-size:22px;font-weight:600;">Items</h2>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+              <sc-for list="{{ inventory }}" as="iv" hint-placeholder-count="10">
+                <div style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:center;padding:8px 12px;border:3px {{ iv.border }} var(--ink);">
+                  <canvas ref="{{ iv.ref }}" width="8" height="8" aria-hidden="true" style="width:32px;height:32px;image-rendering:pixelated;"></canvas>
+                  <span style="display:flex;flex-direction:column;min-width:0;"><span style="font-weight:600;font-family:'IBM Plex Mono',monospace;">{{ iv.name }}</span><span style="font-size:14px;">{{ iv.note }}</span></span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;background:var(--ink);color:var(--surface);padding:20px;">
+            <h2 style="margin:0;font-size:22px;font-weight:600;line-height:1.25;">{{ ctaLabel }}</h2>
+            <p style="margin:0;">Take KAI home: kairos-lab runs the same stops from your terminal.</p>
+            <sc-for list="{{ ctaCmds }}" as="cc" hint-placeholder-count="1">
+              <div style="display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
+                  <span style="font-size:15px;font-weight:600;">{{ cc.label }}</span>
+                  <button onClick="{{ cc.copy }}" aria-label="{{ cc.copyAria }}" style="font:600 15px 'IBM Plex Sans',sans-serif;padding:8px 14px;min-height:44px;border:2px solid var(--surface);background:{{ cc.copyBg }};color:{{ cc.copyFg }};cursor:pointer;">{{ cc.copyLabel }}</button>
+                </div>
+                <div ref="{{ cc.preRef }}" style="border:2px solid var(--surface);padding:12px 16px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:var(--fsCode);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;"><sc-for list="{{ cc.lines }}" as="l" hint-placeholder-count="1"><div style="padding-left:2ch;text-indent:-2ch;"><span aria-hidden="true" style="user-select:none;-webkit-user-select:none;">{{ l.pfx }}</span>{{ l.text }}</div></sc-for></div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ goBadge }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Get your badge ▶</button><button onClick="{{ goMap }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">Route</button></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.badge }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;flex-direction:column;gap:16px;align-items:flex-start;">
+          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Your badge</h1>
+          <canvas ref="{{ badgeRef }}" width="160" height="100" role="img" aria-label="{{ badgeAria }}" style="width:min(100%,480px);height:auto;aspect-ratio:160/100;image-rendering:pixelated;border:3px solid var(--ink);"></canvas>
+          <p style="margin:0;">{{ badgeAria }}.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ downloadBadge }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ downloadLabel }}</button><button onClick="{{ goMap }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">Route</button></div>
+        </div>
+      </sc-if>
+    </section>
+  </main>
+
+  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ attribution }}</span><a href="{{ plainUrl }}" style="color:var(--onBg);">Plain view</a></footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;title&quot;,&quot;name&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:&quot;title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kairos-lab&quot;,&quot;first-node&quot;,&quot;build-image&quot;,&quot;fleet&quot;,&quot;pipelines&quot;,&quot;manual-upgrade&quot;,&quot;multi-node&quot;,&quot;operator-upgrade&quot;,&quot;edgevpn&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{name?:string,character?:string,cleared?:number,skipped?:string[],done?:string[],facts?:object,xp?:number,started?:boolean,settings?:object,completedAt?:string}&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,'copied'|'failed'&gt;&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,boolean&gt;&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = {
+    ready: false, p: null,
+    view: this.props.view ?? 'title', stage: this.props.stage ?? null, step: this.props.step ?? 0,
+    status: this.props.status ?? 'todo', alt: {}, showAll: this.props.showAll ?? {}, copy: this.props.copy ?? {},
+    cursor: 0, factCursor: 0, mapCursor: 0, settingsOpen: !!this.props.settingsOpen,
+    returnView: null, clear: this.props.clear ?? null, resetArmed: false, nameDraft: this.props.nameDraft ?? null, charCursor: 0, skipAsk: this.props.skipAsk ?? null
+  };
+  pres = {}; ct = {};
+
+  componentDidMount() {
+    const E = window.KAIE;
+    E.load().then(() => {
+      const p = this.props.seed ? E.seedProgress(this.props.seed) : (this.persist() ? E.loadProgress() : E.newProgress());
+      const stage = this.state.stage || E.currentStage(p) || E.stageIds()[0];
+      let clear = this.state.clear;
+      if (!clear && ['clear-step', 'clear-stage', 'items'].includes(this.state.view)) clear = { xp: E.W.xp.step, optional: false, stageCleared: this.state.view !== 'clear-step' };
+      const ci = Math.max(0, E.W.player.characters.findIndex(c => c.id === p.character));
+      this.setState({ ready: true, p, stage, clear, mapCursor: Math.max(0, E.stageIds().indexOf(stage)), charCursor: ci, nameDraft: this.state.nameDraft ?? p.name });
+    }).catch(e => console.error('KAI load', e));
+    this.onKey = e => this.key(e);
+    window.addEventListener('keydown', this.onKey);
+  }
+  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); Object.values(this.ct).forEach(clearTimeout); }
+
+  persist() { return this.props.persist !== false && !this.props.seed; }
+  setP(fn) { this.setState(s => { const p = fn(JSON.parse(JSON.stringify(s.p))); if (this.persist()) window.KAIE.saveProgress(p); return { p }; }); }
+  facts() { return this.state.p.facts; }
+  settings() { return this.state.p.settings; }
+  palette() { return this.props.palette ?? this.settings().palette; }
+  pname() { return window.KAIE.playerName(this.state.p); }
+  reduced() {
+    if (this.props.reduceMotion != null) return !!this.props.reduceMotion;
+    const m = this.settings().motion;
+    if (m === 'reduce') return true;
+    if (m === 'full') return false;
+    return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  steps() { return window.KAIE.steps(this.state.stage, this.facts()); }
+  curStep() { const st = this.steps(); return st[Math.min(this.state.step, st.length - 1)]; }
+  go(view, extra) { this.setState({ view, settingsOpen: false, skipAsk: null, ...(extra || {}) }); if (typeof window !== 'undefined' && this.props.keys !== false) window.scrollTo(0, 0); }
+
+  // ---------- actions ----------
+  newGame() {
+    this.setP(p => { const n = window.KAIE.newProgress(); n.settings = p.settings; n.started = true; return n; });
+    this.go('name', { nameDraft: '', returnView: null, factCursor: 0, charCursor: 0 });
+  }
+  continueGame() {
+    const E = window.KAIE, p = this.state.p;
+    if (!p.started) return;
+    if (!p.name) return this.go('name', { nameDraft: '' });
+    if (!p.character) return this.go('character');
+    if (E.allDone(p)) return this.go('complete');
+    const cur = E.currentStage(p) || E.stageIds()[0];
+    this.go('map', { mapCursor: E.stageIds().indexOf(cur) });
+  }
+  menuSelect(i) {
+    if (i === 0) this.newGame();
+    else if (i === 1) this.continueGame();
+    else if (i === 2 && typeof window !== 'undefined') window.location.href = window.KAIE.W.links.plainView;
+  }
+  nameDone() {
+    const W = window.KAIE.W, n = String(this.state.nameDraft || '').trim().slice(0, W.player.nameMax) || W.player.defaultName;
+    this.setP(p => { p.name = n; p.started = true; return p; });
+    this.go('character');
+  }
+  characterDone() {
+    const id = window.KAIE.W.player.characters[this.state.charCursor].id;
+    this.setP(p => { p.character = id; return p; });
+    this.go('loadout', { returnView: null });
+  }
+  setFact(fid, oid) { this.setP(p => { p.facts[fid] = oid; p.started = true; return p; }); }
+  cycleFact(dir) {
+    const E = window.KAIE, f = E.C.facts[this.state.factCursor], ids = f.options.map(o => o.id).concat(['unsure']);
+    const i = ids.indexOf(this.facts()[f.id]);
+    this.setFact(f.id, ids[(i + dir + ids.length) % ids.length]);
+  }
+  goLoadout() { this.go('loadout', { returnView: this.state.view === 'loadout' ? this.state.returnView : this.state.view }); }
+  loadoutDone() {
+    const rv = this.state.returnView;
+    if (rv && !['title', 'loadout', 'map', 'name', 'character'].includes(rv)) this.go(rv, { status: 'todo' });
+    else this.goMap();
+  }
+  goMap() {
+    const E = window.KAIE, p = this.state.p, ids = E.stageIds();
+    const target = ['stage', 'mentor'].includes(this.state.view) ? this.state.stage : (E.currentStage(p) || this.state.stage || ids[0]);
+    this.go('map', { mapCursor: Math.max(0, ids.indexOf(target)) });
+  }
+  openStage(id) {
+    const E = window.KAIE, p = this.state.p;
+    if (E.stageState(p, id) === 'locked') return;
+    this.go('mentor', { stage: id, step: E.firstOpenStep(p, id), status: 'todo', mapCursor: E.stageIds().indexOf(id) });
+  }
+  askSkip(id) { this.setState({ skipAsk: id }); }
+  doSkip() {
+    const E = window.KAIE, id = this.state.skipAsk;
+    const p2 = JSON.parse(JSON.stringify(this.state.p));
+    p2.skipped[id] = true;
+    if (E.allDone(p2) && !p2.completedAt) p2.completedAt = E.today();
+    if (this.persist()) E.saveProgress(p2);
+    this.setState({ p: p2, skipAsk: null });
+    if (E.allDone(p2)) this.go('complete');
+    else { const cur = E.currentStage(p2); this.setState({ mapCursor: Math.max(0, E.stageIds().indexOf(cur)) }); }
+  }
+  goStep(i) { this.setState({ step: i, status: 'todo' }); if (this.props.keys !== false) window.scrollTo(0, 0); }
+  didIt() {
+    const E = window.KAIE, st = this.curStep(), sid = this.state.stage, key = E.stepKey(sid, st.id);
+    const was = E.stageCleared(this.state.p, sid);
+    const gain = st.optional ? E.W.xp.sideQuest : E.W.xp.step;
+    const p2 = JSON.parse(JSON.stringify(this.state.p));
+    if (!p2.done[key]) { p2.done[key] = true; p2.xp += gain; }
+    if (p2.skipped[sid] && E.stageCleared(p2, sid)) delete p2.skipped[sid];
+    p2.last = { stage: sid, step: this.state.step };
+    if (E.allDone(p2) && !p2.completedAt) p2.completedAt = E.today();
+    if (this.persist()) E.saveProgress(p2);
+    const stageCleared = !was && E.stageCleared(p2, sid);
+    this.setState({ p: p2 });
+    this.go('clear-step', { status: 'done', clear: { xp: gain, optional: !!st.optional, stageCleared } });
+  }
+  didNot() { this.setState({ status: 'failed' }); }
+  nextIndex() {
+    const E = window.KAIE, st = this.steps(), p = this.state.p, sid = this.state.stage;
+    for (let i = this.state.step + 1; i < st.length; i++) if (!p.done[E.stepKey(sid, st[i].id)]) return i;
+    const j = st.findIndex(s => !s.optional && !p.done[E.stepKey(sid, s.id)]);
+    return j >= 0 ? j : Math.min(this.state.step + 1, st.length - 1);
+  }
+  clearNext() {
+    const c = this.state.clear || {}, v = this.state.view, E = window.KAIE;
+    if (v === 'clear-step') {
+      if (c.stageCleared) this.go('clear-stage');
+      else this.go('stage', { step: this.nextIndex(), status: 'todo' });
+    } else if (v === 'clear-stage') {
+      if (E.stageItems(this.state.stage).length) this.go('items'); else this.afterItems();
+    } else if (v === 'items') this.afterItems();
+  }
+  afterItems() {
+    const E = window.KAIE, p = this.state.p;
+    if (E.allDone(p)) this.go('complete');
+    else { const nx = E.currentStage(p) || this.state.stage; this.go('map', { mapCursor: E.stageIds().indexOf(nx) }); }
+  }
+  copy(key, code) {
+    const done = s => {
+      this.setState(st => ({ copy: { ...st.copy, [key]: s } }));
+      clearTimeout(this.ct[key]);
+      this.ct[key] = setTimeout(() => this.setState(st => { const c = { ...st.copy }; delete c[key]; return { copy: c }; }), s === 'copied' ? 2000 : 8000);
+    };
+    const selectIt = () => { const el = this.pres[key]; if (el) { const r = document.createRange(); r.selectNodeContents(el); const sel = getSelection(); sel.removeAllRanges(); sel.addRange(r); } };
+    const fallback = () => {
+      try {
+        const ta = document.createElement('textarea'); ta.value = code; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select(); const ok = document.execCommand('copy'); ta.remove();
+        if (!ok) throw new Error('execCommand'); done('copied');
+      } catch (e) { done('failed'); selectIt(); }
+    };
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(code).then(() => done('copied'), fallback);
+    else fallback();
+  }
+  setSetting(k, v) { this.setP(p => { p.settings[k] = v; return p; }); }
+  resetProgress() {
+    if (!this.state.resetArmed) { this.setState({ resetArmed: true }); return; }
+    this.setP(p => { const n = window.KAIE.newProgress(); n.settings = p.settings; return n; });
+    this.setState({ resetArmed: false, settingsOpen: false, view: 'title', cursor: 0 });
+  }
+  drawBadge(el, scale) {
+    const E = window.KAIE, p = this.state.p;
+    if (!el || !E.ready()) return;
+    const x = el.getContext('2d'); el.width = 160 * (scale || 1); el.height = 100 * (scale || 1);
+    x.setTransform(scale || 1, 0, 0, scale || 1, 0, 0); x.imageSmoothingEnabled = false;
+    E.rect(x, E.pal(this.palette(), 'ui')[0], 0, 0, 160, 100);
+    E.drawBadge(x, this.palette(), this.pname(), p.completedAt || E.today(), 0, 2);
+  }
+  downloadBadge() {
+    const c = document.createElement('canvas'); this.drawBadge(c, 6);
+    const a = document.createElement('a'); a.download = 'kairos-workshop-badge-' + this.pname().toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png';
+    a.href = c.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  key(e) {
+    if (this.props.keys === false || !this.state.ready) return;
+    const a = document.activeElement, onCtl = a && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName);
+    const k = e.key, v = this.state.view, E = window.KAIE;
+    if (this.state.settingsOpen) { if (k === 'Escape') this.setState({ settingsOpen: false }); return; }
+    if (a && a.tagName === 'INPUT') return;
+    const arrows = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (v === 'title') {
+      if (k === 'ArrowDown' || k === 'ArrowUp') {
+        const n = 3, en = i => i !== 1 || this.state.p.started;
+        let c = this.state.cursor; do { c = (c + (k === 'ArrowDown' ? 1 : n - 1)) % n; } while (!en(c));
+        this.setState({ cursor: c }); e.preventDefault();
+      } else if (k === 'Enter' && !onCtl) this.menuSelect(this.state.cursor);
+    } else if (v === 'character') {
+      const n = E.W.player.characters.length;
+      if (k === 'ArrowLeft' || k === 'ArrowRight') { this.setState({ charCursor: (this.state.charCursor + (k === 'ArrowRight' ? 1 : n - 1)) % n }); e.preventDefault(); }
+      else if (k === 'Enter' && !onCtl) this.characterDone();
+    } else if (v === 'loadout') {
+      const n = E.C.facts.length;
+      if (k === 'ArrowDown' || k === 'ArrowUp') { this.setState({ factCursor: (this.state.factCursor + (k === 'ArrowDown' ? 1 : n - 1)) % n }); e.preventDefault(); }
+      else if (k === 'ArrowLeft' || k === 'ArrowRight') { this.cycleFact(k === 'ArrowRight' ? 1 : -1); e.preventDefault(); }
+      else if (k === 'Enter' && !onCtl) this.loadoutDone();
+    } else if (v === 'map') {
+      if (arrows.includes(k)) { const n = E.stageIds().length, d = (k === 'ArrowRight' || k === 'ArrowDown') ? 1 : -1; this.setState({ mapCursor: Math.max(0, Math.min(n - 1, this.state.mapCursor + d)), skipAsk: null }); e.preventDefault(); }
+      else if (k === 'Enter' && !onCtl) this.openStage(E.stageIds()[this.state.mapCursor]);
+    } else if (['clear-step', 'clear-stage', 'items'].includes(v)) {
+      if (k === 'Enter' && !onCtl) this.clearNext();
+    } else if (v === 'mentor') {
+      if (k === 'Enter' && !onCtl) this.go('stage');
+    } else if (v === 'complete') {
+      if (k === 'Enter' && !onCtl) this.go('badge');
+    } else if (v === 'stage') {
+      if (k === 'Escape') this.goMap();
+    }
+  }
+
+  // ---------- view models ----------
+  segs(paras) { return paras.map(pa => pa.map(g => ({ ...g, isText: g.t === 'text', isB: g.t === 'b', isCode: g.t === 'code', isA: g.t === 'a' }))); }
+  cmdModel(key, code, lines, head, dark) {
+    const L = window.KAIE.W.labels, cs = this.state.copy[key];
+    return {
+      head, lines: lines.map(l => ({ text: l.text, pfx: l.prompt ? '$ ' : (l.cont ? '  ' : '') })),
+      copy: () => this.copy(key, code), preRef: el => { this.pres[key] = el; },
+      copyLabel: cs === 'copied' ? '✓ ' + L.copied : cs === 'failed' ? '✗ Copy failed' : L.copy,
+      copyAria: cs === 'copied' ? 'Copied to clipboard' : 'Copy command',
+      copyBg: cs === 'copied' ? (dark ? 'var(--surface)' : 'var(--codeInk)') : 'transparent',
+      copyFg: cs === 'copied' ? (dark ? 'var(--ink)' : 'var(--codeBg)') : (dark ? 'var(--surface)' : 'var(--codeInk)'),
+      failed: cs === 'failed', failMsg: L.copy_failed
+    };
+  }
+  decorate(r) {
+    const E = window.KAIE, L = E.W.labels, mode = this.palette();
+    const base = { ...r, pad: r.inset ? 20 : 0, rail: r.inset ? 3 : 0, hasOnly: !!r.only,
+      isText: r.type === 'text', isHeading: r.type === 'heading' && !!r.text, isTabs: r.type === 'tabs', isAltHeader: r.type === 'altHeader',
+      isCommand: r.type === 'command', isOutput: r.type === 'output', isCallout: r.type === 'callout', isEmpty: r.type === 'empty',
+      isNotice: r.type === 'notice', isTrouble: r.type === 'trouble' };
+    if (r.paras) base.paras = this.segs(r.paras);
+    if (r.type === 'command') Object.assign(base, this.cmdModel(r.key, r.code, r.lines, r.isFile ? 'File: ' + r.name : 'Terminal'));
+    if (r.type === 'output') { base.text = r.lines.join('\n'); base.outLabel = '⤷ ' + L.expected_output; }
+    if (r.type === 'callout') { base.kindLabel = L[r.kind] || r.kind; base.bw = r.kind === 'warning' ? 5 : 3; base.iconRef = el => E.drawIcon(el, r.kind, mode); }
+    if (r.type === 'tabs') base.tabs = r.tabs.map(tb => ({ ...tb, hasOnly: !!tb.only, mark: tb.selected ? '●' : '○', bg: tb.selected ? 'var(--ink)' : 'transparent', fg: tb.selected ? 'var(--surface)' : 'var(--ink)', pick: () => this.setState(s => ({ alt: { ...s.alt, [r.key]: tb.i } })) }));
+    if (r.type === 'empty') Object.assign(base, {
+      emptyLabel: L.empty, emptyDetail: 'Your loadout: ' + E.loadoutText(this.facts()) + '. ' + r.total + ' options are hidden.',
+      showAllLabel: L.show_all, changeLabel: L.change_loadout, iconRef: el => E.drawIcon(el, 'think1', mode),
+      showAll: () => this.setState(s => ({ showAll: { ...s.showAll, [r.key]: true } }))
+    });
+    if (r.type === 'notice') { const k = r.key.replace(/\/n$/, ''); base.text = L.showing_all; base.hideAll = () => this.setState(s => { const a = { ...s.showAll }; delete a[k]; return { showAll: a }; }); }
+    if (r.type === 'trouble') Object.assign(base, { text: L.troubleshooting, detail: 'It did not work. ' + L.no_penalty + ': fix it and check again.', iconRef: el => E.drawIcon(el, 'sad', mode) });
+    return base;
+  }
+  stageItemsView(sid) {
+    const E = window.KAIE, W = E.W, inv = E.inventory(this.state.p);
+    return E.stageItems(sid).map(it => {
+      if (it.part) {
+        const m = inv.find(x => x.id === it.id), part = m.parts[it.part - 1], nx = m.parts.find(x => !x.owned);
+        const next = !nx ? 'Complete!' : nx.soon ? 'Part ' + nx.n + ', ' + nx.label + ': ' + W.labels.coming_soon.toLowerCase() + '.' : 'Next part: ' + nx.label + ' (stop ' + E.stageNo(nx.stage) + ').';
+        return { id: it.id + '#' + it.part, icon: m.icon, name: m.name + ' ' + m.have + '/' + m.total, sub: m.have + '/' + m.total, desc: 'Part ' + part.n + ': ' + part.label + '. ' + m.desc, note: next, hasNote: true };
+      }
+      const d = W.items[it.id]; return { id: it.id, icon: d.icon, name: d.name, sub: '', desc: d.desc, note: '', hasNote: false };
+    });
+  }
+
+  vpProps() {
+    const E = window.KAIE, W = E.W, M = W.messages, p = this.state.p, v = this.state.view, red = this.reduced(), name = this.pname();
+    const vp = { palette: this.palette(), reduce: red, maxScale: 3, dialog: null, action: null, hud: null, menu: null, cursor: 0, loadout: null, map: null, mapCursor: 0, kind: 'step', headline: '', sub: '',
+      player: { style: p.character || W.player.characters[this.state.charCursor].id, name }, mentor: null, items: null, nameText: '', date: '',
+      onMenu: i => { if (v === 'title') { this.setState({ cursor: i }); this.menuSelect(i); } else if (v === 'loadout') this.setState({ factCursor: i }); else if (v === 'character') this.setState({ charCursor: i }); },
+      onMap: i => { this.setState({ mapCursor: i }); const id = E.stageIds()[i]; if (E.stageState(p, id) !== 'locked') this.openStage(id); } };
+    const tall = typeof window !== 'undefined' && window.innerHeight >= 1000;
+    const sid = this.state.stage, th = E.themeStage(sid), g = E.stageProgress(p, sid), mm = E.mentor(name, sid);
+    if (v === 'title') Object.assign(vp, { screen: 'title', menu: M.title_menu.map((l, i) => ({ label: l, disabled: i === 1 && !p.started })), cursor: this.state.cursor });
+    else if (v === 'name') Object.assign(vp, { screen: 'name', nameText: this.state.nameDraft || '', dialog: M.name_line, action: W.poses.name });
+    else if (v === 'character') Object.assign(vp, { screen: 'character', cursor: this.state.charCursor, dialog: E.fill(M.character_line, { name }) });
+    else if (v === 'loadout') Object.assign(vp, { screen: 'loadout', dialog: E.fill(M.loadout, { name }), cursor: this.state.factCursor, loadout: E.C.facts.map(f => ({ fact: f.id, value: p.facts[f.id] === 'unsure' ? M.unsure : E.optLabel(f.id, p.facts[f.id]) })) });
+    else if (v === 'map') {
+      const ids = E.stageIds(), plan = E.mentorPlan(name);
+      const map = ids.map(id => ({ id, state: E.stageState(p, id), mentor: plan[id], ...E.stageProgress(p, id) }));
+      const q = map[this.state.mapCursor] || map[0], t2 = E.themeStage(q.id), m2 = E.mentor(name, q.id), prev = ids[ids.indexOf(q.id) - 1];
+      const line = q.state === 'locked' ? E.fill(M.map_locked, { prev: prev ? E.themeStage(prev).location : '' }) : q.state === 'skipped' ? M.map_skipped : E.fill(q.state === 'cleared' ? M.map_cleared : M.map_current, q);
+      Object.assign(vp, { screen: 'map', map, mapCursor: this.state.mapCursor, hud: { xp: p.xp }, dialog: 'STOP ' + E.stageNo(q.id) + ' ' + t2.location + '\nWITH ' + E.first(m2).toUpperCase() + '\n' + line, action: red ? 'idle' : W.poses.map });
+    } else if (v === 'mentor') Object.assign(vp, { screen: 'mentor', mentor: mm, dialog: E.fill(M.mentor_intro, { mentor: E.first(mm), goal: E.stage(sid).goal }), action: W.poses.mentor });
+    else if (v === 'stage') {
+      const st = this.curStep(), rows = this.stageRows();
+      const hasCmd = rows.some(r => r.type === 'command'), hasEmpty = rows.some(r => r.type === 'empty');
+      vp.maxScale = tall ? 3 : 2;
+      if (this.state.status === 'failed') Object.assign(vp, { screen: 'fail', headline: M.fail_head, sub: M.fail_sub, dialog: M.fail_line, action: 'sad' });
+      else Object.assign(vp, { screen: 'stage', hud: { stage: sid, done: g.done, total: g.total, xp: p.xp }, dialog: st.title + '\n' + (hasEmpty ? M.empty_line : st.line), action: hasEmpty ? W.poses.empty : hasCmd ? W.poses.command : W.poses.text });
+    } else if (v === 'clear-step') {
+      const st = this.curStep(), c = this.state.clear || {};
+      Object.assign(vp, { screen: 'clear', kind: 'step', headline: c.optional ? M.side_clear : M.step_clear, sub: '+' + (c.xp || 0) + ' XP', dialog: st.title + '\n' + E.fill(M.step_clear_line, { name }), action: W.poses.stepClear });
+    } else if (v === 'clear-stage') Object.assign(vp, { screen: 'clear', kind: 'stage', mentor: mm, headline: M.stage_clear, dialog: E.fill(M.mentor_outro, { name, mentor: E.first(mm) }), action: red ? 'celebrate' : W.poses.stageClear });
+    else if (v === 'items') {
+      const its = this.stageItemsView(sid);
+      Object.assign(vp, { screen: 'clear', kind: 'item', headline: M.item_head, items: its, dialog: E.fill(M.item_line, { item: its.map(i => i.name).join(', ') }) });
+    } else if (v === 'complete') Object.assign(vp, { screen: 'complete', headline: M.complete_head, sub: M.complete_sub, items: E.inventory(p).map(i => ({ icon: i.icon, owned: i.owned })), dialog: E.fill(M.complete_line, { name }) });
+    else if (v === 'badge') Object.assign(vp, { screen: 'badge', date: p.completedAt || E.today() });
+    return vp;
+  }
+  stageRows() {
+    const E = window.KAIE, st = this.curStep(), sid = this.state.stage, s = this.state;
+    const opts = { key: sid + '/' + st.id, facts: this.facts(), sel: s.alt, showAll: s.showAll, layout: this.settings().layout };
+    const rows = E.flatten(st.blocks, opts);
+    if (s.status === 'failed') {
+      rows.push({ type: 'trouble', key: opts.key + '/t', inset: 0 });
+      E.flatten(st.check.fail, { ...opts, key: opts.key + '/fail', inset: 1 }, rows);
+    }
+    return rows;
+  }
+
+  renderVals() {
+    const E = window.KAIE, s = this.state;
+    const base = {
+      goMap: () => this.goMap(), goLoadout: () => this.goLoadout(), toggleSettings: () => this.setState({ settingsOpen: !this.state.settingsOpen, resetArmed: false }),
+      newGame: () => this.newGame(), continueGame: () => this.continueGame(), loadoutDone: () => this.loadoutDone(),
+      didIt: () => this.didIt(), didNot: () => this.didNot(), resetProgress: () => this.resetProgress(),
+      nameDone: () => this.nameDone(), characterDone: () => this.characterDone(), mentorDone: () => this.go('stage'), goBadge: () => this.go('badge'), downloadBadge: () => this.downloadBadge(),
+      onName: e => this.setState({ nameDraft: e.target.value.slice(0, (E.W && E.W.player.nameMax) || 12) }), onNameKey: e => { if (e.key === 'Enter') this.nameDone(); },
+      settingsOpen: s.settingsOpen, show: {}, vp: {}, rows: [], pills: [], stages: [], facts: [], recap: [], ctaCmds: [], settingGroups: [], clear: {}, characters: [], inventory: [],
+      skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', attribution: '', resetLabel: 'Reset progress', nameVal: '', playerName: ''
+    };
+    if (!s.ready || !E.ready() || !s.p) return base;
+    const W = E.W, L = W.labels, M = W.messages, p = s.p, v = s.view, mode = this.palette(), pg = E.page(mode), name = this.pname();
+    const fsz = { s: [16, 17], m: [18, 19], l: [20, 21] }[this.settings().text] || [18, 19];
+    const rootVars = Object.entries(pg).map(([k, c]) => '--' + k + ':' + c + ';').join('') + '--fs:' + fsz[0] + 'px;--fsCode:' + fsz[1] + 'px;';
+    const sid = s.stage, th = E.themeStage(sid), sc = E.stage(sid), g = E.stageProgress(p, sid), tot = E.totals(p), ids = E.stageIds(), plan = E.mentorPlan(name);
+    const so = !s.settingsOpen;
+    const show = { title: v === 'title' && so, name: v === 'name' && so, character: v === 'character' && so, loadout: v === 'loadout' && so, map: v === 'map' && so, mentor: v === 'mentor' && so, stage: v === 'stage' && so,
+      clearStep: v === 'clear-step' && so, clearStage: v === 'clear-stage' && so, items: v === 'items' && so, complete: v === 'complete' && so, badge: v === 'badge' && so };
+    const out = { ...base, rootVars, show, vp: this.vpProps(), plainUrl: W.links.plainView, attribution: W.attribution + ' Kairos is a CNCF sandbox project.', playerName: name };
+    const steps = this.steps(), st = this.curStep(), no = E.stageNo(sid);
+    out.crumb = { title: 'Title screen', name: 'New game · your name', character: 'New game · your look', loadout: 'Loadout', map: 'Route · ' + (tot.cleared + tot.skipped) + ' of ' + tot.stages + ' stops done',
+      mentor: 'Stop ' + no + ' · ' + th.location + ' · your mentor', stage: 'Stop ' + no + ' · ' + th.location + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length,
+      'clear-step': 'Stop ' + no + ' · step cleared', 'clear-stage': 'Stop ' + no + ' cleared', items: 'New items', complete: 'Workshop complete', badge: 'Your badge' }[v] || '';
+    out.showMapBtn = !['title', 'name', 'character', 'map'].includes(v) && p.started && !!p.character;
+
+    out.noSave = !p.started; out.continueLabel = p.started ? 'Continue as ' + name + ' · ' + tot.done + '/' + tot.total + ' steps' : 'Continue';
+    // name + character
+    out.nameVal = s.nameDraft ?? ''; out.nameMax = W.player.nameMax; out.nameDefault = W.player.defaultName;
+    out.nameHint = 'Leave it empty and KAI calls you “' + W.player.defaultName + '”.';
+    out.characters = W.player.characters.map((c, i) => { const sel = i === s.charCursor; return { label: c.label, desc: c.desc, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', pick: () => this.setState({ charCursor: i }), ref: el => { if (!el) return; const x = el.getContext('2d'); x.clearRect(0, 0, 16, 16); E.draw(x, E.S.frames['p-' + c.id + '-down'], E.pal(mode, 'player'), 0, 0); } }; });
+    // loadout
+    out.facts = E.C.facts.map(f => ({ label: f.label, question: f.question, options: f.options.concat([{ id: 'unsure', label: 'Not sure yet' }]).map(o => {
+      const sel = p.facts[f.id] === o.id;
+      return { label: o.label, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', pick: () => this.setFact(f.id, o.id) };
+    }) }));
+    out.loadoutDoneLabel = s.returnView && !['title', 'loadout', 'map', 'name', 'character'].includes(s.returnView) ? 'Save and go back' : 'Start the trip ▶';
+    // mentor
+    const mm = E.mentor(name, sid);
+    out.mentorCard = { name: mm.name, country: mm.country, stageNo: no, location: th.location, intro: E.fill(M.mentor_intro, { mentor: E.first(mm), goal: sc.goal }), ref: el => E.drawPortrait(el, mm.id, mode) };
+    // map
+    out.mapSummary = (tot.cleared + tot.skipped) + ' of ' + tot.stages + ' stops done' + (tot.skipped ? ' (' + tot.skipped + ' skipped)' : '') + ' · ' + tot.done + ' of ' + tot.total + ' steps · ' + p.xp + ' XP';
+    out.stages = ids.map((id, i) => {
+      const state = E.stageState(p, id), gg = E.stageProgress(p, id), t2 = E.themeStage(id), m2 = E.W.mentors.find(x => x.id === plan[id]);
+      const prev = ids[i - 1];
+      return {
+        id, no: i + 1, location: t2.location, title: E.stage(id).title, locked: state === 'locked', ariaCurrent: state === 'current' ? 'step' : 'false',
+        stateLabel: { cleared: '✓ Cleared', current: '▶ Current', skipped: '» Skipped', locked: 'Locked' }[state],
+        detail: 'with ' + m2.name + (state === 'locked' ? ' · finish or skip stop ' + i + ' first' : state === 'skipped' ? ' · come back any time' : (gg.side ? ' · ' + gg.sideDone + '/' + gg.side + ' side quests' : '')),
+        count: gg.done + '/' + gg.total + ' steps', pct: gg.total ? Math.round(100 * gg.done / gg.total) : 0,
+        bg: i === s.mapCursor ? 'var(--surface2)' : 'var(--surface)', cursor: state === 'locked' ? 'not-allowed' : 'pointer',
+        canSkip: state === 'current', skipLabel: L.skip, skip: () => this.askSkip(id),
+        open: () => this.openStage(id), iconRef: el => E.drawPortrait(el, m2.id, mode)
+      };
+    });
+    if (s.skipAsk) { const t2 = E.themeStage(s.skipAsk); out.skipAsk = { open: true, no: E.stageNo(s.skipAsk), location: t2.location, yes: () => this.doSkip(), no2: () => this.setState({ skipAsk: null }), yesLabel: L.skip_confirm, noLabel: L.skip_cancel }; }
+    // stage
+    if (st) {
+      out.stageId = no; out.location = th.location; out.stageTitle = sc.title;
+      out.stepTitle = st.title; out.stepNum = Math.min(s.step, steps.length - 1) + 1; out.stepCount = steps.length;
+      out.isOptional = !!st.optional; out.sideQuestLabel = L.side_quest + ' · ' + L.optional;
+      out.pills = steps.map((x, i) => {
+        const d = !!p.done[E.stepKey(sid, x.id)], cur = i === s.step;
+        return { label: d ? '✓' : x.optional ? '☆' : String(i + 1), current: cur ? 'step' : 'false', go: () => this.goStep(i),
+          aria: 'Step ' + (i + 1) + ': ' + x.title + (d ? ', done' : '') + (x.optional ? ', side quest' : ''), bg: cur ? 'var(--ink)' : 'transparent', fg: cur ? 'var(--surface)' : 'var(--ink)' };
+      });
+      out.rows = v === 'stage' ? this.stageRows().map(r => this.decorate(r)) : [];
+      out.checkPrompt = st.check.prompt;
+      const isDone = !!p.done[E.stepKey(sid, st.id)];
+      out.isDone = isDone; out.notDone = !isDone; out.isFailed = s.status === 'failed';
+      out.didItLabel = L.did_it; out.didNotLabel = L.did_not_work;
+      out.nextLabel = s.step < steps.length - 1 ? 'Next step ▶' : 'Route ▶';
+      out.nextStep = () => s.step < steps.length - 1 ? this.goStep(s.step + 1) : this.goMap();
+      out.prevStep = () => this.goStep(Math.max(0, s.step - 1)); out.skipNext = () => this.goStep(Math.min(steps.length - 1, s.step + 1));
+      out.noPrev = s.step <= 0; out.noNext = s.step >= steps.length - 1;
+    }
+    // transitions
+    const c = s.clear || {};
+    if (v === 'clear-step') {
+      const ns = steps[this.nextIndex()];
+      out.clear = { title: c.optional ? 'Side quest done' : 'Step cleared', detail: '+' + (c.xp || 0) + ' XP · ' + g.done + ' of ' + g.total + ' steps done at ' + th.location + (c.optional ? '. Side quests don\'t count toward progress.' : '.'),
+        next: () => this.clearNext(), nextLabel: c.stageCleared ? 'Stage clear ▶' : (ns && ns !== st ? 'Next: ' + ns.title + (ns.optional ? ' (side quest)' : '') + ' ▶' : 'Continue ▶') };
+    } else if (v === 'clear-stage') {
+      out.clear = { title: 'Stop ' + no + ' cleared', outro: E.fill(M.mentor_outro, { name, mentor: E.first(mm) }), detail: sc.title + ' · ' + g.done + ' of ' + g.total + ' steps' + (g.side ? ' · ' + g.sideDone + ' of ' + g.side + ' side quests' : ''),
+        portraitRef: el => E.drawPortrait(el, mm.id, mode),
+        steps: steps.map(x => ({ mark: p.done[E.stepKey(sid, x.id)] ? '✓' : x.optional ? '☆' : '·', label: x.title + (x.optional ? ' (side quest' + (p.done[E.stepKey(sid, x.id)] ? '' : ', skipped') + ')' : '') })),
+        next: () => this.clearNext(), nextLabel: E.stageItems(sid).length ? 'Collect your items ▶' : 'Route ▶' };
+    } else if (v === 'items') {
+      const its = this.stageItemsView(sid);
+      out.clear = { title: its.length > 1 ? 'New items' : 'New item', items: its.map(it => ({ ...it, ref: el => E.drawIcon(el, it.icon, mode) })), next: () => this.clearNext(), nextLabel: E.allDone(p) ? 'Finish the workshop ▶' : 'Route ▶' };
+    }
+    // complete
+    out.recapSummary = p.xp + ' XP · ' + tot.done + ' of ' + tot.total + ' steps · ' + tot.cleared + ' stops cleared' + (tot.skipped ? ', ' + tot.skipped + ' skipped' : '') + ' · ' + tot.side + ' side quests';
+    out.recap = ids.map((id, i) => { const gg = E.stageProgress(p, id), st2 = E.stageState(p, id), m2 = E.W.mentors.find(x => x.id === plan[id]); return { no: i + 1, location: E.themeStage(id).location, title: E.stage(id).title, mentor: E.first(m2), count: st2 === 'skipped' ? '» skipped' : gg.done + '/' + gg.total + (gg.side ? ' · ☆ ' + gg.sideDone + '/' + gg.side : ''), iconRef: el => E.drawPortrait(el, m2.id, mode) }; });
+    out.inventory = [];
+    E.inventory(p).forEach(it => {
+      if (it.mega) {
+        out.inventory.push({ name: it.name + ' ' + it.have + '/' + it.total, note: it.parts.map(x => x.n + ' ' + x.label + (x.owned ? ' ✓' : x.soon ? ' · ' + L.coming_soon.toLowerCase() : ' · ' + M.unknown_item)).join(' · '), border: 'solid', ref: el => E.drawIcon(el, it.owned ? it.icon : 'unknown', mode) });
+        it.parts.filter(x => x.soon).forEach(x => out.inventory.push({ name: L.coming_soon, note: it.name + ' part ' + x.n + ': ' + x.label, border: 'dashed', ref: el => E.drawIcon(el, x.icon, mode) }));
+      } else out.inventory.push({ name: it.owned ? it.name : M.unknown_item, note: it.owned ? it.desc : 'Clear stop ' + E.stageNo(it.stage) + ' to reveal it.', border: it.owned ? 'solid' : 'dashed', ref: el => E.drawIcon(el, it.owned ? it.icon : 'unknown', mode) });
+    });
+    out.ctaLabel = L.cta;
+    const inst = E.stage(ids[0]).steps[0].blocks.find(b => b.type === 'alternatives');
+    out.ctaCmds = inst ? inst.items.slice(0, 2).filter(it => E.matches(it.only, p.facts)).map((it, i) => {
+      const b = it.blocks.find(x => x.type === 'command'), key = 'cta/' + i;
+      return { label: it.label + ' · ' + E.onlyText(it.only), ...this.cmdModel(key, b.code, E.cmdLines(b.code), '', true) };
+    }) : [];
+    // badge
+    out.badgeRef = el => this.drawBadge(el, 1);
+    out.badgeAria = 'Kairos workshop badge for ' + name + ', ' + (p.completedAt || E.today());
+    out.downloadLabel = L.download_badge;
+    // settings
+    const set = this.settings(), sysRed = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const opt = (k, val, label, extra) => { const sel = set[k] === val; return { label, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', pick: () => this.setSetting(k, val), hasSwatch: false, swatch: [], ...(extra || {}) }; };
+    out.settingGroups = [
+      { label: 'Palette', hint: 'Changes the game screen and this page.', options: [['dmg', 'DMG'], ['kairos', 'Kairos'], ['gbc', 'Color']].map(([k, l]) => opt('palette', k, l, { hasSwatch: true, swatch: E.pal(k, 'ui') })) },
+      { label: 'Motion', hint: 'Reduced motion shows a still KAI and a still character: no walking, no jumping, no typing effect. Your system setting is ' + (sysRed ? 'reduced.' : 'full motion.'), options: [opt('motion', 'system', 'Follow system'), opt('motion', 'reduce', 'Reduce motion'), opt('motion', 'full', 'Full motion')] },
+      { label: 'Text size', hint: 'Instructions and commands. The game screen keeps its pixel size.', options: [opt('text', 's', 'Small'), opt('text', 'm', 'Medium'), opt('text', 'l', 'Large')] },
+      { label: 'Alternatives', hint: 'How to show “pick one” options, like the install methods.', options: [opt('layout', 'tabs', 'Tabs'), opt('layout', 'stacked', 'Stacked')] }
+    ];
+    out.resetLabel = s.resetArmed ? 'Click again to erase progress' : 'Reset progress';
+    return out;
+  }
+}
+</script>
+</body>
+</html>

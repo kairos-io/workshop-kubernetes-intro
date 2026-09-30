@@ -3,3 +3,4 @@ kairos-operator-upgrade.yaml
 .DS_Store
 node_modules/
 _site/
+/kai/tui/kai

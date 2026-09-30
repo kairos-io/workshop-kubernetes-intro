@@ -32,9 +32,11 @@ jobs:
         run: npm test
       - name: Generated markdown is up to date
         run: npm run publish:md -- --check
+      - name: Game content is up to date
+        run: npm run compile:kai -- --check --out kai/web
 
   lint:
     uses: kairos-io/linting-composite-action/.github/workflows/reusable-linting.yaml@972437ebe252f9cb30f19dba30727080d1bddea7  # main on 2026-08-26
     with:
       is-go: false
-      yamldirs: "stages conformance .github"
+      yamldirs: "stages conformance kai .github"

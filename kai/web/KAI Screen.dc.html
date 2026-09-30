@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<script src="kai-engine.js"></script>
+<style>body{margin:0;}a{color:inherit;}a:hover{color:inherit;}</style>
+</helmet>
+<div ref="{{ wrapRef }}" style="width:100%;display:flex;justify-content:center;">
+  <div onClick="{{ advance }}" role="group" aria-label="{{ ariaLabel }}" style="position:relative;overflow:hidden;flex:none;cursor:pointer;user-select:none;width:{{ outerW }}px;height:{{ outerH }}px;background:#9bbc0f;">
+    <div style="position:absolute;left:0;top:0;width:160px;height:144px;transform:scale({{ scale }});transform-origin:0 0;font-family:'Press Start 2P',monospace;font-size:8px;line-height:8px;white-space:pre;{{ cssVars }}">
+      <canvas ref="{{ canvasRef }}" width="160" height="144" aria-hidden="true" style="position:absolute;left:0;top:0;width:160px;height:144px;image-rendering:pixelated;"></canvas>
+      <sc-for list="{{ texts }}" as="t" hint-placeholder-count="0">
+        <div style="position:absolute;left:{{ t.x }}px;top:{{ t.y }}px;width:{{ t.w }}px;text-align:{{ t.align }};font-size:{{ t.fs }}px;line-height:{{ t.fs }}px;color:{{ t.c }};">{{ t.s }}</div>
+      </sc-for>
+      <sc-for list="{{ buttons }}" as="b" hint-placeholder-count="0">
+        <button onClick="{{ b.on }}" disabled="{{ b.disabled }}" aria-label="{{ b.aria }}" style="position:absolute;left:{{ b.x }}px;top:{{ b.y }}px;width:{{ b.w }}px;height:{{ b.h }}px;padding:0;margin:0;border:0;background:transparent;cursor:pointer;font:inherit;color:transparent;"></button>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:432},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;title&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;stage&quot;,&quot;clear&quot;,&quot;fail&quot;,&quot;complete&quot;],&quot;default&quot;:&quot;stage&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:&quot;dmg&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;action&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;idle&quot;,&quot;point&quot;,&quot;read&quot;,&quot;think&quot;,&quot;celebrate&quot;,&quot;walk&quot;,&quot;walk-down&quot;,&quot;roll&quot;,&quot;jump&quot;,&quot;talk&quot;,&quot;happy&quot;,&quot;sad&quot;,&quot;sleep&quot;,&quot;wave&quot;],&quot;default&quot;:&quot;point&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;dialog&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Install kairos-lab. Every hero needs a lab!&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;kind&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;step&quot;,&quot;stage&quot;,&quot;tool&quot;],&quot;default&quot;:&quot;step&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;headline&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;sub&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;tool&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;maxScale&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;},&quot;hud&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{stage:number,done:number,total:number,xp:number}&quot;},&quot;menu&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{label:string,disabled?:boolean}[]&quot;},&quot;cursor&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;loadout&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{fact:string,value:string}[]&quot;},&quot;map&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{id:number,state:string,done:number,total:number}[]&quot;},&quot;mapCursor&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;onMenu&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(i:number)=&gt;void&quot;},&quot;onMap&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(i:number)=&gt;void&quot;},&quot;onAdvance&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;()=&gt;void&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, chars: 0, page: 0, blink: true, w: 0 };
+  tick = 0;
+  ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(es => {
+    const w = Math.floor(es[0].contentRect.width);
+    if (Math.abs(w - this.state.w) > 1) this.setState({ w });
+  }) : null;
+
+  componentDidMount() {
+    const E = window.KAIE;
+    E.load().then(() => { this.setState({ ready: true }); setTimeout(() => this.draw(), 30); }).catch(e => console.error('KAI load', e));
+    let n = 0;
+    this.iv = setInterval(() => {
+      n++;
+      if (!E.ready()) return;
+      const red = this.reduced(), d = this.dialog();
+      if (d && this.state.chars < d.total) this.setState({ chars: red ? d.total : this.state.chars + 1 });
+      if (n % 3 === 0) {
+        this.tick++;
+        this.draw();
+        if (!red && this.tick % 4 === 0) this.setState({ blink: !this.state.blink });
+      }
+    }, 40);
+  }
+  componentWillUnmount() { clearInterval(this.iv); if (this.ro) this.ro.disconnect(); }
+  componentDidUpdate(pp) {
+    if (pp.dialog !== this.props.dialog || pp.screen !== this.props.screen) this.setState({ page: 0, chars: this.reduced() ? 9999 : 0 });
+    if (pp.palette !== this.props.palette || pp.cursor !== this.props.cursor || pp.mapCursor !== this.props.mapCursor) this.draw();
+  }
+
+  reduced() {
+    if (this.props.reduceMotion != null) return !!this.props.reduceMotion;
+    return typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+  screen() { return this.props.screen ?? 'stage'; }
+  mode() { return this.props.palette ?? 'dmg'; }
+  scaleVal() {
+    if (typeof this.props.scale === 'number') return this.props.scale;
+    const w = this.state.w || 480;
+    return Math.max(1, Math.min(this.props.maxScale ?? 3, Math.floor(w / 160)));
+  }
+  dialogText() {
+    const s = this.screen();
+    if (this.props.dialog != null) return this.props.dialog;
+    if (s === 'title' || s === 'badge') return null;
+    return '';
+  }
+  dialog() {
+    const t = this.dialogText();
+    if (t == null || t === '') return null;
+    const lines = window.KAIE.wrap(t, 18), pages = [];
+    for (let i = 0; i < lines.length; i += 3) pages.push([lines[i] || '', lines[i + 1] || '', lines[i + 2] || '']);
+    const p = pages[this.state.page % pages.length] || ['', '', ''];
+    return { pages, p, total: p[0].length + p[1].length + p[2].length };
+  }
+  advance() {
+    const d = window.KAIE.ready() && this.dialog();
+    if (d) {
+      if (this.state.chars < d.total) this.setState({ chars: d.total });
+      else if (d.pages.length > 1) this.setState({ page: (this.state.page + 1) % d.pages.length, chars: this.reduced() ? 9999 : 0 });
+    }
+    if (this.props.onAdvance) this.props.onAdvance();
+  }
+  stops() { const E = window.KAIE; const n = (this.props.map || []).length || E.stageIds().length; return E.routeStops(n); }
+  mapOrigin() {
+    const E = window.KAIE, st = this.stops(), eu = E.S.europe, c = st[this.props.mapCursor ?? 0] || st[0];
+    return [Math.max(0, Math.min(eu.w - 160, c[0] - 80)), Math.max(0, Math.min(eu.h - 77, c[1] - 40))];
+  }
+  europe(mode) {
+    this.eu = this.eu || {};
+    if (this.eu[mode]) return this.eu[mode];
+    const E = window.KAIE, eu = E.S.europe, Wc = E.pal(mode, 'world'), cv = document.createElement('canvas');
+    cv.width = eu.w; cv.height = eu.h;
+    const x = cv.getContext('2d'), L = (a, b) => eu.rows[b] && eu.rows[b][a] === '1';
+    for (let y = 0; y < eu.h; y++) for (let a = 0; a < eu.w; a++) {
+      const land = L(a, y), coast = land && (!L(a - 1, y) || !L(a + 1, y) || !L(a, y - 1) || !L(a, y + 1));
+      x.fillStyle = coast ? Wc[2] : land ? Wc[1] : ((a + y * 3) % 13 === 0 ? Wc[1] : Wc[0]);
+      x.fillRect(a, y, 1, 1);
+    }
+    return (this.eu[mode] = cv);
+  }
+  player(x, px, py, sc, pose, t, red) {
+    const E = window.KAIE, P = this.props.player || {}, f = E.pframe(P.style, pose, t, red);
+    E.draw(x, f.map, E.pal(this.mode(), 'player'), px, py + f.dy * sc, { scale: sc, flip: f.flip });
+  }
+  ppose(kai) { return ({ point: 'point', read: 'read', sad: 'sad', celebrate: 'celebrate', jump: 'celebrate', happy: 'happy', think: 'idle', wave: 'happy', 'walk-down': 'walk-down', walk: 'walk-right' })[kai] || 'idle'; }
+
+  draw() {
+    const E = window.KAIE, c = this.canvas;
+    if (!c || !E.ready()) return;
+    const x = c.getContext('2d'), m = this.mode(), red = this.reduced();
+    const U = E.pal(m, 'ui'), Wc = E.pal(m, 'world'), K = E.pal(m, 'kai'), I = E.pal(m, 'icons');
+    const s = this.screen(), t = red ? 0 : this.tick, P = this.props;
+    E.rect(x, U[0], 0, 0, 160, 144);
+    const kai = (px, py, sc, anim) => {
+      const f = E.frame(anim, t, red);
+      let flip = f.flip;
+      if (!red && f.anim.patrol) { const L = 100, v = t % (2 * L); px = 30 + (v < L ? v : 2 * L - v); flip = v >= L; }
+      if (f.anim.shadow && f.dy < 0) E.draw(x, E.S.tiles.shadow, Wc, px, py + 14 * sc, { scale: sc });
+      E.draw(x, f.map, K, px, py + f.dy * sc, { scale: sc, flip });
+      const ov = f.anim.overlay, bob = red ? 0 : (t >> 1) % 2;
+      if (ov === 'z') { const k = t % 16; E.draw(x, E.S.tiles.z, K, px + 13 * sc, py - 2 - Math.floor(k / 2), { mono: 3 }); }
+      if (ov === 'arrow') E.draw(x, E.S.tiles.arrow, U, px + 18 * sc, py + 8 * sc + bob * 2, { mono: 3 });
+      if (ov === 'dots') { const n = red ? 3 : 1 + (t >> 2) % 3; for (let i = 0; i < n; i++) E.rect(x, U[3], px + 15 * sc + i * 3, py - 2, 2, 2); }
+      if (ov === 'sparkle' && (red || t % 4 < 2)) [[-6, 2], [18, -2], [20, 12], [-4, 14]].forEach(([a, b]) => E.draw(x, E.S.tiles.sparkle, U, px + a * sc, py + b * sc, { mono: 2 }));
+      return px;
+    };
+    const who = (px, py, sc, anim) => { this.player(x, px, py, sc, this.ppose(anim), t, red); kai(px + 18 * sc, py, sc, anim); };
+    const arrowDown = () => {
+      const d = this.dialog();
+      if (d && this.state.chars >= d.total && (red || this.state.blink) && d.pages.length > 1) [7, 5, 3, 1].forEach((w, i) => E.rect(x, U[3], 148 + i, 134 + i, w, 1));
+    };
+    const hudBar = (done, total, bx, bw) => {
+      E.rect(x, U[0], 0, 0, 160, 19); E.rect(x, U[3], 0, 18, 160, 1);
+      E.rect(x, U[3], bx, 10, bw, 6); E.rect(x, U[0], bx + 1, 11, bw - 2, 4);
+      E.rect(x, U[2], bx + 1, 11, total ? Math.round((bw - 2) * done / total) : 0, 4);
+    };
+    const cursorAt = (cx, cy) => E.draw(x, E.S.tiles.cursor, U, cx, cy, { mono: 3 });
+    const corners = (nx, ny, w, h) => [[-3, -3, 1, 1], [w + 1, -3, -1, 1], [-3, h + 2, 1, -1], [w + 1, h + 2, -1, -1]].forEach(([a, b, dx, dy]) => { E.rect(x, U[3], nx + a, ny + b, 3, 1); E.rect(x, U[3], nx + a + (dx < 0 ? 2 : 0), ny + b + (dy < 0 ? -2 : 0), 1, 3); });
+    const portrait = (id, px, py, sc) => { const mm = E.W.mentors.find(q => q.id === id); if (mm) E.draw(x, E.S.portraits[mm.portrait], E.pal(m, 'portrait'), px, py, { scale: sc || 1 }); };
+
+    if (s === 'stage') {
+      const th = E.themeStage(P.hud ? P.hud.stage : E.stageIds()[0]);
+      E.tile(x, E.S.tiles.grass, Wc, 0, 19, 160, 77);
+      E.tile(x, E.S.tiles.path, Wc, 0, 64, 160, 16);
+      for (let i = 0; i < 10; i++) E.draw(x, E.S.tiles.tree, Wc, i * 16, 19);
+      const nodes = P.nodes ?? th.nodes;
+      for (let i = 0; i < nodes; i++) {
+        const nx = 136 - i * 18;
+        E.draw(x, E.S.tiles.node, Wc, nx, 40);
+        if (!red && (t + i) % 4 < 2) [3, 7, 11].forEach(r => E.rect(x, Wc[2], nx + 3, 40 + r, 3, 1));
+      }
+      who(26, 58, 1, P.action || 'point');
+      hudBar(P.hud ? P.hud.done : 0, P.hud ? P.hud.total : 0, 80, 34);
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    } else if (s === 'title') {
+      E.draw(x, E.S.logos.kairos, E.pal(m, 'kairos'), 44, 6, { scale: 2 });
+      E.draw(x, E.S.logos.hadron, E.pal(m, 'hadron'), 84, 6, { scale: 2 });
+      E.tile(x, E.S.tiles.path, Wc, 0, 74, 160, 18);
+      kai(72, 75, 1, P.action || (red ? 'idle' : 'walk'));
+      E.box(x, U, 20, 94, 120, 46);
+      cursorAt(30, 101 + (P.cursor ?? 0) * 12);
+    } else if (s === 'name') {
+      E.box(x, U, 12, 22, 136, 22);
+      if (red || this.state.blink) { const n = String(P.nameText || '').length; E.rect(x, U[3], 20 + n * 8, 38, 7, 1); }
+      E.tile(x, E.S.tiles.path, Wc, 0, 58, 160, 34);
+      kai(72, 64, 1, P.action || 'wave');
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    } else if (s === 'character') {
+      const chars = E.W.player.characters, cur = P.cursor ?? 0;
+      chars.forEach((ch, i) => {
+        const px = 12 + i * 52, f = E.pframe(ch.id, i === cur ? 'walk-down' : 'idle', t, red);
+        if (i === cur) E.box(x, U, px - 6, 16, 44, 60);
+        E.draw(x, f.map, E.pal(m, 'player'), px, 24 + f.dy * 2, { scale: 2, flip: f.flip });
+      });
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    } else if (s === 'loadout') {
+      kai(138, 1, 1, P.action || 'idle');
+      (P.loadout || []).forEach((r, i) => {
+        const y = 20 + i * 18, sel = i === (P.cursor ?? 0);
+        E.box(x, U, 4, y, 152, 17, sel);
+        E.draw(x, E.S.icons['fact-' + r.fact] || E.S.icons.check, sel ? [U[3], U[3], U[0], U[0]] : I, 8, y + 5, sel ? { mono: 3 } : {});
+        if (sel) E.draw(x, E.S.tiles.cursor, U, 56, y + 6, { mono: 0 });
+      });
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    } else if (s === 'map') {
+      const st = P.map || [], pos = this.stops(), [ox, oy] = this.mapOrigin();
+      x.drawImage(this.europe(m), ox, oy, 160, 77, 0, 19, 160, 77);
+      const V = ([a, b]) => [a - ox, b - oy + 19], inView = (a, b) => b >= 19 && b < 96 && a > -8 && a < 168;
+      for (let i = 0; i < pos.length - 1; i++) {
+        const [ax, ay] = V(pos[i]), [bx, by] = V(pos[i + 1]), n = Math.max(1, Math.abs(bx - ax), Math.abs(by - ay));
+        for (let k = 0; k <= n; k += 2) { const px = Math.round(ax + (bx - ax) * k / n), py = Math.round(ay + (by - ay) * k / n); if (inView(px, py)) E.rect(x, Wc[3], px, py, 1, 1); }
+      }
+      const cur = st.findIndex(q => q.state === 'current');
+      pos.forEach((p0, i) => {
+        const [nx, ny] = V(p0), state = (st[i] && st[i].state) || 'locked';
+        if (!inView(nx, ny)) return;
+        E.draw(x, E.S.icons.town, Wc, nx - 4, ny - 4, state === 'locked' || state === 'skipped' ? { mono: 2 } : {});
+        if (state === 'locked') E.draw(x, E.S.icons.lock, I, nx, ny - 1);
+        if (state === 'cleared') E.draw(x, E.S.icons.check, I, nx - 4, ny - 13);
+        if (state === 'skipped') { E.rect(x, U[3], nx - 5, ny - 12, 10, 2); }
+      });
+      if (cur >= 0) { const [nx, ny] = V(pos[cur]); if (inView(nx, ny)) this.player(x, nx - 8, ny - 20, 1, red ? 'idle' : 'walk-down', t, red); }
+      const mc = P.mapCursor ?? Math.max(0, cur), [cx, cy] = V(pos[mc] || pos[0]);
+      if (red || this.state.blink) corners(cx - 4, cy - 4, 8, 8);
+      const q = st[mc];
+      if (q && q.mentor) { const left = cx > 60, bx = left ? 2 : 126; E.box(x, U, bx, 21, 32, 32); portrait(q.mentor, bx + 4, 25); }
+      const passed = st.filter(q => q.state === 'cleared' || q.state === 'skipped').length;
+      hudBar(passed, st.length || 1, 4, 56);
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    } else if (s === 'mentor') {
+      E.box(x, U, 6, 6, 148, 58);
+      E.rect(x, U[2], 10, 12, 52, 46); portrait(P.mentor && P.mentor.id, 12, 12, 2);
+      E.tile(x, E.S.tiles.path, Wc, 0, 70, 160, 22);
+      who(58, 72, 1, P.action || 'wave');
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    } else if (s === 'clear' || s === 'fail' || s === 'complete' || s === 'badge') {
+      const kind = P.kind || 'step';
+      if (s === 'badge') {
+        E.drawBadge(x, m, P.player && P.player.name, P.date, 0, 0);
+      } else if (s === 'clear' && kind === 'item') {
+        const its = (P.items || []).slice(0, 3), w = its.length * 48, sx = Math.floor((160 - w) / 2);
+        its.forEach((it, i) => { E.box(x, U, sx + i * 48 + 6, 20, 36, 36); const ic = E.S.icons[it.icon] || E.S.icons.unknown; E.draw(x, ic, I, sx + i * 48 + 12, 26, { scale: 3 }); });
+        this.player(x, 56, 74, 1, 'happy', t, red); kai(76, 74, 1, 'happy');
+      } else if (s === 'clear' && kind === 'stage') {
+        E.box(x, U, 8, 22, 32, 32); portrait(P.mentor && P.mentor.id, 12, 26);
+        kai(60, 24, 2, P.action || (red ? 'celebrate' : 'jump'));
+        this.player(x, 118, 38, 1, 'celebrate', t, red);
+      } else if (s === 'complete') {
+        who(52, 26, 1, 'celebrate');
+        const its = P.items || [], w = its.length * 9, sx = Math.floor((160 - w) / 2);
+        its.forEach((it, i) => E.draw(x, E.S.icons[it.owned ? it.icon : 'unknown'] || E.S.icons.unknown, I, sx + i * 9, 80, it.owned ? {} : { mono: 2 }));
+      } else {
+        const anim = P.action || (s === 'fail' ? 'sad' : 'celebrate');
+        this.player(x, 40, 30, 2, this.ppose(anim), t, red);
+        kai(84, 30, 2, anim);
+      }
+      E.box(x, U, 0, 96, 160, 48); arrowDown();
+    }
+  }
+
+  layout() {
+    const E = window.KAIE, P = this.props, s = this.screen(), W = E.W, M = W.messages;
+    const T = [], B = [];
+    const tx = (x, y, str, o) => T.push({ x, y, s: String(str), w: (o && o.w) || 160 - x, align: (o && o.align) || 'left', fs: (o && o.fs) || 8, c: (o && o.c) || 'var(--c3)' });
+    const center = (y, str, o) => T.push({ x: (o && o.x) || 0, y, s: String(str), w: (o && o.w) || 160, align: 'center', fs: (o && o.fs) || 8, c: (o && o.c) || 'var(--c3)' });
+    const d = this.dialog();
+    if (d) { let c = this.state.chars; d.p.forEach((l, i) => { tx(8, 104 + i * 12, l.slice(0, Math.max(0, c))); c -= l.length; }); }
+    const pname = String((P.player && P.player.name) || '').toUpperCase();
+    if (s === 'stage') {
+      const h = P.hud || { stage: E.stageIds()[0], done: 0, total: 0 }, th = E.themeStage(h.stage);
+      tx(4, 2, 'ST' + E.stageNo(h.stage)); tx(32, 2, th.location);
+      tx(4, 10, pname.slice(0, 9));
+      tx(0, 10, h.done + '/' + h.total, { w: 156, align: 'right' });
+    } else if (s === 'map') {
+      const st = P.map || [], passed = st.filter(q => q.state === 'cleared' || q.state === 'skipped').length;
+      tx(4, 2, M.map_title); tx(0, 2, pname.slice(0, 12), { w: 156, align: 'right' });
+      tx(64, 10, passed + '/' + (st.length || 0));
+      tx(0, 10, 'XP' + String((P.hud && P.hud.xp) || 0).padStart(4, '0'), { w: 156, align: 'right' });
+      const [ox, oy] = this.mapOrigin();
+      this.stops().forEach(([a, b], i) => { const nx = a - ox, ny = b - oy + 19; if (ny >= 19 && ny < 96 && nx > -8 && nx < 168) B.push({ x: nx - 7, y: ny - 7, w: 14, h: 14, aria: 'Stop ' + (i + 1), disabled: false, on: e => { e.stopPropagation(); P.onMap && P.onMap(i); } }); });
+    } else if (s === 'title') {
+      center(40, W.game.title, { fs: 16 }); center(60, W.game.edition);
+      (P.menu || M.title_menu.map(l => ({ label: l }))).forEach((it, i) => {
+        tx(40, 101 + i * 12, it.disabled ? '(' + it.label + ')' : it.label);
+        B.push({ x: 24, y: 98 + i * 12, w: 112, h: 12, aria: it.label, disabled: !!it.disabled, on: e => { e.stopPropagation(); P.onMenu && P.onMenu(i); } });
+      });
+    } else if (s === 'name') {
+      center(8, M.name_prompt);
+      tx(20, 30, String(P.nameText || '').toUpperCase().slice(0, 12));
+    } else if (s === 'character') {
+      center(6, M.character_prompt);
+      W.player.characters.forEach((ch, i) => {
+        center(80, i === (P.cursor ?? 0) ? '[' + ch.label.toUpperCase() + ']' : ch.label.toUpperCase(), { x: 2 + i * 52, w: 52 });
+        B.push({ x: 6 + i * 52, y: 16, w: 44, h: 72, aria: ch.label, disabled: false, on: e => { e.stopPropagation(); P.onMenu && P.onMenu(i); } });
+      });
+    } else if (s === 'loadout') {
+      tx(8, 6, 'LOADOUT');
+      (P.loadout || []).forEach((r, i) => {
+        const y = 20 + i * 18, sel = i === (P.cursor ?? 0), col = sel ? 'var(--c0)' : 'var(--c3)';
+        tx(20, y + 5, (M.loadout_labels[r.fact] || r.fact).padEnd(4), { c: col });
+        tx(64, y + 5, String(r.value).toUpperCase().slice(0, 11), { c: col });
+        B.push({ x: 4, y, w: 152, h: 17, aria: r.fact, disabled: false, on: e => { e.stopPropagation(); P.onMenu && P.onMenu(i); } });
+      });
+    } else if (s === 'mentor') {
+      const mm = P.mentor || {}, parts = String(mm.name || '').toUpperCase().split(' ');
+      tx(64, 14, 'MENTOR');
+      tx(64, 26, (parts[0] || '').slice(0, 11));
+      if (parts.length > 1) tx(64, 36, parts.slice(1).join(' ').slice(0, 11));
+      tx(64, 50, String(mm.country || '').toUpperCase().slice(0, 11));
+    } else if (s === 'clear' || s === 'fail' || s === 'complete') {
+      const kind = P.kind || 'step';
+      if (P.headline) center(8, P.headline);
+      if (kind === 'item' && s === 'clear') (P.items || []).slice(0, 3).forEach((it, i, arr) => { const sx = Math.floor((160 - arr.length * 48) / 2); center(60, it.sub || '', { x: sx + i * 48, w: 48 }); });
+      else if (P.sub) center(s === 'complete' ? 66 : 68, P.sub);
+    }
+    return { T, B };
+  }
+
+  renderVals() {
+    const E = window.KAIE, ready = this.state.ready && E.ready();
+    const scale = this.scaleVal();
+    const base = {
+      scale, outerW: 160 * scale, outerH: 144 * scale,
+      wrapRef: el => { if (el && el !== this.wrap) { this.wrap = el; if (this.ro) this.ro.observe(el); } },
+      canvasRef: el => { this.canvas = el; if (el) this.draw(); },
+      advance: () => this.advance()
+    };
+    if (!ready) return { ...base, cssVars: '', texts: [], buttons: [], ariaLabel: 'Game screen' };
+    const U = E.pal(this.mode(), 'ui');
+    const { T, B } = this.layout();
+    return {
+      ...base,
+      cssVars: `--c0:${U[0]};--c1:${U[1]};--c2:${U[2]};--c3:${U[3]};`,
+      texts: T, buttons: B,
+      ariaLabel: 'Game screen: ' + (this.props.dialog || this.screen())
+    };
+  }
+}
+</script>
+</body>
+</html>
