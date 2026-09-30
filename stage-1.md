@@ -72,12 +72,15 @@ If your shell says the command is not found, `~/.local/bin` is not on your
 ## Not using kairos-lab? Get AuroraBoot yourself
 
 If you are using your own virtualization software, `kairos-lab setup` does not
-run for you, so you need the AuroraBoot container image instead. It needs a
-container runtime, Docker or Podman.
+run for you, so you need to get AuroraBoot yourself. There are two ways:
 
-Wherever the workshop says `auroraboot build-iso ...`, you run the container
-instead. The examples below are the command from the end of
-[stage 3](stage-3.md).
+- Run the AuroraBoot container image. It needs a container runtime, Docker or
+  Podman. This works on Linux and on macOS.
+- On Linux only, build AuroraBoot locally and run it as a normal command.
+
+Wherever the workshop says `auroraboot build-iso ...`, you either run the
+container or use your local build instead. The examples below are the command
+from the end of [stage 3](stage-3.md).
 
 ### Docker
 
@@ -120,6 +123,55 @@ mkdir -p build && sudo podman run -it --rm \
   quay.io/kairos/auroraboot:latest \
   build-iso --output /result ttl.sh/stage-2:24h
 ```
+
+### Build it locally (Linux only)
+
+Use this if you would rather have a plain `auroraboot` command than run the
+container.
+
+> [!WARNING]
+> **Do not build AuroraBoot on macOS. Use the container instead.** AuroraBoot is
+> built for Linux. To make an ISO it calls Linux tools (`xorriso`, `mtools`,
+> `mkfs.fat`, `mksquashfs`), it creates files owned by root, and it expects
+> boot files that only exist inside its container image. macOS has none of
+> that, so a build made there will not give you a working `auroraboot`. The
+> container is a Linux system with everything in place, which is why Docker and
+> Podman work on macOS.
+
+You need:
+
+- Go, at the version in AuroraBoot's [`go.mod`](https://github.com/kairos-io/AuroraBoot/blob/main/go.mod)
+  (1.26 at the time of writing).
+- Node.js with npm, to build the web UI that is embedded in the binary.
+- A C compiler, because one dependency (SQLite) is built with cgo.
+- The tools AuroraBoot calls while it builds an ISO: at least `xorriso`,
+  `mtools`, `dosfstools` and `squashfs-tools`. The container image installs a
+  longer list (see the [`Dockerfile`](https://github.com/kairos-io/AuroraBoot/blob/main/Dockerfile)),
+  because it also builds raw disks and UKIs. If a build complains about a
+  missing tool, install it.
+
+Build it:
+
+```bash
+git clone https://github.com/kairos-io/AuroraBoot.git
+cd AuroraBoot
+make build
+```
+
+`make build` builds the web UI and then the Go binary, `./auroraboot`.
+
+Run it as root, because it changes file ownership to root while it unpacks the
+image. This is the same as the container command above:
+
+```bash
+sudo ./auroraboot build-iso --output ./build stage-2:v1.0.0
+```
+
+The files in `./build` belong to root.
+
+If the build stops with `could not find any shim file to copy`, the image does
+not include a shim. The container carries a fallback for that case and a local
+build does not, so use the container for that image.
 
 You do not need to run these now. You will use them at the end of stage 3.
 
