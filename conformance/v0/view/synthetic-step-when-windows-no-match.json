@@ -1,0 +1,14 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-step-when.yaml",
+  "facts": {
+    "os": "windows"
+  },
+  "expect": [
+    {"kind":"section","title":"Always here","state":"shown"},
+    {"kind":"step","id":"everyone","state":"shown"},
+    {"kind":"command","text":"echo everyone"},
+    {"kind":"step","id":"installers","state":"shown"},
+    {"kind":"no-match","step":"installers"},
+    {"kind":"check","checkKind":"command-available"}
+  ]
+}

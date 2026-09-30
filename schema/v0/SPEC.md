@@ -125,3 +125,28 @@ A warning has a `kind`: `note`, `tip`, `important`, `warning` or `caution`. They
 ## Versioning
 
 The format string names the version. A reader accepts only formats it knows. Changes in v0 are not recorded. From v1, every change is recorded here.
+
+## The visible outline
+
+The visible outline is a flat, ordered list of records that says what a reader shows for a stage and a set of facts. It lets different readers check that they show the same things. `tools/lib/view.mjs` is the reference implementation. The files in `conformance/v0/view/` hold the expected outlines.
+
+Each case file is `{ "stage": <path relative to the repository root>, "facts": {...}, "expect": [...] }`.
+
+The outline follows the render order above and leaves out prose fields (`text`, `after`, `onFail`, titles of steps and variants). An item that is hidden is absent, and so is everything inside it. Records:
+
+| Record | Fields |
+|---|---|
+| section | `kind: "section"`, `title`, `state` |
+| step | `kind: "step"`, `id`, `state` |
+| variant | `kind: "variant"`, `id`, `state` |
+| warning | `kind: "warning"`, `warningKind`, `state` |
+| command | `kind: "command"`, `text` (one entry of `commands`, unchanged) |
+| expect | `kind: "expect"` |
+| check | `kind: "check"`, `checkKind` |
+| no-match | `kind: "no-match"`, `step` (a visible step with variants where every variant is hidden) |
+
+`state` is `shown` when the item's `when` evaluates to `true` or the item has no `when`, and `conditional` when it evaluates to `unknown`. The state of an item does not depend on the state of the items around it.
+
+Order inside a section: its warnings, then its steps. Order inside a step: its warnings, then its variants (each with its warnings, commands and expect), then `no-match` if no variant is visible, then its commands and expect, then its check.
+
+A reader must produce the same outline as the case file for every case in `conformance/v0/view/`. The stages the cases refer to are `stages/stage-1.yaml` and the synthetic stages in `conformance/v0/fixtures/`.

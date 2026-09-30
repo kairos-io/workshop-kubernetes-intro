@@ -1,0 +1,15 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-step-when.yaml",
+  "facts": {
+    "os": "macos"
+  },
+  "expect": [
+    {"kind":"section","title":"Always here","state":"shown"},
+    {"kind":"step","id":"everyone","state":"shown"},
+    {"kind":"command","text":"echo everyone"},
+    {"kind":"step","id":"installers","state":"shown"},
+    {"kind":"variant","id":"brew","state":"shown"},
+    {"kind":"command","text":"brew install tool"},
+    {"kind":"check","checkKind":"command-available"}
+  ]
+}

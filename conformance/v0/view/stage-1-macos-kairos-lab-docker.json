@@ -1,0 +1,28 @@
+{
+  "stage": "stages/stage-1.yaml",
+  "facts": {
+    "os": "macos",
+    "virtualization": "kairos-lab",
+    "runtime": "docker"
+  },
+  "expect": [
+    {"kind":"section","title":"Before we begin","state":"shown"},
+    {"kind":"section","title":"Installing kairos-lab","state":"shown"},
+    {"kind":"step","id":"install-kairos-lab","state":"shown"},
+    {"kind":"variant","id":"homebrew","state":"shown"},
+    {"kind":"command","text":"brew tap kairos-io/kairos\nbrew install kairos-lab\n"},
+    {"kind":"variant","id":"from-source","state":"shown"},
+    {"kind":"command","text":"git clone https://github.com/kairos-io/kairos-lab.git && cd kairos-lab\ngo build -o kairos-lab ./cmd/kairos-lab\n"},
+    {"kind":"variant","id":"release-binary","state":"shown"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"check","checkKind":"command-available"},
+    {"kind":"section","title":"Set up dependencies","state":"shown"},
+    {"kind":"step","id":"kairos-lab-setup","state":"shown"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"variant","id":"docker","state":"shown"},
+    {"kind":"command","text":"kairos-lab setup"},
+    {"kind":"step","id":"auroraboot-version","state":"shown"},
+    {"kind":"command","text":"auroraboot --version"},
+    {"kind":"check","checkKind":"command-available"}
+  ]
+}

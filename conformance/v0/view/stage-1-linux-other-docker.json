@@ -1,0 +1,24 @@
+{
+  "stage": "stages/stage-1.yaml",
+  "facts": {
+    "os": "linux",
+    "virtualization": "other",
+    "runtime": "docker"
+  },
+  "expect": [
+    {"kind":"section","title":"Before we begin","state":"shown"},
+    {"kind":"section","title":"Not using kairos-lab? Get AuroraBoot yourself","state":"shown"},
+    {"kind":"step","id":"pull-auroraboot","state":"shown"},
+    {"kind":"variant","id":"docker","state":"shown"},
+    {"kind":"command","text":"docker pull quay.io/kairos/auroraboot:latest"},
+    {"kind":"check","checkKind":"image-exists"},
+    {"kind":"step","id":"run-auroraboot-container","state":"shown"},
+    {"kind":"variant","id":"docker","state":"shown"},
+    {"kind":"command","text":"mkdir -p build && docker run -it --rm \\\n  -v /var/run/docker.sock:/var/run/docker.sock \\\n  -v $PWD/build:/result \\\n  quay.io/kairos/auroraboot:latest \\\n  build-iso --output /result stage-2:v1.0.0\n"},
+    {"kind":"section","title":"Build it locally (Linux only)","state":"shown"},
+    {"kind":"step","id":"build-auroraboot","state":"shown"},
+    {"kind":"command","text":"git clone https://github.com/kairos-io/AuroraBoot.git\ncd AuroraBoot\nmake build\n"},
+    {"kind":"step","id":"run-auroraboot-local","state":"shown"},
+    {"kind":"command","text":"sudo ./auroraboot build-iso --output ./build stage-2:v1.0.0"}
+  ]
+}

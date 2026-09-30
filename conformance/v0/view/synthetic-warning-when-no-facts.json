@@ -1,0 +1,20 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-warning-when.yaml",
+  "facts": {},
+  "expect": [
+    {"kind":"section","title":"Visible section","state":"shown"},
+    {"kind":"warning","warningKind":"warning","state":"conditional"},
+    {"kind":"warning","warningKind":"tip","state":"shown"},
+    {"kind":"step","id":"run","state":"shown"},
+    {"kind":"warning","warningKind":"caution","state":"conditional"},
+    {"kind":"variant","id":"fast","state":"conditional"},
+    {"kind":"warning","warningKind":"note","state":"conditional"},
+    {"kind":"command","text":"echo fast"},
+    {"kind":"variant","id":"slow","state":"conditional"},
+    {"kind":"command","text":"echo slow"},
+    {"kind":"section","title":"Hidden section","state":"conditional"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"step","id":"inside","state":"shown"},
+    {"kind":"command","text":"echo inside"}
+  ]
+}

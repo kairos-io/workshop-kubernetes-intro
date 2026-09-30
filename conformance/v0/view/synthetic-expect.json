@@ -1,0 +1,14 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-expect.yaml",
+  "facts": {},
+  "expect": [
+    {"kind":"section","title":"Run it","state":"shown"},
+    {"kind":"step","id":"run","state":"shown"},
+    {"kind":"command","text":"echo one"},
+    {"kind":"command","text":"echo two"},
+    {"kind":"expect"},
+    {"kind":"check","checkKind":"vm-running"},
+    {"kind":"step","id":"no-output","state":"shown"},
+    {"kind":"command","text":"echo quiet"}
+  ]
+}

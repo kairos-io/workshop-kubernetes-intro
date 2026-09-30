@@ -1,0 +1,41 @@
+format: kairos-workshop/v0
+id: synthetic-warning-when
+title: Warnings with their own condition
+sections:
+  - title: Visible section
+    warnings:
+      - kind: warning
+        when: { os: macos }
+        text: Only for macOS.
+      - kind: tip
+        text: For everyone.
+    steps:
+      - id: run
+        warnings:
+          - kind: caution
+            when: { os: [windows, linux], arch: arm64 }
+            text: Only for Windows or Linux on arm64.
+        variants:
+          - id: fast
+            title: Fast
+            when: { os: linux }
+            warnings:
+              - kind: note
+                when: { arch: amd64 }
+                text: amd64 note.
+            commands:
+              - echo fast
+          - id: slow
+            title: Slow
+            when: { os: windows }
+            commands:
+              - echo slow
+  - title: Hidden section
+    when: { os: macos, runtime: podman }
+    warnings:
+      - kind: note
+        text: Never shown unless the section shows.
+    steps:
+      - id: inside
+        commands:
+          - echo inside

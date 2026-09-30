@@ -1,0 +1,21 @@
+{
+  "stage": "stages/stage-1.yaml",
+  "facts": {
+    "os": "macos",
+    "virtualization": "other",
+    "runtime": "podman"
+  },
+  "expect": [
+    {"kind":"section","title":"Before we begin","state":"shown"},
+    {"kind":"section","title":"Not using kairos-lab? Get AuroraBoot yourself","state":"shown"},
+    {"kind":"step","id":"pull-auroraboot","state":"shown"},
+    {"kind":"variant","id":"podman","state":"shown"},
+    {"kind":"command","text":"podman pull quay.io/kairos/auroraboot:latest"},
+    {"kind":"check","checkKind":"image-exists"},
+    {"kind":"step","id":"run-auroraboot-container","state":"shown"},
+    {"kind":"variant","id":"podman","state":"shown"},
+    {"kind":"command","text":"mkdir -p build && sudo podman run -it --rm \\\n  -v /var/run/docker.sock:/var/run/docker.sock:Z \\\n  -v $PWD/build:/result \\\n  quay.io/kairos/auroraboot:latest \\\n  build-iso --output /result ttl.sh/stage-2:24h\n"},
+    {"kind":"section","title":"Build it locally (Linux only)","state":"shown"},
+    {"kind":"warning","warningKind":"warning","state":"shown"}
+  ]
+}

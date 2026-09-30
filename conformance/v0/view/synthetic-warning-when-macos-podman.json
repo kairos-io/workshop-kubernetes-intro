@@ -1,0 +1,19 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-warning-when.yaml",
+  "facts": {
+    "os": "macos",
+    "arch": "arm64",
+    "runtime": "podman"
+  },
+  "expect": [
+    {"kind":"section","title":"Visible section","state":"shown"},
+    {"kind":"warning","warningKind":"warning","state":"shown"},
+    {"kind":"warning","warningKind":"tip","state":"shown"},
+    {"kind":"step","id":"run","state":"shown"},
+    {"kind":"no-match","step":"run"},
+    {"kind":"section","title":"Hidden section","state":"shown"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"step","id":"inside","state":"shown"},
+    {"kind":"command","text":"echo inside"}
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-warning-when.yaml",
+  "facts": {
+    "os": "linux",
+    "arch": "amd64",
+    "runtime": "docker"
+  },
+  "expect": [
+    {"kind":"section","title":"Visible section","state":"shown"},
+    {"kind":"warning","warningKind":"tip","state":"shown"},
+    {"kind":"step","id":"run","state":"shown"},
+    {"kind":"variant","id":"fast","state":"shown"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"command","text":"echo fast"}
+  ]
+}
