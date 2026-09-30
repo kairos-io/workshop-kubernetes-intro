@@ -1,0 +1,7 @@
+# expect-error: a workshop stage file path is outside stages/
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+stages:
+  - file: ../evil.yaml

@@ -1,0 +1,9 @@
+# expect-error: a check of kind shell is not a v0 kind
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: shell, run: "test -f x" }

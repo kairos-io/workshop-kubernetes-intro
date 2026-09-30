@@ -1,0 +1,6 @@
+# expect-error: the format string is not v0
+format: kairos-workshop/v1
+id: bad
+title: Bad
+sections:
+  - title: X

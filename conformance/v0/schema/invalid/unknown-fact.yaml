@@ -1,0 +1,7 @@
+# expect-error: a when uses a fact that does not exist
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    when: { distro: ubuntu }

@@ -1,0 +1,23 @@
+{
+  "format": "kairos-workshop/v0",
+  "comment": "Rows of when, facts and the expected result of the three-valued evaluation. Every reader must produce the same result for every row.",
+  "rows": [
+    { "name": "scalar hit", "when": { "os": "macos" }, "facts": { "os": "macos" }, "result": "true" },
+    { "name": "scalar miss", "when": { "os": "macos" }, "facts": { "os": "linux" }, "result": "false" },
+    { "name": "list hit", "when": { "os": ["macos", "linux"] }, "facts": { "os": "linux" }, "result": "true" },
+    { "name": "list miss", "when": { "os": ["macos", "linux"] }, "facts": { "os": "windows" }, "result": "false" },
+    { "name": "single item list hit", "when": { "runtime": ["podman"] }, "facts": { "runtime": "podman" }, "result": "true" },
+    { "name": "unset key", "when": { "os": "macos" }, "facts": { "runtime": "docker" }, "result": "unknown" },
+    { "name": "two keys both hit", "when": { "os": "linux", "runtime": "docker" }, "facts": { "os": "linux", "runtime": "docker" }, "result": "true" },
+    { "name": "two keys one miss", "when": { "os": "linux", "runtime": "docker" }, "facts": { "os": "linux", "runtime": "podman" }, "result": "false" },
+    { "name": "two keys both miss", "when": { "os": "linux", "runtime": "docker" }, "facts": { "os": "macos", "runtime": "podman" }, "result": "false" },
+    { "name": "one hit one unset", "when": { "os": "linux", "runtime": "docker" }, "facts": { "os": "linux" }, "result": "unknown" },
+    { "name": "one miss one unset gives false", "when": { "os": "linux", "runtime": "docker" }, "facts": { "os": "macos" }, "result": "false" },
+    { "name": "all unset", "when": { "os": "linux", "runtime": "docker" }, "facts": { "arch": "arm64" }, "result": "unknown" },
+    { "name": "empty facts", "when": { "os": "macos" }, "facts": {}, "result": "unknown" },
+    { "name": "empty facts, two keys", "when": { "os": "macos", "virtualization": "kairos-lab" }, "facts": {}, "result": "unknown" },
+    { "name": "empty string value counts as unset", "when": { "os": "macos" }, "facts": { "os": "" }, "result": "unknown" },
+    { "name": "irrelevant fact set", "when": { "os": "macos" }, "facts": { "os": "macos", "arch": "arm64" }, "result": "true" },
+    { "name": "no when", "when": null, "facts": { "os": "linux" }, "result": "true" }
+  ]
+}

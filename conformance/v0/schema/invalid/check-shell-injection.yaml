@@ -1,0 +1,9 @@
+# expect-error: a command-available check carries shell metacharacters
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: command-available, command: "kairos-lab; rm -rf ~" }

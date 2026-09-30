@@ -1,0 +1,12 @@
+# expect-error: a step has both commands and variants
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    steps:
+      - id: s
+        commands: [ls]
+        variants:
+          - { id: a, title: A, when: { os: linux }, commands: [ls] }
+          - { id: b, title: B, when: { os: macos }, commands: [ls] }

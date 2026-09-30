@@ -1,0 +1,6 @@
+# expect-error: a title holds angle brackets
+format: kairos-workshop/v0
+id: bad
+title: "Bad <b>title</b>"
+sections:
+  - title: X

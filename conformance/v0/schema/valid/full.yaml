@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=../../../../schema/v0/stage.schema.json
+format: kairos-workshop/v0
+id: full
+title: "A stage that uses every field"
+docs:
+  - title: A doc
+    url: https://example.com/docs
+sections:
+  - title: Section with a condition
+    when: { virtualization: kairos-lab }
+    text: |
+      Some **markdown** with a [link](https://example.com) and a table:
+
+      | a | b |
+      |---|---|
+      | 1 | 2 |
+    warnings:
+      - kind: note
+        text: A note.
+      - kind: tip
+        text: A tip.
+      - kind: important
+        when: { os: [macos, linux] }
+        text: Important.
+      - kind: warning
+        text: A warning.
+      - kind: caution
+        when: { os: windows, arch: arm64 }
+        text: A caution.
+    steps:
+      - id: with-variants
+        title: Step with variants
+        when: { os: linux }
+        optional: true
+        text: Pick one.
+        warnings:
+          - kind: note
+            text: Read this first.
+        variants:
+          - id: docker
+            title: Docker
+            when: { runtime: docker }
+            text: Before.
+            warnings:
+              - kind: tip
+                text: A variant tip.
+            commands:
+              - docker version
+              - |
+                docker run --rm hello-world
+            expect: |
+              Hello from Docker!
+            after: After.
+          - id: podman
+            title: Podman
+            when: { runtime: podman }
+            commands:
+              - podman version
+        check: { kind: image-exists, image: "quay.io/kairos/auroraboot:latest" }
+        onFail: The image did not pull.
+      - id: with-commands
+        commands:
+          - echo hello
+        expect: hello
+        after: Done.
+        check: { kind: command-available, command: kairos-lab }
+      - id: iso
+        check: { kind: iso-exists }
+      - id: vm
+        check: { kind: vm-running, name: my-vm }
+      - id: vm-any
+        check: { kind: vm-running }
+        onFail: Start the VM.
+      - id: prose-only
+        text: A step that is only text.
+  - title: Section with no steps
+    text: Just text.

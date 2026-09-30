@@ -1,0 +1,10 @@
+# expect-error: a step has a single variant
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X
+    steps:
+      - id: s
+        variants:
+          - { id: a, title: A, commands: [ls] }
