@@ -3,8 +3,13 @@ import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadWorkshop } from "./lib/load.mjs";
 import { conditionLabel, checkSentence } from "./lib/labels.mjs";
+import { rewriteStageLinks } from "./lib/links.mjs";
 
 const trim = (s) => s.replace(/\s+$/, "");
+
+const unresolved = (id) => {
+  throw new Error(`cannot resolve a link to stage "${id}" without a workshop`);
+};
 
 // A code fence longer than any run of backticks inside the code.
 function fence(code, info) {
@@ -15,21 +20,24 @@ function fence(code, info) {
 
 // Render one converted stage as GitHub markdown. This is a reader with no facts set:
 // every conditional item shows with its condition written out below its heading.
-// `next` is { title, file } or null.
-export function renderStage(stage, next) {
+// `n` is the 1-based position of the stage in workshop.yaml. `next` is { n, title, file } or null.
+// `stageHref(id, anchor)` resolves a `stage:` link to a file name and an optional anchor.
+export function renderStage(stage, { n, next, stageHref = unresolved } = {}) {
   const blocks = [];
   const add = (text) => blocks.push(text);
+  // Markdown from the stage file, with links to other stages resolved.
+  const md = (text) => rewriteStageLinks(trim(text), stageHref);
 
   const only = (when) => when && add(`*Only if you use: ${conditionLabel(when)}.*`);
   const warnings = (list) => {
     for (const w of list ?? []) {
       const prefix = w.when ? `**If you use ${conditionLabel(w.when)}:** ` : "";
-      const lines = (prefix + trim(w.text)).split("\n");
+      const lines = (prefix + md(w.text)).split("\n");
       add([`> [!${w.kind.toUpperCase()}]`, ...lines.map((l) => (l ? `> ${l}` : ">"))].join("\n"));
     }
   };
   const body = (b) => {
-    if (b.text) add(trim(b.text));
+    if (b.text) add(md(b.text));
     warnings(b.warnings);
   };
   const commands = (b) => {
@@ -38,11 +46,11 @@ export function renderStage(stage, next) {
       add("Expected output:");
       add(fence(b.expect, "text"));
     }
-    if (b.after) add(trim(b.after));
+    if (b.after) add(md(b.after));
   };
 
   add(`<!-- Generated from stages/${stage.id}.yaml by tools/publish-md.mjs. Do not edit by hand. -->`);
-  add(`# ${stage.title}`);
+  add(`# Stage ${n}: ${stage.title}`);
   if (stage.docs) add(["Docs:", ...stage.docs.map((d) => `  - [${d.title}](${d.url})`)].join("\n"));
 
   for (const section of stage.sections) {
@@ -61,10 +69,10 @@ export function renderStage(stage, next) {
       }
       commands(step);
       if (step.check) add(`*Check: ${checkSentence(step.check)}*`);
-      if (step.onFail) add(`<details><summary>If it does not work</summary>\n\n${trim(step.onFail)}\n\n</details>`);
+      if (step.onFail) add(`<details><summary>If it does not work</summary>\n\n${md(step.onFail)}\n\n</details>`);
     }
   }
-  if (next) add(`→ [${next.title}](${next.file})`);
+  if (next) add(`→ [Stage ${next.n}: ${next.title}](${next.file})`);
   return blocks.join("\n\n") + "\n";
 }
 
@@ -77,11 +85,13 @@ function main(argv) {
     for (const e of loaded.errors) console.error(`error: ${e}`);
     return 1;
   }
+  const byId = new Map(loaded.stages.map((x) => [x.id, x]));
+  const stageHref = (id, anchor) => `${byId.get(id).outFile}${anchor ? `#${anchor}` : ""}`;
   let stale = 0;
   for (const s of loaded.stages.filter((x) => x.kind === "converted")) {
-    const name = `${s.id}.md`;
+    const name = s.outFile;
     const path = join(root, name);
-    const text = renderStage(s.doc, s.next);
+    const text = renderStage(s.doc, { n: s.n, next: s.next, stageHref });
     if (check) {
       if (!existsSync(path) || readFileSync(path, "utf8") !== text) {
         console.error(`${name} is generated from ${s.file}. Edit the YAML and run \`npm run publish:md\`.`);

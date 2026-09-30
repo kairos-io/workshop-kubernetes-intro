@@ -6,5 +6,6 @@ repository: kairos-io/sample
 intro: |
   Some intro.
 stages:
-  - file: stages/stage-1.yaml
-  - { id: stage-2, title: "Stage 2", markdown: stage-2.md }
+  - file: stages/first-one.yaml
+  - { id: second-one, title: "Second", goal: do the second thing, markdown: stage-2.md }
+  - { id: third-one, title: "Third", markdown: stage-3.md }

@@ -1,0 +1,8 @@
+# expect-error: a stage link names a stage id that is not in the workshop
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    text: See [another stage](stage:no-such-stage).

@@ -2,5 +2,6 @@
 format: kairos-workshop/v1
 id: bad
 title: Bad
+goal: try the example
 sections:
   - title: X

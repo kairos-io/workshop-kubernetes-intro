@@ -1,6 +1,7 @@
 format: kairos-workshop/v0
 id: synthetic-warning-when
 title: Warnings with their own condition
+goal: try the example
 sections:
   - title: Visible section
     warnings:

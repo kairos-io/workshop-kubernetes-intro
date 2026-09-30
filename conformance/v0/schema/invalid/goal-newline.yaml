@@ -1,8 +1,7 @@
-# expect-error: a when has no key
+# expect-error: a goal holds a newline
 format: kairos-workshop/v0
 id: bad
 title: Bad
-goal: try the example
+goal: "set up\nthe lab"
 sections:
   - title: X
-    when: {}

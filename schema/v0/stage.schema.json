@@ -8,6 +8,7 @@
     "format",
     "id",
     "title",
+    "goal",
     "sections"
   ],
   "properties": {
@@ -19,6 +20,9 @@
     },
     "title": {
       "$ref": "#/$defs/plain"
+    },
+    "goal": {
+      "$ref": "#/$defs/goal"
     },
     "docs": {
       "type": "array",
@@ -370,7 +374,7 @@
         {
           "enum": [
             "kairos-lab",
-            "other"
+            "own"
           ]
         },
         {
@@ -380,7 +384,7 @@
           "items": {
             "enum": [
               "kairos-lab",
-              "other"
+              "own"
             ]
           }
         }
@@ -389,6 +393,12 @@
     "expect": {
       "type": "string",
       "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[^\\n<>`*\\[\\]]*$"
     }
   }
 }

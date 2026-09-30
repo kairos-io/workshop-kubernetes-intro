@@ -1,0 +1,11 @@
+# expect-error: a stage link is written as a reference link, which publishers do not resolve
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    text: |
+      See [the lab][lab].
+
+      [lab]: stage:kairos-lab

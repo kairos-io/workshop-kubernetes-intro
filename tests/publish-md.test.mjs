@@ -13,15 +13,18 @@ import { view } from "../tools/lib/view.mjs";
 import { githubSlug } from "../tools/lib/slug.mjs";
 
 const root = new URL("../", import.meta.url).pathname;
-const stage = parse(readFileSync(join(root, "stages/stage-1.yaml"), "utf8"));
-const next = loadWorkshop(root).stages[0].next;
-const output = renderStage(stage, next);
+const stage = parse(readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8"));
+const loaded = loadWorkshop(root);
+const byId = new Map(loaded.stages.map((x) => [x.id, x]));
+const stageHref = (id, anchor) => `${byId.get(id).outFile}${anchor ? `#${anchor}` : ""}`;
+const opts = { n: 1, next: loaded.stages[0].next, stageHref };
+const output = renderStage(stage, opts);
 const tokens = new MarkdownIt().parse(output, {});
 
 test("the first line is the generated-file banner", () => {
   assert.equal(
     output.split("\n")[0],
-    "<!-- Generated from stages/stage-1.yaml by tools/publish-md.mjs. Do not edit by hand. -->",
+    "<!-- Generated from stages/kairos-lab.yaml by tools/publish-md.mjs. Do not edit by hand. -->",
   );
 });
 
@@ -119,7 +122,7 @@ test("the output has no em dashes and no double blank lines", () => {
 });
 
 test("a second run is byte-identical", () => {
-  assert.equal(renderStage(stage, next), output);
+  assert.equal(renderStage(stage, opts), output);
 });
 
 test("the committed stage-1.md equals the generated output", () => {
@@ -129,7 +132,7 @@ test("the committed stage-1.md equals the generated output", () => {
 test("labels", () => {
   assert.equal(conditionLabel({ os: ["macos", "linux"] }), "macOS or Linux");
   assert.equal(conditionLabel({ os: "linux", runtime: "docker" }), "Linux, Docker");
-  assert.equal(conditionLabel({ virtualization: "other" }), "your own virtualization software");
+  assert.equal(conditionLabel({ virtualization: "own" }), "your own virtualization software");
   assert.equal(checkSentence({ kind: "command-available", command: "x" }), "the `x` command is available in a new terminal.");
   assert.equal(checkSentence({ kind: "image-exists", image: "a/b:c" }), "the `a/b:c` image is present in your container runtime.");
   assert.equal(checkSentence({ kind: "iso-exists" }), "the ISO file exists.");
@@ -138,8 +141,8 @@ test("labels", () => {
 });
 
 test("a fence is longer than any backtick run inside the command", () => {
-  const doc = { format: "kairos-workshop/v0", id: "x", title: "X", sections: [{ title: "S", steps: [{ id: "s", commands: ["echo '```'"] }] }] };
-  assert.ok(renderStage(doc, null).includes("````bash\necho '```'\n````"));
+  const doc = { format: "kairos-workshop/v0", id: "x", title: "X", goal: "try x", sections: [{ title: "S", steps: [{ id: "s", commands: ["echo '```'"] }] }] };
+  assert.ok(renderStage(doc, { n: 1 }).includes("````bash\necho '```'\n````"));
 });
 
 test("optional steps and step text render", () => {
@@ -151,7 +154,7 @@ function copyTree() {
   const dir = mkdtempSync(join(tmpdir(), "ws-pub-"));
   for (const f of ["workshop.yaml", "stage-1.md", "stage-2.md"]) cpSync(join(root, f), join(dir, f));
   mkdirSync(join(dir, "stages"));
-  cpSync(join(root, "stages/stage-1.yaml"), join(dir, "stages/stage-1.yaml"));
+  cpSync(join(root, "stages/kairos-lab.yaml"), join(dir, "stages/kairos-lab.yaml"));
   for (let n = 3; n <= 7; n++) writeFileSync(join(dir, `stage-${n}.md`), `# stage ${n}\n`);
   return dir;
 }
@@ -167,7 +170,7 @@ test("--check fails with a clear message when the file is stale", () => {
   writeFileSync(join(dir, "stage-1.md"), "# edited by hand\n");
   const r = run(dir, "--check");
   assert.equal(r.status, 1);
-  assert.match(r.stderr, /stage-1\.md is generated from stages\/stage-1\.yaml\. Edit the YAML and run `npm run publish:md`\./);
+  assert.match(r.stderr, /stage-1\.md is generated from stages\/kairos-lab\.yaml\. Edit the YAML and run `npm run publish:md`\./);
   assert.equal(readFileSync(join(dir, "stage-1.md"), "utf8"), "# edited by hand\n", "--check must not write");
 });
 
@@ -189,4 +192,43 @@ test("a normal run writes the file and leaves markdown stages alone", () => {
   const again = readFileSync(join(dir, "stage-1.md"), "utf8");
   run(dir);
   assert.equal(readFileSync(join(dir, "stage-1.md"), "utf8"), again);
+});
+
+// Numbers are positions, ids are slugs (A2).
+test("the heading number is the position in workshop.yaml, not part of the title", () => {
+  assert.equal(stage.title, "Setting up kairos-lab");
+  assert.equal(output.split("\n")[2], "# Stage 1: Setting up kairos-lab");
+  const doc = { format: "kairos-workshop/v0", id: "x", title: "X", goal: "try x", sections: [{ title: "S" }] };
+  assert.equal(renderStage(doc, { n: 5 }).split("\n")[2], "# Stage 5: X");
+});
+
+test("the generated file is named by position", () => {
+  assert.equal(byId.get("kairos-lab").outFile, "stage-1.md");
+  assert.equal(byId.get("kairos-lab").n, 1);
+  assert.equal(byId.get("build-image").outFile, "stage-3.md");
+  assert.equal(byId.get("build-image").n, 3);
+});
+
+test("the next link prints the next number and title", () => {
+  const doc = { format: "kairos-workshop/v0", id: "x", title: "X", goal: "try x", sections: [{ title: "S" }] };
+  const text = renderStage(doc, { n: 4, next: { n: 5, title: "Next one", file: "five.md" } });
+  assert.equal(text.trimEnd().split("\n").at(-1), "→ [Stage 5: Next one](five.md)");
+});
+
+// Links by id (A3).
+const linkDoc = (body) => ({
+  format: "kairos-workshop/v0", id: "x", title: "X", goal: "try x",
+  sections: [{ title: "S", text: body, warnings: [{ kind: "note", text: body }], steps: [{ id: "s", after: body, onFail: body, commands: ["echo [a](stage:build-image)"] }] }],
+});
+
+test("a stage link resolves to the generated or the markdown file name, with its anchor", () => {
+  const text = renderStage(linkDoc("See [a](stage:kairos-lab#before-we-begin) and [b](stage:build-image) and [c](stage:first-node)."), { n: 2, stageHref });
+  assert.ok(text.includes("See [a](stage-1.md#before-we-begin) and [b](stage-3.md) and [c](stage-2.md)."));
+  assert.ok(text.includes("> See [a](stage-1.md#before-we-begin)"));
+  assert.equal(text.split("stage:").length - 1, 1, "only the command keeps the text it was given");
+  assert.ok(text.includes("echo [a](stage:build-image)"), "commands are not markdown");
+});
+
+test("an unresolvable stage link is an error for the publisher", () => {
+  assert.throws(() => renderStage(linkDoc("[a](stage:nope)"), { n: 1, stageHref }));
 });

@@ -16,22 +16,41 @@ Files:
 
 A workshop is a list of stages. A stage is a list of sections. A section holds text, warnings and steps. A step holds text, warnings and either variants or commands. A variant holds text, warnings and commands.
 
-A stage in `workshop.yaml` is either a converted stage (`file: stages/<id>.yaml`) or a markdown stage (`id`, `title`, `markdown`). Readers show a markdown stage as a link and do not parse it.
+A stage in `workshop.yaml` is either a converted stage (`file: stages/<id>.yaml`) or a markdown stage (`id`, `title`, `markdown`, and an optional `goal`). Readers show a markdown stage as a link and do not parse it.
 
-Ids are lower case words joined by hyphens. Step ids are unique in a stage. Variant ids are unique in a step. The `id` in a stage file equals its file name without `.yaml`. A step has `variants` or `commands` and `expect`, never both. A step with `variants` has at least two.
+Ids are lower case words joined by hyphens. Stage ids are unique in a workshop. Step ids are unique in a stage. Variant ids are unique in a step. The `id` in a stage file equals its file name without `.yaml`. A step has `variants` or `commands` and `expect`, never both. A step with `variants` has at least two.
+
+## Stages
+
+A converted stage file has a `title`, a `goal` and `sections`.
+
+- `title` is plain text and does not hold a number. Write "Setting up kairos-lab", not "Stage 1: Setting up kairos-lab".
+- `goal` is a short verb phrase that finishes the sentence "Today we learn how to ...", for example `set up kairos-lab`. It is plain text: no markdown, no `<`, `>` or newline, and at most 60 characters. A converted stage requires it. A markdown stage entry in `workshop.yaml` can carry one with the same rules.
+- The `id` is a slug (`kairos-lab`, `first-node`) and never holds a number.
+
+The number of a stage is its 1-based position in `workshop.yaml`. A reader computes it and never stores it. Inserting a stage renumbers the ones after it and breaks no link. The markdown publisher writes a converted stage to `stage-<n>.md` and prints `# Stage <n>: <title>`.
+
+### Links between stages
+
+In any markdown field (`text`, `after`, warning `text`, `onFail`, and the workshop `intro`), a link whose target is `stage:<id>` or `stage:<id>#<anchor>` names another stage by id. Only the inline form `[text](stage:id)` is allowed.
+
+- A validator rejects an id that is not in `workshop.yaml`. For a converted stage it also checks that the anchor is one of that stage's section anchors. For a markdown stage it cannot check the anchor.
+- A publisher resolves the link. The markdown publisher writes `stage-<n>.md[#anchor]` for a converted stage, and the stage's `markdown` file name for a markdown stage. A reader that has no page for the stage can leave the link as it is.
 
 ## Facts
 
 A fact is something the reader knows about their own setup. The set of facts is fixed in v0.
 
-| Fact | Values | Question |
-|---|---|---|
-| `virtualization` | `kairos-lab`, `other` | How will you run the VMs? |
-| `os` | `linux`, `macos`, `windows` | What does your computer run? |
-| `arch` | `amd64`, `arm64` | What CPU architecture does your computer have? |
-| `runtime` | `docker`, `podman` | Which container runtime do you use? |
+| Fact | Label | Question | Values (option labels) |
+|---|---|---|---|
+| `virtualization` | Virtualization | What runs your VMs? | `kairos-lab` (kairos-lab), `own` (My own software) |
+| `os` | Operating system | What is your computer running? | `linux` (Linux), `macos` (macOS), `windows` (Windows) |
+| `arch` | Architecture | Which CPU architecture? | `amd64` (amd64), `arm64` (arm64) |
+| `runtime` | Container runtime | Which container runtime? | `docker` (Docker), `podman` (Podman) |
 
-Labels used in text: `kairos-lab` is "kairos-lab", `other` is "your own virtualization software", `linux` is "Linux", `macos` is "macOS", `windows` is "Windows", `amd64` is "amd64", `arm64` is "arm64", `docker` is "Docker", `podman` is "Podman".
+The label, the question and the option labels are what a game or a site shows when it asks the reader. `tools/lib/facts.mjs` is the source.
+
+Wording used inside a sentence: `kairos-lab` is "kairos-lab", `own` is "your own virtualization software", `linux` is "Linux", `macos` is "macOS", `windows` is "Windows", `amd64` is "amd64", `arm64` is "arm64", `docker` is "Docker", `podman` is "Podman".
 
 A fact can be unset. A reader must work with any subset of facts set.
 
@@ -118,13 +137,22 @@ Text fields (`text`, `after`, `onFail`, warning `text`) hold CommonMark with GFM
 - Raw HTML is not allowed.
 - GitHub alert syntax (`> [!NOTE]`) is not allowed. Use `warnings`.
 - Titles are plain text. They have no `<`, `>` or newline.
-- A relative link to a `.md` file must name a file that exists. A link with `#anchor` into a converted stage must match a section anchor of that stage.
+- A relative link to a `.md` file must name a file that exists. A link with `#anchor` into a converted stage must match a section anchor of that stage. A link to another stage by id, `stage:<id>`, follows the same anchor rule (see Links between stages).
 
 A warning has a `kind`: `note`, `tip`, `important`, `warning` or `caution`. They map to the five GitHub alert kinds.
 
 ## Versioning
 
-The format string names the version. A reader accepts only formats it knows. Changes in v0 are not recorded. From v1, every change is recorded here.
+The format string names the version. A reader accepts only formats it knows. Changes in v0 before its release are listed in the changelog. From v1, every change is recorded here.
+
+## Changelog
+
+Unreleased v0:
+
+- A stage file requires `goal`. A markdown stage entry in `workshop.yaml` can carry one.
+- Stage ids are slugs without numbers, and titles do not hold "Stage N:". The number is the position in `workshop.yaml`. The generated file is `stage-<n>.md`. Stage 1 moved from `stage-1` to `kairos-lab`.
+- Links between stages use `stage:<id>[#anchor]`, resolved by each publisher.
+- The `virtualization` value `other` is now `own`. Every fact and every option has a label and a question in `tools/lib/facts.mjs`.
 
 ## The visible outline
 
@@ -149,4 +177,4 @@ The outline follows the render order above and leaves out prose fields (`text`, 
 
 Order inside a section: its warnings, then its steps. Order inside a step: its warnings, then its variants (each with its warnings, commands and expect), then `no-match` if no variant is visible, then its commands and expect, then its check.
 
-A reader must produce the same outline as the case file for every case in `conformance/v0/view/`. The stages the cases refer to are `stages/stage-1.yaml` and the synthetic stages in `conformance/v0/fixtures/`.
+A reader must produce the same outline as the case file for every case in `conformance/v0/view/`. The stages the cases refer to are `stages/kairos-lab.yaml` and the synthetic stages in `conformance/v0/fixtures/`.

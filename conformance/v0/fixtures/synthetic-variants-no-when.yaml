@@ -1,6 +1,7 @@
 format: kairos-workshop/v0
 id: synthetic-variants-no-when
 title: Variants the reader picks, not facts
+goal: try the example
 sections:
   - title: Pick an option
     steps:

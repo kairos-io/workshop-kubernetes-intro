@@ -1,8 +1,8 @@
 {
-  "stage": "stages/stage-1.yaml",
+  "stage": "stages/kairos-lab.yaml",
   "facts": {
     "os": "macos",
-    "virtualization": "other",
+    "virtualization": "own",
     "runtime": "podman"
   },
   "expect": [

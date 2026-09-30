@@ -1,6 +1,7 @@
 format: kairos-workshop/v0
 id: synthetic-step-when
 title: A step that a fact hides as a whole
+goal: try the example
 sections:
   - title: Always here
     steps:

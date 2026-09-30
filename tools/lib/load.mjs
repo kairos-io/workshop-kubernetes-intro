@@ -74,7 +74,7 @@ function readYaml(root, file, errors) {
 
 // Load workshop.yaml and every converted stage under `root`.
 // Returns { ok: false, errors } or { ok: true, workshop, stages, facts }.
-// Each stage is { id, title, kind, file?, markdown?, doc?, slugs?, next, facts }.
+// Each stage is { id, title, goal, n, kind, file?, markdown?, outFile, doc?, slugs?, next, facts }.
 export function loadWorkshop(root) {
   const errors = [];
   const workshop = readYaml(root, "workshop.yaml", errors);
@@ -83,7 +83,9 @@ export function loadWorkshop(root) {
   if (!shape.ok) return { ok: false, errors: shape.errors.map((e) => `workshop.yaml: ${e}`) };
 
   const stages = workshop.stages.map((entry) => {
-    if (entry.markdown) return { id: entry.id, title: entry.title, kind: "markdown", markdown: entry.markdown, facts: [] };
+    if (entry.markdown) {
+      return { id: entry.id, title: entry.title, goal: entry.goal, kind: "markdown", markdown: entry.markdown, facts: [] };
+    }
     const raw = readYaml(root, entry.file, errors);
     if (!raw) return { id: entry.file, title: entry.file, kind: "converted", file: entry.file, facts: [], broken: true };
     const result = validateStageSchema(raw);
@@ -95,6 +97,7 @@ export function loadWorkshop(root) {
     return {
       id: doc.id,
       title: doc.title,
+      goal: doc.goal,
       kind: "converted",
       file: entry.file,
       doc,
@@ -106,9 +109,15 @@ export function loadWorkshop(root) {
 
   for (const s of stages) if (s.doc) s.slugs = uniqueSlugs(s.doc.sections.map((sec) => sec.title));
 
+  // Numbers are positions in workshop.yaml, counted from 1. A converted stage is published as
+  // stage-<n>.md. A markdown stage keeps the file name it names.
+  stages.forEach((s, i) => {
+    s.n = i + 1;
+    s.outFile = s.kind === "converted" ? `stage-${s.n}.md` : s.markdown;
+  });
   stages.forEach((s, i) => {
     const n = stages[i + 1];
-    s.next = n ? { id: n.id, title: n.title, file: n.kind === "converted" ? `${n.id}.md` : n.markdown, converted: n.kind === "converted" } : null;
+    s.next = n ? { id: n.id, title: n.title, n: n.n, file: n.outFile, converted: n.kind === "converted" } : null;
   });
   const used = new Set(stages.flatMap((s) => s.facts));
   return { ok: true, workshop, stages, facts: FACTS.filter((f) => used.has(f)) };

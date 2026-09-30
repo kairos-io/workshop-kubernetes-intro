@@ -2,6 +2,7 @@
 format: kairos-workshop/v0
 id: full
 title: "A stage that uses every field"
+goal: try the example
 docs:
   - title: A doc
     url: https://example.com/docs

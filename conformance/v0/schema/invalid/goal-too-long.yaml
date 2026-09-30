@@ -1,0 +1,7 @@
+# expect-error: a goal is longer than 60 characters
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: this goal goes on and on and on and on and on and on and on and on and on
+sections:
+  - title: X

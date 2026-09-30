@@ -1,6 +1,7 @@
 format: kairos-workshop/v0
 id: synthetic-expect
 title: A step with commands and expected output
+goal: try the example
 sections:
   - title: Run it
     steps:

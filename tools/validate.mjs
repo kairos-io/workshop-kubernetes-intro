@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import MarkdownIt from "markdown-it";
 import { loadWorkshop } from "./lib/load.mjs";
 import { githubSlug } from "./lib/slug.mjs";
+import { parseStageHref, countInlineStageLinks } from "./lib/links.mjs";
 
 // Parse with html: true so raw HTML shows up as tokens we can reject.
 const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
@@ -29,10 +30,23 @@ function checkMarkdown(text, where, ctx) {
     }
     if (ALERT.test(plain.join(""))) errors.push(`${where}: GitHub alert syntax is not allowed, use warnings`);
   }
+  // Publishers resolve the inline form only. A stage link written another way would pass through unresolved.
+  const parsed = md.parse(text, {}).flatMap((t) => t.children ?? []).filter((c) => c.type === "link_open" && c.attrGet("href")?.startsWith("stage:")).length;
+  if (parsed !== countInlineStageLinks(text)) errors.push(`${where}: write a stage link as [text](stage:id) or [text](stage:id#section)`);
   return errors;
 }
 
+// A `stage:<id>[#anchor]` link. The id must name a stage. For a converted stage the anchor must be a section slug.
+function checkStageLink(href, ctx) {
+  const { id, anchor } = parseStageHref(href);
+  const target = ctx.stages?.get(id);
+  if (!target) return `link ${href} names the stage "${id}", which does not exist`;
+  if (anchor && target.slugs && !target.slugs.has(anchor)) return `link ${href} names no section "${anchor}" in stage "${id}"`;
+  return undefined;
+}
+
 function checkLink(href, ctx) {
+  if (href?.startsWith("stage:")) return checkStageLink(href, ctx);
   if (!href || SCHEME.test(href) || href.startsWith("#") || href.startsWith("/")) return undefined;
   const [path, anchor] = href.split("#");
   if (!path.endsWith(".md")) return undefined;
@@ -47,7 +61,7 @@ function checkLink(href, ctx) {
 }
 
 // The semantic rules for one stage document (raw or normalized). It must already pass the schema.
-// ctx: { root, converted: Map<"<id>.md", Set<slug>> }
+// ctx: { root, stages: Map<id, { slugs: Set<slug> | null }>, converted: Map<"stage-<n>.md", Set<slug>> }, see buildContext
 export function checkStage(doc, ctx) {
   const errors = [];
   const md_ = (text, where) => text && errors.push(...checkMarkdown(text, where, ctx));
@@ -87,19 +101,24 @@ export function checkStage(doc, ctx) {
   return errors;
 }
 
+// The lookup tables the semantic rules need, from a loaded workshop.
+export function buildContext(loaded, root) {
+  const stages = new Map(loaded.stages.map((s) => [s.id, { slugs: s.slugs ? new Set(s.slugs) : null }]));
+  const converted = new Map(loaded.stages.filter((s) => s.kind === "converted").map((s) => [s.outFile, new Set(s.slugs)]));
+  return { root, stages, converted };
+}
+
 // Validate a whole workshop tree. Returns a list of error strings, empty when valid.
 export function validateWorkshop(root) {
   const loaded = loadWorkshop(root);
   if (!loaded.ok) return loaded.errors;
   const errors = [];
   const ids = new Set();
-  const converted = new Map();
   for (const s of loaded.stages) {
     if (ids.has(s.id)) errors.push(`workshop.yaml: duplicate stage id "${s.id}"`);
     ids.add(s.id);
-    if (s.kind === "converted") converted.set(`${s.id}.md`, new Set(s.slugs));
   }
-  const ctx = { root, converted };
+  const ctx = buildContext(loaded, root);
   const intro = loaded.workshop.intro;
   if (intro) errors.push(...checkMarkdown(intro, "workshop.yaml intro", ctx));
 

@@ -1,4 +1,4 @@
-<!-- Generated from stages/stage-1.yaml by tools/publish-md.mjs. Do not edit by hand. -->
+<!-- Generated from stages/kairos-lab.yaml by tools/publish-md.mjs. Do not edit by hand. -->
 
 # Stage 1: Setting up kairos-lab
 

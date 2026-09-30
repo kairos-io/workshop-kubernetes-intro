@@ -1,0 +1,7 @@
+# expect-error: a markdown stage goal holds angle brackets
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+stages:
+  - { id: two, title: Two, goal: "go <here>", markdown: two.md }

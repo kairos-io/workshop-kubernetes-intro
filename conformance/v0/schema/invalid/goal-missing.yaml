@@ -1,8 +1,6 @@
-# expect-error: a when has no key
+# expect-error: a stage file has no goal
 format: kairos-workshop/v0
 id: bad
 title: Bad
-goal: try the example
 sections:
   - title: X
-    when: {}

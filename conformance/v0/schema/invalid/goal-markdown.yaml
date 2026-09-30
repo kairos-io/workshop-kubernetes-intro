@@ -1,8 +1,7 @@
-# expect-error: a when has no key
+# expect-error: a goal holds markdown
 format: kairos-workshop/v0
 id: bad
 title: Bad
-goal: try the example
+goal: "set up `kairos-lab`"
 sections:
   - title: X
-    when: {}

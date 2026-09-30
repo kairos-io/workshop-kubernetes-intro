@@ -23,6 +23,7 @@
             "properties": {
               "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
               "title": { "type": "string", "minLength": 1, "pattern": "^[^\\n<>]*$" },
+              "goal": { "type": "string", "minLength": 1, "maxLength": 60, "pattern": "^[^\\n<>`*\\[\\]]*$" },
               "markdown": { "type": "string", "pattern": "^[A-Za-z0-9_-]+\\.md$" } } }
         ]
       }

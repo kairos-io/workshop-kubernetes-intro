@@ -7,6 +7,7 @@ import { normalizeStage } from "../tools/lib/load.mjs";
 import { validateStageSchema } from "../tools/lib/schema.mjs";
 import { checkStage } from "../tools/validate.mjs";
 import { loadWorkshop } from "../tools/lib/load.mjs";
+import { buildContext } from "../tools/validate.mjs";
 
 const root = new URL("../", import.meta.url);
 const viewDir = new URL("conformance/v0/view/", root);
@@ -58,14 +59,14 @@ test("every item has a known kind and the right fields", () => {
 test("stage 1 fixture files agree with the stage file", () => {
   const items = readCase("stage-1-no-facts.json").expect;
   const titles = items.filter((i) => i.kind === "section").map((i) => i.title);
-  assert.deepEqual(titles, loadStage("stages/stage-1.yaml").sections.map((s) => s.title));
+  assert.deepEqual(titles, loadStage("stages/kairos-lab.yaml").sections.map((s) => s.title));
 });
 
 // Independent checks that do not depend on the expected files.
-const ids = (facts, kind, stage = "stages/stage-1.yaml") => view(loadStage(stage), facts).filter((i) => i.kind === kind);
+const ids = (facts, kind, stage = "stages/kairos-lab.yaml") => view(loadStage(stage), facts).filter((i) => i.kind === kind);
 
 test("with no facts every command of stage 1 is present", () => {
-  const doc = loadStage("stages/stage-1.yaml");
+  const doc = loadStage("stages/kairos-lab.yaml");
   const want = [];
   for (const s of doc.sections) for (const st of s.steps ?? []) {
     want.push(...(st.commands ?? []));
@@ -90,14 +91,14 @@ test("windows with kairos-lab shows the caution and no install option", () => {
 });
 
 test("a warning for macos is hidden on linux and the whole section still shows", () => {
-  const facts = { os: "linux", virtualization: "other", runtime: "docker" };
-  const items = view(loadStage("stages/stage-1.yaml"), facts);
+  const facts = { os: "linux", virtualization: "own", runtime: "docker" };
+  const items = view(loadStage("stages/kairos-lab.yaml"), facts);
   assert.ok(items.some((i) => i.kind === "section" && i.title === "Build it locally (Linux only)"));
   assert.ok(!items.some((i) => i.kind === "warning"));
 });
 
 test("unknown facts give conditional items and known facts give shown items", () => {
-  const items = view(loadStage("stages/stage-1.yaml"), { os: "linux", virtualization: "other" });
+  const items = view(loadStage("stages/kairos-lab.yaml"), { os: "linux", virtualization: "own" });
   const build = items.find((i) => i.kind === "step" && i.id === "build-auroraboot");
   assert.equal(build.state, "shown");
   const docker = items.find((i) => i.kind === "variant" && i.id === "docker");
@@ -105,16 +106,16 @@ test("unknown facts give conditional items and known facts give shown items", ()
 });
 
 test("the outline is the same for two runs", () => {
-  const doc = loadStage("stages/stage-1.yaml");
+  const doc = loadStage("stages/kairos-lab.yaml");
   assert.deepEqual(view(doc, {}), view(doc, {}));
 });
 
 // The synthetic fixture stages must themselves be valid.
 test("synthetic fixtures pass the schema and the semantic rules", () => {
-  const converted = new Map(loadWorkshop(root.pathname).stages.filter((s) => s.kind === "converted").map((s) => [`${s.id}.md`, new Set(s.slugs)]));
+  const ctx = buildContext(loadWorkshop(root.pathname), root.pathname);
   for (const f of readdirSync(new URL("conformance/v0/fixtures/", root)).filter((n) => n.startsWith("synthetic-"))) {
     const doc = loadStage(`conformance/v0/fixtures/${f}`);
     assert.equal(validateStageSchema(doc).ok, true, f);
-    assert.deepEqual(checkStage(doc, { root: root.pathname, converted }), [], f);
+    assert.deepEqual(checkStage(doc, ctx), [], f);
   }
 });

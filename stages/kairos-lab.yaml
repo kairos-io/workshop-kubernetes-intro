@@ -1,7 +1,8 @@
 # yaml-language-server: $schema=../schema/v0/stage.schema.json
 format: kairos-workshop/v0
-id: stage-1
-title: "Stage 1: Setting up kairos-lab"
+id: kairos-lab
+title: Setting up kairos-lab
+goal: set up kairos-lab
 docs:
   - title: kairos-lab
     url: https://github.com/kairos-io/kairos-lab
@@ -81,7 +82,7 @@ sections:
         after: |
           Detects your package manager and installs `qemu` if it is missing.
 
-          It also gets you `auroraboot`, the command you use in [stage 3](stage-3.md) to
+          It also gets you `auroraboot`, the command you use in [stage 3](stage:build-image) to
           turn an image you build into an ISO. For that it needs a container runtime,
           Docker or Podman:
 
@@ -101,7 +102,7 @@ sections:
           `PATH`. `kairos-lab setup` tells you what to add.
 
   - title: Not using kairos-lab? Get AuroraBoot yourself
-    when: { virtualization: other }
+    when: { virtualization: own }
     text: |
       If you are using your own virtualization software, `kairos-lab setup` does not
       run for you, so you need to get AuroraBoot yourself. There are two ways:
@@ -112,7 +113,7 @@ sections:
 
       Wherever the workshop says `auroraboot build-iso ...`, you either run the
       container or use your local build instead. The examples below are the command
-      from the end of [stage 3](stage-3.md).
+      from the end of [stage 3](stage:build-image).
     steps:
       - id: pull-auroraboot
         title: Pull the image
@@ -155,7 +156,7 @@ sections:
             text: |
               Podman has trouble using a locally built image, so stage 3 has you push your
               image to a temporary public registry first (see
-              [Using Podman on MacOS](stage-3.md#alternative-using-podman-on-macos)). Once
+              [Using Podman on MacOS](stage:build-image#alternative-using-podman-on-macos)). Once
               you have done that, run AuroraBoot like this:
             commands:
               - |
@@ -166,7 +167,7 @@ sections:
                   build-iso --output /result ttl.sh/stage-2:24h
 
   - title: Build it locally (Linux only)
-    when: { virtualization: other }
+    when: { virtualization: own }
     text: |
       Use this if you would rather have a plain `auroraboot` command than run the
       container.

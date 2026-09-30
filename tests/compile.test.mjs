@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { parse } from "yaml";
 import { githubSlug } from "../tools/lib/slug.mjs";
 import { loadWorkshop, normalizeWhen } from "../tools/lib/load.mjs";
-import { validateWorkshop, checkStage } from "../tools/validate.mjs";
+import { validateWorkshop, checkStage, buildContext } from "../tools/validate.mjs";
 import { validateStageSchema } from "../tools/lib/schema.mjs";
 
 const root = new URL("../", import.meta.url).pathname;
@@ -23,7 +23,7 @@ function scratch(files) {
 const workshopYaml = (stages) =>
   `format: kairos-workshop/v0\nid: t\ntitle: T\nrepository: kairos-io/t\nstages:\n${stages}\n`;
 const stageYaml = (id, extra = "") =>
-  `format: kairos-workshop/v0\nid: ${id}\ntitle: S\nsections:\n  - title: One\n${extra}`;
+  `format: kairos-workshop/v0\nid: ${id}\ntitle: S\ngoal: do s\nsections:\n  - title: One\n${extra}`;
 
 test("githubSlug matches GitHub for the headings we care about", () => {
   assert.equal(githubSlug("Before we begin"), "before-we-begin");
@@ -39,7 +39,7 @@ test("stage 1 and the workshop index validate", () => {
 test("stage 1 section slugs equal the five published anchors", () => {
   const loaded = loadWorkshop(root);
   assert.equal(loaded.ok, true);
-  const stage1 = loaded.stages.find((s) => s.id === "stage-1");
+  const stage1 = loaded.stages.find((s) => s.id === "kairos-lab");
   assert.deepEqual(stage1.slugs, [
     "before-we-begin",
     "installing-kairos-lab",
@@ -53,8 +53,8 @@ test("stage 3 heading slug matches the outbound anchor", () => {
   const text = readFileSync(join(root, "stage-3.md"), "utf8");
   const heading = text.split("\n").find((l) => l.startsWith("## Alternative"));
   assert.equal(githubSlug(heading.replace(/^##\s+/, "")), "alternative-using-podman-on-macos");
-  const stage1 = readFileSync(join(root, "stages/stage-1.yaml"), "utf8");
-  assert.ok(stage1.includes("stage-3.md#alternative-using-podman-on-macos"));
+  const stage1 = readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8");
+  assert.ok(stage1.includes("stage:build-image#alternative-using-podman-on-macos"));
 });
 
 test("scalar when is normalized to a list", () => {
@@ -63,7 +63,7 @@ test("scalar when is normalized to a list", () => {
 });
 
 test("the loader normalizes every when in stage 1", () => {
-  const stage1 = loadWorkshop(root).stages.find((s) => s.id === "stage-1");
+  const stage1 = loadWorkshop(root).stages.find((s) => s.id === "kairos-lab");
   const homebrew = stage1.doc.sections[1].steps[0].variants[0];
   assert.deepEqual(homebrew.when, { os: ["macos"] });
   assert.deepEqual(stage1.doc.sections[1].when, { virtualization: ["kairos-lab"] });
@@ -74,7 +74,7 @@ test("the loader computes next links and referenced facts", () => {
   const [one, two, , , , , seven] = loaded.stages;
   assert.equal(one.kind, "converted");
   assert.equal(two.kind, "markdown");
-  assert.deepEqual(one.next, { id: "stage-2", title: "Stage 2: Deploying a single node cluster", file: "stage-2.md", converted: false });
+  assert.deepEqual(one.next, { id: "first-node", title: "Deploying a single node cluster", n: 2, file: "stage-2.md", converted: false });
   assert.equal(seven.next, null);
   assert.deepEqual(one.facts, ["virtualization", "os", "runtime"]);
   assert.deepEqual(loaded.facts, ["virtualization", "os", "runtime"]);
@@ -87,12 +87,12 @@ test("a converted stage links to its generated file name", () => {
     "stages/b.yaml": stageYaml("b"),
   });
   const loaded = loadWorkshop(dir);
-  assert.deepEqual(loaded.stages[0].next, { id: "b", title: "S", file: "b.md", converted: true });
+  assert.deepEqual(loaded.stages[0].next, { id: "b", title: "S", n: 2, file: "stage-2.md", converted: true });
 });
 
 // Semantic errors: each rule has a test that makes it fail.
 const semDir = new URL("../conformance/v0/semantic/", import.meta.url);
-const ctx = () => ({ root, converted: new Map(loadWorkshop(root).stages.filter((s) => s.kind === "converted").map((s) => [`${s.id}.md`, new Set(s.slugs)])) });
+const ctx = () => buildContext(loadWorkshop(root), root);
 
 for (const f of readdirSync(new URL("invalid/", semDir)).filter((n) => n.endsWith(".yaml")).sort()) {
   test(`semantic invalid: ${f}`, () => {
@@ -139,7 +139,7 @@ test("a stage file that is missing fails", () => {
 test("a schema error in a stage is reported with the file name", () => {
   const dir = scratch({
     "workshop.yaml": workshopYaml("  - file: stages/a.yaml"),
-    "stages/a.yaml": "format: kairos-workshop/v1\nid: a\ntitle: S\nsections:\n  - title: One\n",
+    "stages/a.yaml": "format: kairos-workshop/v1\nid: a\ntitle: S\ngoal: do s\nsections:\n  - title: One\n",
   });
   assert.match(validateWorkshop(dir).join("\n"), /stages\/a\.yaml/);
 });
@@ -156,13 +156,13 @@ test("duplicate stage ids in the workshop fail", () => {
 test("a link from one converted stage to a section of another must resolve", () => {
   const dir = scratch({
     "workshop.yaml": workshopYaml("  - file: stages/a.yaml\n  - file: stages/b.yaml"),
-    "stages/a.yaml": stageYaml("a", "    text: See [b](b.md#nope).\n"),
+    "stages/a.yaml": stageYaml("a", "    text: See [b](stage-2.md#nope).\n"),
     "stages/b.yaml": stageYaml("b"),
   });
   assert.match(validateWorkshop(dir).join("\n"), /no section "nope"/);
   const ok = scratch({
     "workshop.yaml": workshopYaml("  - file: stages/a.yaml\n  - file: stages/b.yaml"),
-    "stages/a.yaml": stageYaml("a", "    text: See [b](b.md#one).\n"),
+    "stages/a.yaml": stageYaml("a", "    text: See [b](stage-2.md#one).\n"),
     "stages/b.yaml": stageYaml("b"),
   });
   assert.deepEqual(validateWorkshop(ok), []);
@@ -188,4 +188,109 @@ test("the validate script exits 1 on a broken tree", async () => {
   const r = spawnSync(process.execPath, [join(root, "tools/validate.mjs"), dir], { encoding: "utf8" });
   assert.equal(r.status, 1);
   assert.match(r.stdout + r.stderr, /stages\/a\.yaml/);
+});
+
+// A1: goals.
+test("every converted stage has a goal and stage 1 says what it is", () => {
+  const loaded = loadWorkshop(root);
+  assert.equal(loaded.stages[0].goal, "set up kairos-lab");
+  assert.deepEqual(loaded.stages.map((s) => s.goal), [
+    "set up kairos-lab",
+    "boot a first node",
+    "build an image",
+    "build images automatically",
+    "upgrade a node by hand",
+    "write a cloud-config",
+    "upgrade through Kubernetes",
+  ]);
+  for (const s of loaded.stages) assert.ok(s.goal.length <= 60 && !/[\n<>`*[\]]/.test(s.goal), s.id);
+});
+
+test("a goal of exactly 60 characters is accepted and 61 is rejected", () => {
+  const base = parse(readFileSync(new URL("../conformance/v0/schema/valid/minimal.yaml", import.meta.url), "utf8"));
+  assert.equal(validateStageSchema({ ...base, goal: "a".repeat(60) }).ok, true);
+  assert.equal(validateStageSchema({ ...base, goal: "a".repeat(61) }).ok, false);
+  assert.equal(validateStageSchema({ ...base, goal: "" }).ok, false);
+});
+
+// A2: slug ids and computed numbers.
+test("stage ids are unique kebab-case slugs and the numbers are positions", () => {
+  const loaded = loadWorkshop(root);
+  assert.deepEqual(loaded.stages.map((s) => s.id), [
+    "kairos-lab", "first-node", "build-image", "pipelines", "manual-upgrade", "multi-node", "operator-upgrade",
+  ]);
+  assert.equal(new Set(loaded.stages.map((s) => s.id)).size, loaded.stages.length);
+  for (const s of loaded.stages) assert.match(s.id, /^[a-z0-9]+(-[a-z0-9]+)*$/);
+  assert.deepEqual(loaded.stages.map((s) => s.n), [1, 2, 3, 4, 5, 6, 7]);
+  for (const s of loaded.stages) assert.ok(!/^Stage \d+:/.test(s.title), s.title);
+});
+
+test("a markdown stage title is what its file's first heading says, minus the number", () => {
+  for (const s of loadWorkshop(root).stages.filter((x) => x.kind === "markdown")) {
+    const heading = readFileSync(join(root, s.markdown), "utf8").split("\n").find((l) => l.startsWith("# "));
+    assert.equal(heading, `# Stage ${s.n}: ${s.title}`);
+  }
+});
+
+// A3: links by id.
+const linked = (text, extra = "") => scratch({
+  "workshop.yaml": workshopYaml("  - file: stages/a.yaml\n  - { id: md-stage, title: M, markdown: m.md }") + extra,
+  "stages/a.yaml": stageYaml("a", `    text: ${JSON.stringify(text)}\n`),
+  "m.md": "# M\n",
+});
+
+test("a link by id to a known stage is valid, with or without an anchor", () => {
+  assert.deepEqual(validateWorkshop(linked("[x](stage:a) [y](stage:a#one) [z](stage:md-stage) [w](stage:md-stage#any-anchor)")), []);
+});
+
+test("a link by id to an unknown stage is rejected", () => {
+  assert.match(validateWorkshop(linked("[x](stage:nope)")).join("\n"), /names the stage "nope", which does not exist/);
+});
+
+test("a link by id with an anchor a converted stage does not have is rejected", () => {
+  assert.match(validateWorkshop(linked("[x](stage:a#two)")).join("\n"), /names no section "two" in stage "a"/);
+});
+
+test("a link by id is checked in every markdown field", () => {
+  const doc = (field) => {
+    const base = { format: "kairos-workshop/v0", id: "a", title: "S", goal: "do s", sections: [{ title: "One" }] };
+    const bad = "[x](stage:nope)";
+    if (field === "section.text") base.sections[0].text = bad;
+    if (field === "section.warning") base.sections[0].warnings = [{ kind: "note", text: bad }];
+    if (field === "step.after") base.sections[0].steps = [{ id: "s", commands: ["x"], after: bad }];
+    if (field === "step.onFail") base.sections[0].steps = [{ id: "s", onFail: bad }];
+    if (field === "variant.text") base.sections[0].steps = [{ id: "s", variants: [{ id: "v1", title: "V1", text: bad }, { id: "v2", title: "V2" }] }];
+    return base;
+  };
+  for (const field of ["section.text", "section.warning", "step.after", "step.onFail", "variant.text"]) {
+    assert.ok(checkStage(doc(field), buildContext(loadWorkshop(root), root)).length > 0, field);
+  }
+  const dir = scratch({
+    "workshop.yaml": `format: kairos-workshop/v0\nid: t\ntitle: T\nrepository: kairos-io/t\nintro: "See [x](stage:nope)."\nstages:\n  - { id: s, title: S, markdown: s.md }\n`,
+    "s.md": "# s\n",
+  });
+  assert.match(validateWorkshop(dir).join("\n"), /intro.*stage "nope"/);
+});
+
+test("a stage link that publishers cannot resolve is rejected", () => {
+  assert.match(validateWorkshop(linked("[x][r]\n\n[r]: stage:a")).join("\n"), /write a stage link as/);
+});
+
+test("the stage 1 file links to stage 3 by id and no hard-coded stage-N.md link is left", () => {
+  const text = readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8");
+  assert.ok(text.includes("(stage:build-image#alternative-using-podman-on-macos)"));
+  assert.ok(!/\]\(stage-\d+\.md/.test(text));
+});
+
+// A4: fact values.
+test("the virtualization values are kairos-lab and own, and every fact and option has a question and a label", async () => {
+  const { FACT_DEFS, VALUES, LABELS } = await import("../tools/lib/facts.mjs");
+  assert.deepEqual(VALUES.virtualization, ["kairos-lab", "own"]);
+  assert.equal(LABELS.virtualization.own, "your own virtualization software");
+  assert.equal(FACT_DEFS[0].question, "What runs your VMs?");
+  assert.equal(FACT_DEFS[0].options[1].label, "My own software");
+  for (const f of FACT_DEFS) {
+    assert.ok(f.label && f.question, f.id);
+    for (const o of f.options) assert.ok(o.id && o.label && o.phrase, `${f.id}/${o.id}`);
+  }
 });

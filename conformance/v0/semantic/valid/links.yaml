@@ -1,11 +1,15 @@
 format: kairos-workshop/v0
 id: links
 title: Links that are allowed
+goal: try the example
 sections:
   - title: X
     text: |
       A link to [a markdown stage](stage-3.md#alternative-using-podman-on-macos),
       a link to [a converted stage](stage-1.md#set-up-dependencies),
+      a link by id to [a converted stage](stage:kairos-lab#set-up-dependencies),
+      a link by id to [a markdown stage](stage:build-image#any-heading-at-all),
+      a link by id with no anchor to [the next stage](stage:first-node),
       an [external link](https://example.com/page.md),
       an [in page link](#x) and inline code `<div>` and `> [!NOTE]`.
 
