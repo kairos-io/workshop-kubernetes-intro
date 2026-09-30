@@ -108,14 +108,10 @@ mkdir build && sudo podman run -it --rm -v /var/run/docker.sock:/var/run/docker.
 ## Create an ISO using AuroraBoot
 
 ```bash
-mkdir build && docker run -it --rm \
-  -v /var/run/docker.sock:/var/run/docker.sock \
-  -v $PWD/build:/result \
-  quay.io/kairos/auroraboot:latest \
-  build-iso --output /result stage-2:v1.0.0
+auroraboot build-iso --output ./build stage-2:v1.0.0
 ```
 
-If the build is successful, you should find the ISO file in the `$PWD/build` directory.
+If the build is successful, you should find the ISO file in the `./build` directory.
 
 ## Run it
 
