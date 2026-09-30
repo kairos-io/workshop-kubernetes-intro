@@ -1,0 +1,54 @@
+format: kairos-workshop/v0
+id: step-shapes
+title: Everything a step without variants can hold
+goal: show step shapes
+sections:
+  - title: Steps
+    steps:
+      - id: everything
+        title: Everything
+        text: Step text.
+        warnings:
+          - kind: note
+            text: A note for everyone.
+          - kind: caution
+            when: { os: windows }
+            text: A caution for Windows.
+          - kind: warning
+            when: { runtime: [docker, podman] }
+            text: A warning for both runtimes.
+        commands:
+          - echo one
+          - |
+            echo two
+            echo three
+        expect: |
+          one
+          two
+          three
+        after: After text.
+        check: { kind: image-exists, image: "quay.io/kairos/auroraboot:latest" }
+        onFail: |
+          It did not work.
+
+          Try again.
+      - id: named-checks
+        title: Named checks
+        commands:
+          - echo x
+        check: { kind: vm-running, name: demo }
+      - id: iso
+        commands:
+          - echo iso
+        check: { kind: iso-exists }
+      - id: vm
+        commands:
+          - echo vm
+        check: { kind: vm-running }
+      - id: no-check
+        title: No check
+        optional: true
+        text: Optional and without a check.
+      - id: only-on-fail
+        text: A step with a failure text and no check.
+        onFail: Look at the logs.

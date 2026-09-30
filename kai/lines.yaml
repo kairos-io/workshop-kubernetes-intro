@@ -1,0 +1,18 @@
+# The line the game shows in the dialogue box for each step. It is theme, not workshop content.
+# Keys are <stage-id>/<step-id>. A missing key falls back to the step title.
+# A line is plain text on one line, at most 60 characters.
+kairos-lab/before-we-begin: "First, a quick look at what you need."
+kairos-lab/install-kairos-lab: "Let's get kairos-lab onto your machine."
+kairos-lab/kairos-lab-setup: "One command gets your tools ready."
+kairos-lab/auroraboot-version: "Let's make sure the new tool answers."
+kairos-lab/pull-auroraboot: "Bring AuroraBoot over as a container image."
+kairos-lab/run-auroraboot-container: "A trial run for later. You can skip it for now."
+kairos-lab/build-it-locally-linux-only: "Prefer a plain command? You can build it yourself."
+kairos-lab/build-auroraboot: "Build AuroraBoot on your Linux machine."
+kairos-lab/run-auroraboot-local: "Try your local build. Save this one for later."
+first-node/on-github: "Your first node waits on GitHub for now."
+build-image/on-github: "Image building lives on GitHub for now."
+pipelines/on-github: "The pipeline guide lives on GitHub for now."
+manual-upgrade/on-github: "The upgrade guide lives on GitHub for now."
+multi-node/on-github: "The multi-node guide lives on GitHub for now."
+operator-upgrade/on-github: "The operator guide lives on GitHub for now."

@@ -1,0 +1,154 @@
+{
+  "id": "when-merge",
+  "title": "Conditions of sections and steps",
+  "goal": "merge conditions",
+  "steps": [
+    {
+      "id": "narrower",
+      "title": "Section with a condition",
+      "line": "Section with a condition",
+      "only": {
+        "os": [
+          "macos"
+        ],
+        "arch": [
+          "amd64"
+        ],
+        "runtime": [
+          "docker"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo narrower"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "inherits",
+      "title": "Section with a condition",
+      "line": "Section with a condition",
+      "only": {
+        "os": [
+          "linux",
+          "macos"
+        ],
+        "runtime": [
+          "docker"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo inherits"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "same-key-all",
+      "title": "Section with a condition",
+      "line": "Section with a condition",
+      "only": {
+        "os": [
+          "linux",
+          "macos"
+        ],
+        "runtime": [
+          "docker"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo same key"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "text-before-a-conditional-step",
+      "title": "Text before a conditional step",
+      "line": "Text before a conditional step",
+      "only": {
+        "virtualization": [
+          "own"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Section text that must survive when the step is hidden."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "only": {
+            "os": [
+              "macos"
+            ]
+          },
+          "md": "Section warning for macOS."
+        }
+      ],
+      "check": {
+        "prompt": "You read this.",
+        "fail": []
+      }
+    },
+    {
+      "id": "linux-only",
+      "title": "Text before a conditional step",
+      "line": "Text before a conditional step",
+      "only": {
+        "virtualization": [
+          "own"
+        ],
+        "os": [
+          "linux"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo linux"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "has-condition",
+      "title": "No condition on the section",
+      "line": "No condition on the section",
+      "only": {
+        "arch": [
+          "arm64"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo arm"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    }
+  ]
+}

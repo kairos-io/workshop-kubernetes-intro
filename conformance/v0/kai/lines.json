@@ -1,0 +1,37 @@
+{
+  "id": "lines",
+  "title": "Game lines",
+  "goal": "say a line",
+  "steps": [
+    {
+      "id": "with-line",
+      "title": "With a line",
+      "line": "A line from the theme.",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo a"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "without-line",
+      "title": "Without a line",
+      "line": "Without a line",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo b"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    }
+  ]
+}

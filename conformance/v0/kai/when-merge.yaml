@@ -1,0 +1,37 @@
+format: kairos-workshop/v0
+id: when-merge
+title: Conditions of sections and steps
+goal: merge conditions
+sections:
+  - title: Section with a condition
+    when: { os: [linux, macos], runtime: docker }
+    steps:
+      - id: narrower
+        when: { os: [macos, windows], arch: amd64 }
+        commands:
+          - echo narrower
+      - id: inherits
+        commands:
+          - echo inherits
+      - id: same-key-all
+        when: { os: [macos, linux] }
+        commands:
+          - echo same key
+  - title: Text before a conditional step
+    when: { virtualization: own }
+    text: Section text that must survive when the step is hidden.
+    warnings:
+      - kind: warning
+        when: { os: macos }
+        text: Section warning for macOS.
+    steps:
+      - id: linux-only
+        when: { os: linux }
+        commands:
+          - echo linux
+  - title: No condition on the section
+    steps:
+      - id: has-condition
+        when: { arch: arm64 }
+        commands:
+          - echo arm

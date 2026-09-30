@@ -1,0 +1,101 @@
+{
+  "id": "variants",
+  "title": "A step with variants",
+  "goal": "pick a variant",
+  "steps": [
+    {
+      "id": "install",
+      "title": "Install it",
+      "line": "Install it",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Step text comes first."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "md": "Step warning."
+        },
+        {
+          "type": "alternatives",
+          "id": "install",
+          "title": "Install it",
+          "items": [
+            {
+              "label": "On a Mac",
+              "only": {
+                "os": [
+                  "macos"
+                ]
+              },
+              "blocks": [
+                {
+                  "type": "text",
+                  "md": "Variant text."
+                },
+                {
+                  "type": "callout",
+                  "kind": "warning",
+                  "only": {
+                    "arch": [
+                      "arm64"
+                    ]
+                  },
+                  "md": "Variant warning."
+                },
+                {
+                  "type": "command",
+                  "code": "brew install it"
+                },
+                {
+                  "type": "command",
+                  "code": "it --version"
+                },
+                {
+                  "type": "output",
+                  "text": "it 1.0"
+                },
+                {
+                  "type": "text",
+                  "md": "Variant after."
+                }
+              ]
+            },
+            {
+              "label": "On Linux",
+              "only": {
+                "os": [
+                  "linux"
+                ]
+              },
+              "blocks": [
+                {
+                  "type": "command",
+                  "code": "apt install it"
+                }
+              ]
+            },
+            {
+              "label": "Everywhere",
+              "blocks": [
+                {
+                  "type": "command",
+                  "code": "go install it"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "text",
+          "md": "Step after comes last."
+        }
+      ],
+      "check": {
+        "prompt": "The it command is available in a new terminal.",
+        "fail": []
+      }
+    }
+  ]
+}

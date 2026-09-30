@@ -1,0 +1,107 @@
+{
+  "id": "sections-text-only",
+  "title": "Sections without steps",
+  "goal": "read the sections",
+  "steps": [
+    {
+      "id": "just-text",
+      "title": "Just text",
+      "line": "Just text",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "First paragraph.\n\nSecond paragraph with a [link](stage:sections-text-only#just-text)."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "md": "A note."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "md": "A tip is shown as a note."
+        }
+      ],
+      "check": {
+        "prompt": "You read this.",
+        "fail": []
+      }
+    },
+    {
+      "id": "only-a-warning",
+      "title": "Only a warning",
+      "line": "Only a warning",
+      "only": {
+        "os": [
+          "windows"
+        ]
+      },
+      "blocks": [
+        {
+          "type": "callout",
+          "kind": "warning",
+          "md": "Important becomes a warning."
+        }
+      ],
+      "check": {
+        "prompt": "You read this.",
+        "fail": []
+      }
+    },
+    {
+      "id": "empty-steps-list",
+      "title": "Empty steps list",
+      "line": "Empty steps list",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Text with an empty list of steps."
+        }
+      ],
+      "check": {
+        "prompt": "You read this.",
+        "fail": []
+      }
+    },
+    {
+      "id": "first",
+      "title": "The first step",
+      "line": "The first step",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Section text."
+        },
+        {
+          "type": "callout",
+          "kind": "caution",
+          "md": "Section caution."
+        },
+        {
+          "type": "command",
+          "code": "echo first"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "second",
+      "title": "Text and two steps",
+      "line": "Text and two steps",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo second"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    }
+  ]
+}

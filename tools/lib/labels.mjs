@@ -22,3 +22,10 @@ export function checkSentence(check) {
       throw new Error(`unknown check kind: ${check.kind}`);
   }
 }
+
+// A check as a full sentence for a reader that shows it on its own line, for example a game.
+// Same wording as checkSentence, capitalized, with no markdown.
+export function checkPrompt(check) {
+  const text = checkSentence(check).replaceAll("`", "");
+  return text[0].toUpperCase() + text.slice(1);
+}
