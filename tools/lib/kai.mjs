@@ -99,6 +99,7 @@ function checkOf(step, fallback) {
   return {
     kind: step.check ? step.check.kind : "manual",
     prompt: step.check ? checkPrompt(step.check) : fallback,
+    ...(step.check?.verify && { verify: { command: step.check.verify.command, ...(step.check.verify.output !== undefined && { output: trim(step.check.verify.output) }) } }),
     fail: step.onFail ? [textBlock(step.onFail)] : [],
   };
 }
@@ -461,7 +462,12 @@ export function validateContent(content) {
       const c = st.check;
       if (!c || typeof c.prompt !== "string" || c.prompt === "") errors.push(`${w}: check.prompt is required`);
       else {
-        checkShape(c, ["prompt", "fail"], ["kind"], `${w}, check`, errors);
+        checkShape(c, ["prompt", "fail"], ["kind", "verify"], `${w}, check`, errors);
+        if (c.verify !== undefined) {
+          checkShape(c.verify, ["command"], ["output"], `${w}, check.verify`, errors);
+          if (!isText(c.verify.command) || c.verify.command.includes("\n")) errors.push(`${w}, check.verify: "command" must be text on one line`);
+          if (c.verify.output !== undefined && !isText(c.verify.output)) errors.push(`${w}, check.verify: "output" must be text`);
+        }
         if (c.kind !== undefined && ![...CHECK_KINDS, "manual"].includes(c.kind)) errors.push(`${w}, check: unknown check kind "${c.kind}"`);
         checkBlocks(c.fail, `${w}, check.fail`, errors);
       }

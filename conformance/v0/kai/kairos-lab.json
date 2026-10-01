@@ -102,6 +102,10 @@
       "check": {
         "kind": "command-available",
         "prompt": "The kairos-lab command is available in a new terminal.",
+        "verify": {
+          "command": "kairos-lab --version",
+          "output": "0.1.3"
+        },
         "fail": []
       },
       "goal": "Install the kairos-lab command",
@@ -202,6 +206,9 @@
       "check": {
         "kind": "command-available",
         "prompt": "The auroraboot command is available in a new terminal.",
+        "verify": {
+          "command": "auroraboot --version"
+        },
         "fail": [
           {
             "type": "text",

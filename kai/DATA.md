@@ -213,7 +213,7 @@ Our rule (SPEC, "Stage tip") offers the TIP when the check gives a match or cond
 | `optional` | Optional. `true` for a side quest. |
 | `only` | Optional. Show the step only when this matches. |
 | `blocks` | What the step shows, in reading order. At least one. |
-| `check` | `{ kind, prompt, fail }`. |
+| `check` | `{ kind, prompt, verify?, fail }`. |
 | `goal` | Optional. What the learner does in this step, plain text, at most 100 characters. It is there when the step has a `help`. |
 | `help` | Optional. `{ tool?, source?, docs?, expect }`. The rest of the input for the step help prompt. The stage defaults for `tool`, `source` and `docs` are already merged in. `source` and `docs` are `https` URLs. `expect` is the sentence for the `{expect}` slot of the prompt. |
 
@@ -234,10 +234,11 @@ Each block has a `type` and may have an `only`. When `only` does not match, hide
 
 ### Check
 
-`check` is `{ kind, prompt, fail }`.
+`check` is `{ kind, prompt, verify?, fail }`.
 
 - `kind` says what the check is. It is one of `command-available`, `image-exists`, `iso-exists`, `vm-running`, or `manual`. `manual` means the step names no check and `prompt` is a default sentence ("You finished this step.", "You read this." or "You finished this stage."). A reader can treat every kind as a manual confirmation. `content.json` carries the sentence only, not the values a check would need to run.
 - `prompt` is the sentence the learner confirms ("The auroraboot command is available in a new terminal.", or a default such as "You finished this step.").
+- `verify` is optional: `{ command, output? }`. It tells the learner how to check the step by hand. `command` is plain text on one line, the command the learner runs (no placeholder, no `$ ` prompt: the reader adds the prompt, and Copy copies the bare command). `output` is optional plain text, possibly on several lines, an example of what the learner sees. A reader shows it as an example and never compares it with anything. `verify` is there when the stage file sets it on the check of the step, so a `manual` check never has one. The reader never runs the command.
 - `fail` is a list of blocks to show when the learner says it did not work. It can be empty.
 
 ## What the reader reads

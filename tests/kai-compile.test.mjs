@@ -522,7 +522,7 @@ test("kai/DATA.md names every field of the generated content and theme and has n
 test("every check has a kind: the named kind, or manual for a default prompt", () => {
   const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
   const byId = Object.fromEntries(out.stages[0].steps.map((s) => [s.id, s.check]));
-  assert.deepEqual(byId["install-kairos-lab"], { kind: "command-available", prompt: "The kairos-lab command is available in a new terminal.", fail: [] });
+  assert.deepEqual(byId["install-kairos-lab"], { kind: "command-available", prompt: "The kairos-lab command is available in a new terminal.", verify: { command: "kairos-lab --version", output: "0.1.3" }, fail: [] });
   assert.equal(byId["pull-auroraboot"].kind, "image-exists");
   assert.equal(byId["kairos-lab-setup"].kind, "manual");
   assert.equal(byId["kairos-lab-setup"].prompt, PROMPTS.step);
@@ -533,6 +533,25 @@ test("every check has a kind: the named kind, or manual for a default prompt", (
     assert.ok(["command-available", "image-exists", "iso-exists", "vm-running", "manual"].includes(st.check.kind), st.id);
     assert.equal(st.check.kind === "manual", [PROMPTS.step, PROMPTS.read, PROMPTS.stage].includes(st.check.prompt), st.id);
   }
+});
+
+test("a check verify is carried over: the command, and the output only when the stage has one", () => {
+  const steps = stepsOf("  - title: S\n    text: T\n    steps:\n      - id: a\n        commands: [c]\n        check: { kind: iso-exists, verify: { command: ls build, output: \"a.iso\\nb.iso\\n\" } }\n      - id: b\n        commands: [c]\n        check: { kind: iso-exists, verify: { command: ls build } }\n      - id: c\n        commands: [c]\n        check: { kind: iso-exists }\n      - id: d\n        commands: [c]\n");
+  assert.deepEqual(steps[0].check.verify, { command: "ls build", output: "a.iso\nb.iso" });
+  assert.deepEqual(steps[1].check.verify, { command: "ls build" });
+  assert.equal("verify" in steps[2].check, false);
+  assert.equal("verify" in steps[3].check, false, "a step with no named check has no verify");
+  assert.deepEqual(Object.keys(steps[0].check), ["kind", "prompt", "verify", "fail"]);
+});
+
+test("the validator checks the verify of a check", () => {
+  const bad = (fn) => { const c = good(); fn(c.stages[0].steps[0].check); return c; };
+  validateContent(bad((c) => { c.verify = { command: "x" }; }));
+  validateContent(bad((c) => { c.verify = { command: "x", output: "y" }; }));
+  assert.throws(() => validateContent(bad((c) => { c.verify = {}; })), /check.verify: missing "command"/);
+  assert.throws(() => validateContent(bad((c) => { c.verify = { command: "a\nb" }; })), /"command" must be text on one line/);
+  assert.throws(() => validateContent(bad((c) => { c.verify = { command: "x", output: "" }; })), /"output" must be text/);
+  assert.throws(() => validateContent(bad((c) => { c.verify = { command: "x", run: 1 }; })), /unknown field "run"/);
 });
 
 test("every help has an expect: the check sentence, or the default sentence", () => {

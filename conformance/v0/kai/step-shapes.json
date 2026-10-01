@@ -58,6 +58,10 @@
       "check": {
         "kind": "image-exists",
         "prompt": "The quay.io/kairos/auroraboot:latest image is present in your container runtime.",
+        "verify": {
+          "command": "docker images quay.io/kairos/auroraboot",
+          "output": "REPOSITORY                 TAG       IMAGE ID\nquay.io/kairos/auroraboot  latest    0123456789ab"
+        },
         "fail": [
           {
             "type": "text",
@@ -79,6 +83,9 @@
       "check": {
         "kind": "vm-running",
         "prompt": "The demo VM is running.",
+        "verify": {
+          "command": "ps aux | grep demo"
+        },
         "fail": []
       }
     },
