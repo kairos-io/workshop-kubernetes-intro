@@ -1,0 +1,11 @@
+# expect-error: a step help docs value is not a URL
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: S
+    steps:
+      - id: a
+        help: { goal: Do the thing, docs: "example.com/docs" }
+        commands: [echo hi]

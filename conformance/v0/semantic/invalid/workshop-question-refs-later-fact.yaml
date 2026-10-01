@@ -1,0 +1,21 @@
+# expect-error: a question has a when on a fact that is asked later
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: virtualization
+      title: How will you run the VMs?
+      when: { os: [linux, macos] }
+      options:
+        - { value: kairos-lab, label: Zen }
+        - { value: own, label: Master }
+    - fact: os
+      title: What is your computer running?
+      options:
+        - { value: linux, label: Linux }
+        - { value: macos, label: macOS }
+        - { value: windows, label: Windows }
+stages:
+  - { id: s, title: S, markdown: s.md }

@@ -43,6 +43,15 @@
         }
       }
     },
+    "help": {
+      "$ref": "#/$defs/stage-help"
+    },
+    "tip": {
+      "$ref": "#/$defs/tip"
+    },
+    "not_skippable_when": {
+      "$ref": "#/$defs/when"
+    },
     "sections": {
       "type": "array",
       "minItems": 1,
@@ -70,6 +79,58 @@
     "httpsUrl": {
       "type": "string",
       "pattern": "^https://[^\\s]+$"
+    },
+    "stage-help": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "tool": {
+          "$ref": "#/$defs/plain"
+        },
+        "source": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "docs": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    },
+    "step-help": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal"
+      ],
+      "properties": {
+        "goal": {
+          "$ref": "#/$defs/help-goal"
+        },
+        "tool": {
+          "$ref": "#/$defs/plain"
+        },
+        "source": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "docs": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    },
+    "tip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request"
+      ],
+      "properties": {
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "request": {
+          "$ref": "#/$defs/plain"
+        }
+      }
     },
     "when": {
       "type": "object",
@@ -239,6 +300,9 @@
         "optional": {
           "type": "boolean"
         },
+        "help": {
+          "$ref": "#/$defs/step-help"
+        },
         "text": {
           "$ref": "#/$defs/markdown"
         },
@@ -398,6 +462,12 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 60,
+      "pattern": "^[^\\n<>`*\\[\\]]*$"
+    },
+    "help-goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
       "pattern": "^[^\\n<>`*\\[\\]]*$"
     }
   }

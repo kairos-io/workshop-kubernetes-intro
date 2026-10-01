@@ -1,0 +1,10 @@
+# expect-error: a welcome page holds an image
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages:
+    - "Look ![alt](https://example.com/a.png)."
+stages:
+  - { id: s, title: S, markdown: s.md }

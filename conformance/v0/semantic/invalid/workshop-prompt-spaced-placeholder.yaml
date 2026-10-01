@@ -1,0 +1,10 @@
+# expect-error: the tip template writes a placeholder with spaces
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+prompts:
+  step: "Stage {stage}, step {step}"
+  tip: "Stage { stage }: {request}"
+stages:
+  - { id: s, title: S, markdown: s.md }

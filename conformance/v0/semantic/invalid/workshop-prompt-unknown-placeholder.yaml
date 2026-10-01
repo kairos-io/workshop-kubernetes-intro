@@ -1,0 +1,10 @@
+# expect-error: the step template uses a placeholder that does not exist
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+prompts:
+  step: "Stage {stage}, step {step}, colour {colour}"
+  tip: "Stage {stage}: {request}"
+stages:
+  - { id: s, title: S, markdown: s.md }

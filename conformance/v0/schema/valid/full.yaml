@@ -6,6 +6,14 @@ goal: try the example
 docs:
   - title: A doc
     url: https://example.com/docs
+help:
+  tool: kairos-lab
+  source: https://example.com/source
+  docs: https://example.com/docs
+tip:
+  when: { virtualization: [own] }
+  request: "Explain how to install {runtime} on {os} ({arch}) with {virtualization}."
+not_skippable_when: { virtualization: kairos-lab }
 sections:
   - title: Section with a condition
     when: { virtualization: kairos-lab }
@@ -33,6 +41,11 @@ sections:
         title: Step with variants
         when: { os: linux }
         optional: true
+        help:
+          goal: Pick a way to install it
+          tool: A different tool
+          source: https://example.com/other
+          docs: https://example.com/other-docs
         text: Pick one.
         warnings:
           - kind: note
@@ -60,6 +73,7 @@ sections:
         check: { kind: image-exists, image: "quay.io/kairos/auroraboot:latest" }
         onFail: The image did not pull.
       - id: with-commands
+        help: { goal: Say hello }
         commands:
           - echo hello
         expect: hello

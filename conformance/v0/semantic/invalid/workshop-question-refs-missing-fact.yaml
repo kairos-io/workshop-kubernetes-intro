@@ -1,0 +1,20 @@
+# expect-error: a question has a when on a fact that no question asks
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: virtualization
+      title: How will you run the VMs?
+      options:
+        - { value: kairos-lab, label: Zen }
+        - { value: own, label: Master }
+    - fact: arch
+      title: Which CPU architecture?
+      when: { runtime: docker }
+      options:
+        - { value: amd64, label: amd64 }
+        - { value: arm64, label: arm64 }
+stages:
+  - { id: s, title: S, markdown: s.md }

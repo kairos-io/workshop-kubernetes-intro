@@ -5,9 +5,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { parse } from "yaml";
 import { githubSlug } from "../tools/lib/slug.mjs";
-import { loadWorkshop, normalizeWhen } from "../tools/lib/load.mjs";
-import { validateWorkshop, checkStage, buildContext } from "../tools/validate.mjs";
-import { validateStageSchema } from "../tools/lib/schema.mjs";
+import { loadWorkshop, normalizeWhen, normalizeStage } from "../tools/lib/load.mjs";
+import { validateWorkshop, checkStage, checkWorkshop, buildContext } from "../tools/validate.mjs";
+import { validateStageSchema, validateWorkshopSchema } from "../tools/lib/schema.mjs";
 
 const root = new URL("../", import.meta.url).pathname;
 
@@ -91,25 +91,75 @@ test("a converted stage links to its generated file name", () => {
 });
 
 // Semantic errors: each rule has a test that makes it fail.
+// A file named workshop-*.yaml is a workshop index. Every other file is a stage.
 const semDir = new URL("../conformance/v0/semantic/", import.meta.url);
 const ctx = () => buildContext(loadWorkshop(root), root);
+const isWorkshop = (f) => f.startsWith("workshop-");
+const schemaOf = (f, doc) => (isWorkshop(f) ? validateWorkshopSchema(doc) : validateStageSchema(doc));
+const semanticOf = (f, doc) => (isWorkshop(f) ? checkWorkshop(doc) : checkStage(doc, ctx()));
+
+// The message each new workshop rule must give, so a fixture cannot pass for the wrong reason.
+const WANTED = {
+  "workshop-question-refs-later-fact.yaml": /questions\[0\] \(virtualization\): when names "os", which is not asked before this question/,
+  "workshop-question-refs-missing-fact.yaml": /when names "runtime", which is not asked before this question/,
+  "workshop-question-refs-itself.yaml": /when names "os", which is not asked before this question/,
+  "workshop-option-missing-value.yaml": /questions\[0\] \(os\): no option for the value "windows"/,
+  "workshop-option-duplicate-value.yaml": /offers the value "linux" twice/,
+  "workshop-duplicate-fact.yaml": /questions\[1\]: the fact "os" is already asked by questions\[0\]/,
+  "workshop-forces-own-fact.yaml": /forces its own fact "os"/,
+  "workshop-two-recommended.yaml": /more than one recommended option/,
+  "workshop-note-refs-later-fact.yaml": /notes\[0\]: when names "runtime", which is not asked before this question/,
+  "workshop-prompt-unknown-placeholder.yaml": /prompts\.step: unknown placeholder \{colour\}/,
+  "workshop-prompt-spaced-placeholder.yaml": /prompts\.tip: unknown placeholder \{ stage \}/,
+  "workshop-welcome-unknown-placeholder.yaml": /welcome\.pages\[0\]: unknown placeholder \{place\}/,
+  "workshop-welcome-http-link.yaml": /welcome\.pages\[0\]: a link must use https/,
+  "workshop-welcome-relative-link.yaml": /welcome\.pages\[0\]: a link must use https/,
+  "workshop-welcome-list.yaml": /welcome\.pages\[0\]: only one paragraph of inline markdown is allowed/,
+  "workshop-welcome-two-paragraphs.yaml": /welcome\.pages\[0\]: only one paragraph of inline markdown is allowed/,
+  "workshop-welcome-raw-html.yaml": /welcome\.pages\[0\]: raw HTML is not allowed/,
+  "workshop-welcome-image.yaml": /welcome\.pages\[0\]: only one paragraph of inline markdown is allowed/,
+  "workshop-option-text-html.yaml": /options\[0\]\.text: raw HTML is not allowed/,
+  "workshop-note-alert.yaml": /notes\[0\]\.text: GitHub alert syntax is not allowed/,
+  "tip-unknown-placeholder.yaml": /tip\.request: unknown placeholder \{stage\}/,
+  "tip-spaced-placeholder.yaml": /tip\.request: unknown placeholder \{ runtime \}/,
+};
 
 for (const f of readdirSync(new URL("invalid/", semDir)).filter((n) => n.endsWith(".yaml")).sort()) {
   test(`semantic invalid: ${f}`, () => {
     const text = readFileSync(new URL(`invalid/${f}`, semDir), "utf8");
     assert.match(text.split("\n")[0], /^# expect-error: \S/);
     const doc = parse(text);
-    assert.equal(validateStageSchema(doc).ok, true, "a semantic fixture must pass the schema");
-    assert.ok(checkStage(doc, ctx()).length > 0, "the semantic rules must reject this file");
+    assert.equal(schemaOf(f, doc).ok, true, "a semantic fixture must pass the schema");
+    const errors = semanticOf(f, doc);
+    assert.ok(errors.length > 0, "the semantic rules must reject this file");
+    if (isWorkshop(f) || f.startsWith("tip-")) {
+      assert.ok(WANTED[f], `${f} needs an entry in WANTED`);
+      assert.match(errors.join("\n"), WANTED[f]);
+    }
   });
 }
 
 for (const f of readdirSync(new URL("valid/", semDir)).filter((n) => n.endsWith(".yaml")).sort()) {
   test(`semantic valid: ${f}`, () => {
     const doc = parse(readFileSync(new URL(`valid/${f}`, semDir), "utf8"));
-    assert.deepEqual(checkStage(doc, ctx()), []);
+    assert.equal(schemaOf(f, doc).ok, true, "a semantic fixture must pass the schema");
+    assert.deepEqual(semanticOf(f, doc), []);
   });
 }
+
+test("every valid workshop fixture of the schema also passes the semantic rules", () => {
+  const dir = new URL("../conformance/v0/schema/valid/", import.meta.url);
+  const names = readdirSync(dir).filter((n) => n.startsWith("workshop-") && n.endsWith(".yaml"));
+  assert.ok(names.length >= 2);
+  for (const f of names) assert.deepEqual(checkWorkshop(parse(readFileSync(new URL(f, dir), "utf8"))), [], f);
+});
+
+test("the schema valid stage fixtures also pass the semantic rules", () => {
+  const dir = new URL("../conformance/v0/schema/valid/", import.meta.url);
+  for (const f of readdirSync(dir).filter((n) => !n.startsWith("workshop-") && n.endsWith(".yaml"))) {
+    assert.deepEqual(checkStage(parse(readFileSync(new URL(f, dir), "utf8")), ctx()), [], f);
+  }
+});
 
 test("errors name the rule", () => {
   const doc = parse(readFileSync(new URL("invalid/duplicate-step-id.yaml", semDir), "utf8"));
@@ -293,4 +343,37 @@ test("the virtualization values are kairos-lab and own, and every fact and optio
     assert.ok(f.label && f.question, f.id);
     for (const o of f.options) assert.ok(o.id && o.label && o.phrase, `${f.id}/${o.id}`);
   }
+});
+
+// Welcome, loadout and prompts in workshop.yaml.
+test("a workshop with a broken loadout fails validation with the file name", () => {
+  const dir = scratch({
+    "workshop.yaml": `format: kairos-workshop/v0\nid: t\ntitle: T\nrepository: kairos-io/t\nloadout:\n  questions:\n    - fact: os\n      title: Which?\n      options:\n        - { value: linux, label: Linux }\n        - { value: macos, label: macOS }\nstages:\n  - { id: s, title: S, markdown: s.md }\n`,
+    "s.md": "# s\n",
+  });
+  assert.match(validateWorkshop(dir).join("\n"), /workshop\.yaml: loadout\.questions\[0\] \(os\): no option for the value "windows"/);
+});
+
+test("the real workshop has five welcome pages, four loadout questions and both prompts", () => {
+  const { workshop } = loadWorkshop(root);
+  assert.equal(workshop.welcome.pages.length, 5);
+  assert.deepEqual(workshop.loadout.questions.map((q) => q.fact), ["os", "virtualization", "arch", "runtime"]);
+  assert.deepEqual(Object.keys(workshop.prompts), ["step", "tip"]);
+  assert.ok(workshop.welcome.pages[0].includes("{name}"));
+  assert.ok(workshop.welcome.pages[4].includes("(https://www.spectrocloud.com/solutions/kairos-support)"));
+});
+
+test("the welcome, loadout and prompt copy has no em dash", () => {
+  const { workshop } = loadWorkshop(root);
+  assert.ok(!JSON.stringify([workshop.welcome, workshop.loadout, workshop.prompts]).includes("—"));
+});
+
+test("a stage help, tip and skip rule are normalized by the loader", () => {
+  const raw = parse("format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\ntip: { when: { virtualization: own }, request: R }\nnot_skippable_when: { virtualization: kairos-lab }\nsections:\n  - title: S\n    text: x\n");
+  const doc = normalizeStage(raw);
+  assert.deepEqual(doc.tip, { when: { virtualization: ["own"] }, request: "R" });
+  assert.deepEqual(doc.not_skippable_when, { virtualization: ["kairos-lab"] });
+  const bare = normalizeStage(parse("format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\ntip: { request: R }\nsections:\n  - title: S\n    text: x\n"));
+  assert.deepEqual(bare.tip, { request: "R" });
+  assert.equal("not_skippable_when" in bare, false);
 });

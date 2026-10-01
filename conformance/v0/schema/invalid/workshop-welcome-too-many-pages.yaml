@@ -1,0 +1,9 @@
+# expect-error: welcome has 11 pages
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages: [a, b, c, d, e, f, g, h, i, j, k]
+stages:
+  - { id: s, title: S, markdown: s.md }

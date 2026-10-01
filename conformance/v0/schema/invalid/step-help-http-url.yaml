@@ -1,0 +1,11 @@
+# expect-error: a step help names an http URL
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: S
+    steps:
+      - id: a
+        help: { goal: Do the thing, source: "http://example.com/src" }
+        commands: [echo hi]

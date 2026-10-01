@@ -27,6 +27,8 @@ function withWhen(item) {
 export function normalizeStage(doc) {
   return {
     ...doc,
+    ...(doc.tip && { tip: { ...doc.tip, ...(doc.tip.when && { when: normalizeWhen(doc.tip.when) }) } }),
+    ...(doc.not_skippable_when && { not_skippable_when: normalizeWhen(doc.not_skippable_when) }),
     sections: doc.sections.map((section) => ({
       ...withWhen(section),
       ...(section.steps && {
@@ -43,6 +45,8 @@ export function normalizeStage(doc) {
 export function referencedFacts(doc) {
   const used = new Set();
   const add = (when) => when && Object.keys(when).forEach((k) => used.add(k));
+  add(doc.tip?.when);
+  add(doc.not_skippable_when);
   for (const section of doc.sections) {
     add(section.when);
     section.warnings?.forEach((w) => add(w.when));

@@ -1,0 +1,14 @@
+# expect-error: a question asks about a fact that does not exist
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: colour
+      title: Which colour?
+      options:
+        - { value: red, label: Red }
+        - { value: blue, label: Blue }
+stages:
+  - { id: s, title: S, markdown: s.md }

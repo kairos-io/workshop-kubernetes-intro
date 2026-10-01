@@ -1,0 +1,10 @@
+# expect-error: a welcome page holds raw HTML
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages:
+    - "Hello <b>there</b>."
+stages:
+  - { id: s, title: S, markdown: s.md }

@@ -5,6 +5,8 @@ import MarkdownIt from "markdown-it";
 import { loadWorkshop } from "./lib/load.mjs";
 import { githubSlug } from "./lib/slug.mjs";
 import { parseStageHref, countInlineStageLinks } from "./lib/links.mjs";
+import { VALUES } from "./lib/facts.mjs";
+import { PROMPT_PLACEHOLDERS, REQUEST_PLACEHOLDERS } from "./lib/prompt.mjs";
 
 // Parse with html: true so raw HTML shows up as tokens we can reject.
 const md = new MarkdownIt({ html: true, linkify: false, typographer: false });
@@ -33,6 +35,35 @@ function checkMarkdown(text, where, ctx) {
   // Publishers resolve the inline form only. A stage link written another way would pass through unresolved.
   const parsed = md.parse(text, {}).flatMap((t) => t.children ?? []).filter((c) => c.type === "link_open" && c.attrGet("href")?.startsWith("stage:")).length;
   if (parsed !== countInlineStageLinks(text)) errors.push(`${where}: write a stage link as [text](stage:id) or [text](stage:id#section)`);
+  return errors;
+}
+
+const BRACES = /\{([^{}]*)\}/g;
+
+// Every {word} in `text` must be one of `allowed`.
+function checkPlaceholders(text, allowed, where) {
+  const errors = [];
+  for (const m of text.matchAll(BRACES)) if (!allowed.includes(m[1])) errors.push(`${where}: unknown placeholder {${m[1]}}`);
+  return errors;
+}
+
+// Inline markdown for the game: one paragraph with text, bold, italic, code and https links.
+const INLINE_OK = new Set(["text", "strong_open", "strong_close", "em_open", "em_close", "code_inline", "link_open", "link_close", "softbreak"]);
+
+function checkInline(text, where) {
+  const errors = [];
+  const tokens = md.parse(text, {});
+  const single = tokens.length === 3 && tokens[0].type === "paragraph_open" && tokens[1].type === "inline" && tokens[2].type === "paragraph_close";
+  if (tokens.some((t) => t.type === "html_block")) return [`${where}: raw HTML is not allowed`];
+  if (!single) return [`${where}: only one paragraph of inline markdown is allowed: text, bold, italic, code and links`];
+  const plain = [];
+  for (const child of tokens[1].children ?? []) {
+    if (child.type === "html_inline") errors.push(`${where}: raw HTML is not allowed`);
+    else if (!INLINE_OK.has(child.type)) errors.push(`${where}: only one paragraph of inline markdown is allowed: text, bold, italic, code and links`);
+    if (child.type === "text") plain.push(child.content);
+    if (child.type === "link_open" && !child.attrGet("href")?.startsWith("https://")) errors.push(`${where}: a link must use https`);
+  }
+  if (ALERT.test(plain.join(""))) errors.push(`${where}: GitHub alert syntax is not allowed`);
   return errors;
 }
 
@@ -66,6 +97,8 @@ export function checkStage(doc, ctx) {
   const errors = [];
   const md_ = (text, where) => text && errors.push(...checkMarkdown(text, where, ctx));
   const warnings = (list, where) => list?.forEach((w, i) => md_(w.text, `${where}.warnings[${i}].text`));
+
+  if (doc.tip) errors.push(...checkPlaceholders(doc.tip.request, REQUEST_PLACEHOLDERS, "tip.request"));
 
   const anchors = new Set();
   doc.sections.forEach((s, i) => {
@@ -101,6 +134,57 @@ export function checkStage(doc, ctx) {
   return errors;
 }
 
+// The loadout rules that the schema cannot express. The loadout must already pass the schema.
+function checkLoadout(loadout) {
+  const errors = [];
+  const asked = new Map();
+  loadout.questions.forEach((q, qi) => {
+    const at = `loadout.questions[${qi}]`;
+    const here = `${at} (${q.fact})`;
+    if (asked.has(q.fact)) errors.push(`${at}: the fact "${q.fact}" is already asked by questions[${asked.get(q.fact)}]`);
+    else asked.set(q.fact, qi);
+
+    const before = new Set(loadout.questions.slice(0, qi).map((x) => x.fact));
+    const refs = (when, where, allowOwn) => {
+      for (const fact of Object.keys(when ?? {})) {
+        if (!before.has(fact) && !(allowOwn && fact === q.fact)) errors.push(`${where}: when names "${fact}", which is not asked before this question`);
+      }
+    };
+    refs(q.when, here, false);
+
+    const seen = new Set();
+    q.options.forEach((o, oi) => {
+      if (seen.has(o.value)) errors.push(`${here}: offers the value "${o.value}" twice`);
+      seen.add(o.value);
+      if (o.forces && q.fact in o.forces) errors.push(`${here}, options[${oi}]: forces its own fact "${q.fact}"`);
+      if (o.text) errors.push(...checkInline(o.text, `${here}.options[${oi}].text`));
+    });
+    for (const value of VALUES[q.fact]) if (!seen.has(value)) errors.push(`${here}: no option for the value "${value}"`);
+    if (q.options.filter((o) => o.recommended).length > 1) errors.push(`${here}: more than one recommended option`);
+
+    if (q.text) errors.push(...checkInline(q.text, `${here}.text`));
+    if (q.help) errors.push(...checkInline(q.help.text, `${here}.help.text`));
+    (q.notes ?? []).forEach((n, ni) => {
+      refs(n.when, `${here}, notes[${ni}]`, true);
+      errors.push(...checkInline(n.text, `${here}.notes[${ni}].text`));
+    });
+  });
+  return errors;
+}
+
+// The semantic rules for workshop.yaml: the welcome pages, the loadout and the prompt templates.
+// It must already pass the schema. The `intro` and the stage list are checked in validateWorkshop.
+export function checkWorkshop(doc) {
+  const errors = [];
+  (doc.welcome?.pages ?? []).forEach((page, i) => {
+    const where = `welcome.pages[${i}]`;
+    errors.push(...checkInline(page, where), ...checkPlaceholders(page, ["name"], where));
+  });
+  if (doc.loadout) errors.push(...checkLoadout(doc.loadout));
+  for (const [kind, template] of Object.entries(doc.prompts ?? {})) errors.push(...checkPlaceholders(template, PROMPT_PLACEHOLDERS, `prompts.${kind}`));
+  return errors;
+}
+
 // The lookup tables the semantic rules need, from a loaded workshop.
 export function buildContext(loaded, root) {
   const stages = new Map(loaded.stages.map((s) => [s.id, { slugs: s.slugs ? new Set(s.slugs) : null }]));
@@ -121,6 +205,7 @@ export function validateWorkshop(root) {
   const ctx = buildContext(loaded, root);
   const intro = loaded.workshop.intro;
   if (intro) errors.push(...checkMarkdown(intro, "workshop.yaml intro", ctx));
+  errors.push(...checkWorkshop(loaded.workshop).map((e) => `workshop.yaml: ${e}`));
 
   for (const s of loaded.stages) {
     if (s.kind === "markdown") {

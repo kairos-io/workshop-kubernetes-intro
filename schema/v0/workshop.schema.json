@@ -12,6 +12,31 @@
     "subtitle": { "type": "string", "pattern": "^[^\\n<>]*$" },
     "repository": { "type": "string", "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$" },
     "intro": { "type": "string", "minLength": 1 },
+    "welcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pages"],
+      "properties": {
+        "pages": { "type": "array", "minItems": 1, "maxItems": 10, "items": { "type": "string", "minLength": 1 } }
+      }
+    },
+    "loadout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["questions"],
+      "properties": {
+        "questions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/question" } }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step", "tip"],
+      "properties": {
+        "step": { "type": "string", "minLength": 1 },
+        "tip": { "type": "string", "minLength": 1 }
+      }
+    },
     "stages": {
       "type": "array",
       "minItems": 1,
@@ -27,6 +52,92 @@
               "markdown": { "type": "string", "pattern": "^[A-Za-z0-9_-]+\\.md$" } } }
         ]
       }
+    }
+  },
+  "$defs": {
+    "plain": { "type": "string", "minLength": 1, "maxLength": 200, "pattern": "^[^\\n<>`]*$" },
+    "markdown": { "type": "string", "minLength": 1 },
+    "fact": { "enum": ["os", "virtualization", "arch", "runtime"] },
+    "value-os": { "enum": ["linux", "macos", "windows"] },
+    "value-virtualization": { "enum": ["kairos-lab", "own"] },
+    "value-arch": { "enum": ["amd64", "arm64"] },
+    "value-runtime": { "enum": ["docker", "podman"] },
+    "when": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "os": { "oneOf": [{ "$ref": "#/$defs/value-os" }, { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/value-os" } }] },
+        "virtualization": { "oneOf": [{ "$ref": "#/$defs/value-virtualization" }, { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/value-virtualization" } }] },
+        "arch": { "oneOf": [{ "$ref": "#/$defs/value-arch" }, { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/value-arch" } }] },
+        "runtime": { "oneOf": [{ "$ref": "#/$defs/value-runtime" }, { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/value-runtime" } }] }
+      }
+    },
+    "forces": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "os": { "$ref": "#/$defs/value-os" },
+        "virtualization": { "$ref": "#/$defs/value-virtualization" },
+        "arch": { "$ref": "#/$defs/value-arch" },
+        "runtime": { "$ref": "#/$defs/value-runtime" }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "label"],
+      "properties": {
+        "value": { "type": "string" },
+        "label": { "$ref": "#/$defs/plain" },
+        "text": { "$ref": "#/$defs/markdown" },
+        "recommended": { "type": "boolean" },
+        "forces": { "$ref": "#/$defs/forces" },
+        "ends": { "type": "boolean" }
+      }
+    },
+    "note": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "when": { "$ref": "#/$defs/when" },
+        "text": { "$ref": "#/$defs/markdown" }
+      }
+    },
+    "question": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["fact", "title", "options"],
+      "properties": {
+        "fact": { "$ref": "#/$defs/fact" },
+        "title": { "$ref": "#/$defs/plain" },
+        "text": { "$ref": "#/$defs/markdown" },
+        "when": { "$ref": "#/$defs/when" },
+        "options": { "type": "array", "minItems": 2, "items": { "$ref": "#/$defs/option" } },
+        "help": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["label", "command", "text"],
+          "properties": {
+            "label": { "$ref": "#/$defs/plain" },
+            "command": { "type": "string", "minLength": 1, "pattern": "^[^\\n]*$" },
+            "text": { "$ref": "#/$defs/markdown" }
+          }
+        },
+        "notes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/note" } }
+      },
+      "allOf": [
+        { "if": { "type": "object", "properties": { "fact": { "const": "os" } }, "required": ["fact"] },
+          "then": { "type": "object", "properties": { "options": { "type": "array", "items": { "type": "object", "properties": { "value": { "$ref": "#/$defs/value-os" } } } } } } },
+        { "if": { "type": "object", "properties": { "fact": { "const": "virtualization" } }, "required": ["fact"] },
+          "then": { "type": "object", "properties": { "options": { "type": "array", "items": { "type": "object", "properties": { "value": { "$ref": "#/$defs/value-virtualization" } } } } } } },
+        { "if": { "type": "object", "properties": { "fact": { "const": "arch" } }, "required": ["fact"] },
+          "then": { "type": "object", "properties": { "options": { "type": "array", "items": { "type": "object", "properties": { "value": { "$ref": "#/$defs/value-arch" } } } } } } },
+        { "if": { "type": "object", "properties": { "fact": { "const": "runtime" } }, "required": ["fact"] },
+          "then": { "type": "object", "properties": { "options": { "type": "array", "items": { "type": "object", "properties": { "value": { "$ref": "#/$defs/value-runtime" } } } } } } }
+      ]
     }
   }
 }

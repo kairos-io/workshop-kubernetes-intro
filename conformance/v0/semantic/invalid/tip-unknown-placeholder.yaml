@@ -1,0 +1,10 @@
+# expect-error: a tip request uses a placeholder that a request cannot use
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+tip:
+  request: "Explain how to install {runtime} on {stage}."
+sections:
+  - title: S
+    text: Hello.

@@ -1,0 +1,45 @@
+format: kairos-workshop/v0
+id: sample-workshop
+title: A sample workshop
+repository: kairos-io/sample
+welcome:
+  pages:
+    - "Hi {name}! This is **bold**, `code` and a [link](https://example.com)."
+    - A second page.
+loadout:
+  questions:
+    - fact: os
+      title: What is your computer running?
+      text: Pick the one you are typing on.
+      options:
+        - { value: linux, label: Linux }
+        - { value: macos, label: macOS }
+        - value: windows
+          label: Windows
+          forces: { virtualization: own }
+          ends: true
+          text: Not game over.
+    - fact: virtualization
+      title: How will you run the VMs?
+      when: { os: [linux, macos] }
+      options:
+        - { value: kairos-lab, label: Zen, recommended: true, text: Easy. }
+        - { value: own, label: Master, text: You bring your own software. }
+      help:
+        label: Not sure?
+        command: uname -m
+        text: x86_64 means amd64.
+      notes:
+        - when: { os: linux }
+          text: A note for Linux.
+        - text: A note for everyone.
+    - fact: arch
+      title: Which CPU architecture?
+      options:
+        - { value: amd64, label: amd64 }
+        - { value: arm64, label: arm64, ends: true }
+prompts:
+  step: "Stage {stage}, step {step}: {goal}"
+  tip: "Stage {stage}: {request}"
+stages:
+  - { id: s, title: S, markdown: s.md }

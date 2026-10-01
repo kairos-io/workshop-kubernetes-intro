@@ -1,0 +1,9 @@
+# expect-error: prompts has no tip template
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+prompts:
+  step: "Hello {stage}"
+stages:
+  - { id: s, title: S, markdown: s.md }

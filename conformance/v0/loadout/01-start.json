@@ -1,0 +1,5 @@
+{
+  "description": "Nothing is answered yet, so the first question is asked.",
+  "answers": [],
+  "expect": { "next": "os", "answers": {} }
+}

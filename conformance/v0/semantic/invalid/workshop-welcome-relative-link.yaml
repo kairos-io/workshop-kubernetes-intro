@@ -1,0 +1,10 @@
+# expect-error: a welcome page has a link that is not https
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages:
+    - "See [this](stage:other)."
+stages:
+  - { id: s, title: S, markdown: s.md }

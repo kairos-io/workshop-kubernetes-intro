@@ -1,0 +1,10 @@
+# expect-error: a tip request writes a placeholder with spaces
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+tip:
+  request: "Explain how to install { runtime }."
+sections:
+  - title: S
+    text: Hello.

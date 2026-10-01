@@ -1,0 +1,20 @@
+# expect-error: a help command has two lines
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: arch
+      title: Which CPU architecture?
+      options:
+        - { value: amd64, label: amd64 }
+        - { value: arm64, label: arm64 }
+      help:
+        label: Not sure?
+        command: |
+          uname -m
+          arch
+        text: Look at the output.
+stages:
+  - { id: s, title: S, markdown: s.md }

@@ -1,0 +1,28 @@
+# expect-error: a note has a when on a fact that is asked later
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: os
+      title: What is your computer running?
+      options:
+        - { value: linux, label: Linux }
+        - { value: macos, label: macOS }
+        - { value: windows, label: Windows }
+    - fact: arch
+      title: Which CPU architecture?
+      options:
+        - { value: amd64, label: amd64 }
+        - { value: arm64, label: arm64 }
+      notes:
+        - when: { runtime: docker }
+          text: Docker is fine.
+    - fact: runtime
+      title: Which container runtime?
+      options:
+        - { value: docker, label: Docker }
+        - { value: podman, label: Podman }
+stages:
+  - { id: s, title: S, markdown: s.md }

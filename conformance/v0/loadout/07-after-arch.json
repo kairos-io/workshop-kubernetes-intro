@@ -1,0 +1,5 @@
+{
+  "description": "After the architecture the container runtime question comes next.",
+  "answers": [["os", "linux"], ["virtualization", "kairos-lab"], ["arch", "amd64"]],
+  "expect": { "next": "runtime", "answers": { "os": "linux", "virtualization": "kairos-lab", "arch": "amd64" } }
+}

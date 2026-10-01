@@ -1,0 +1,14 @@
+# expect-error: a question marks two options as recommended
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: virtualization
+      title: How will you run the VMs?
+      options:
+        - { value: kairos-lab, label: Zen, recommended: true }
+        - { value: own, label: Master, recommended: true }
+stages:
+  - { id: s, title: S, markdown: s.md }
