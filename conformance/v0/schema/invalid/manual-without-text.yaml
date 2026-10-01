@@ -1,0 +1,10 @@
+# expect-error: a manual check needs its text, because it has no parameters to build a sentence from
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: manual }

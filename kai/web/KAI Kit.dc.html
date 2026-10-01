@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="kai-engine.js"></script>
+<style>body{margin:0;background:#0f380f;}a{color:#9bbc0f;}a:hover{color:#8bac0f;}</style>
+</helmet>
+<div style="min-height:100vh;background:#0f380f;color:#9bbc0f;font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.5;padding:40px 32px 80px;box-sizing:border-box;display:flex;flex-direction:column;gap:56px;">
+
+  <header style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px;">
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div style="font-family:'Press Start 2P',monospace;font-size:24px;line-height:32px;">KAI</div>
+      <div style="max-width:560px;text-wrap:pretty;">The Kairos armadillo as a 16×16 handheld-RPG sprite. Every screen below is generated from the same props: screen, stage, action and text.</div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <sc-for list="{{ palettes }}" as="p" hint-placeholder-count="3">
+        <button onClick="{{ p.pick }}" style="font-family:'Press Start 2P',monospace;font-size:10px;padding:10px 12px;border:2px solid #9bbc0f;cursor:pointer;background:{{ p.bg }};color:{{ p.fg }};">{{ p.label }}</button>
+      </sc-for>
+    </div>
+  </header>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:12px;">SCREENS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;">
+      <sc-for list="{{ screens }}" as="s" hint-placeholder-count="8">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <dc-import name="KAI Screen" screen="{{ s.screen }}" palette="{{ mode }}" dialog="{{ s.dialog }}" action="{{ s.action }}" hud="{{ s.hud }}" kind="{{ s.kind }}" tool="{{ s.tool }}" headline="{{ s.headline }}" sub="{{ s.sub }}" loadout="{{ s.loadout }}" map="{{ s.map }}" max-scale="{{ 2 }}" map-cursor="{{ s.mapCursor }}" mentor="{{ s.mentor }}" items="{{ s.items }}" player="{{ s.player }}" date="{{ s.date }}" hint-size="320px,288px"></dc-import>
+          <div style="font-size:12px;color:#8bac0f;max-width:320px;">{{ s.caption }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:12px;">ACTIONS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:16px;">
+      <sc-for list="{{ anims }}" as="a" hint-placeholder-count="13">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
+          <canvas ref="{{ a.ref }}" width="24" height="24" style="width:96px;height:96px;image-rendering:pixelated;"></canvas>
+          <div style="font-size:12px;">{{ a.name }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:12px;">LOGOS</div>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;">
+      <canvas ref="{{ logoRef }}" width="200" height="64" style="width:600px;max-width:100%;height:auto;image-rendering:pixelated;"></canvas>
+    </div>
+    <div style="font-size:12px;color:#8bac0f;max-width:640px;text-wrap:pretty;">16×16 pixel marks drawn from the Kairos and Hadron logos you sent. In the Color palette the Kairos mark keeps its brand oranges (#FB9E70, #FF7442, #EE5007).</div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:12px;">ITEMS</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;">
+      <sc-for list="{{ tools }}" as="t" hint-placeholder-count="8">
+        <div style="display:flex;gap:14px;align-items:center;">
+          <canvas ref="{{ t.ref }}" width="10" height="10" style="width:60px;height:60px;image-rendering:pixelated;flex:none;"></canvas>
+          <div style="display:flex;flex-direction:column;">
+            <div style="font-family:'Press Start 2P',monospace;font-size:10px;line-height:18px;">{{ t.name }}</div>
+            <div style="font-size:12px;color:#8bac0f;">{{ t.desc }}</div>
+            <div style="font-size:12px;color:#8bac0f;">{{ t.stage }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:12px;">TEXT</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;">
+      <sc-for list="{{ copy }}" as="g" hint-placeholder-count="10">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-family:'Press Start 2P',monospace;font-size:10px;color:#8bac0f;">{{ g.key }}</div>
+          <sc-for list="{{ g.items }}" as="m" hint-placeholder-count="3">
+            <div style="background:#9bbc0f;color:#0f380f;padding:6px 10px;border:3px solid #306230;">{{ m }}</div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px;max-width:880px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:12px;">USAGE</div>
+    <div>Web: embed a screen and pass the text and action.</div>
+    <pre style="margin:0;padding:16px;background:#306230;color:#9bbc0f;overflow:auto;white-space:pre-wrap;">&lt;dc-import name="KAI Workshop"&gt;&lt;/dc-import&gt;   the full workshop app
+&lt;dc-import name="KAI Screen" screen="fail" headline="CHECK FAILED"
+  sub="LET'S FIX IT" dialog="KAI has a prompt ready."&gt;&lt;/dc-import&gt;</pre>
+    <div>Terminal: the Go renderer in tui/ reads the same kai-sprites.json, theme.json and content.json.</div>
+    <pre style="margin:0;padding:16px;background:#306230;color:#9bbc0f;overflow:auto;white-space:pre-wrap;">kai                      play (arrows, Enter, Tab, c, o, y, n, q)
+kai render --screen map --stage build-image --size 120x40 --name Ana
+kai say "Hi! I'm KAI."</pre>
+    <div style="color:#8bac0f;">Stage titles, steps and commands live in content.json. Mentors, player characters, locations, items per stage, poses and short game lines live in theme.json.</div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:&quot;dmg&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { ready: false, mode: this.props.palette ?? 'dmg' };
+  cells = {}; icons = {}; tick = 0;
+  componentDidMount() {
+    window.KAIE.load().then(() => { this.setState({ ready: true }); setTimeout(() => this.draw(), 50); }).catch(e => console.error('KAI load', e));
+    this.iv = setInterval(() => { this.tick++; this.draw(); }, 125);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  draw() {
+    const E = window.KAIE;
+    if (!E.S) return;
+    const m = this.state.mode, W = E.pal(m, 'world'), K = E.pal(m, 'kai'), I = E.pal(m, 'icons'), U = E.pal(m, 'ui');
+    Object.entries(this.cells).forEach(([name, c]) => {
+      if (!c) return;
+      const x = c.getContext('2d'), f = E.frame(name, this.tick);
+      E.rect(x, W[0], 0, 0, 24, 24);
+      if (f.anim.shadow && f.dy < 0) E.draw(x, E.S.tiles.shadow, W, 4, 18);
+      E.draw(x, f.map, K, 4, 4 + f.dy, { flip: f.flip || (name === 'walk' && (this.tick >> 4) % 2 === 1) });
+      if (f.anim.overlay === 'z') E.draw(x, E.S.tiles.z, K, 18, 1 - ((this.tick >> 2) % 2), { mono: 3 });
+    });
+    Object.entries(this.icons).forEach(([id, c]) => {
+      if (!c) return;
+      const x = c.getContext('2d');
+      E.rect(x, U[0], 0, 0, 10, 10);
+      E.draw(x, E.S.icons[id], I, 1, 1);
+    });
+    if (this.logo && !this.logoDone) {
+      const x = this.logo.getContext('2d');
+      ['dmg', 'kairos', 'gbc'].forEach((pm, i) => {
+        const B = E.pal(pm, 'ui');
+        E.rect(x, B[0], i * 68, 0, 64, 64);
+        E.draw(x, E.S.logos.kairos, E.pal(pm, 'kairos'), i * 68 + 8, 8);
+        E.draw(x, E.S.logos.hadron, E.pal(pm, 'hadron'), i * 68 + 40, 8);
+        E.draw(x, E.S.frames.front, E.pal(pm, 'kai'), i * 68 + 24, 38);
+      });
+      this.logoDone = true;
+    }
+  }
+  renderVals() {
+    const E = window.KAIE, ready = this.state.ready && E && E.S && E.W;
+    const mode = this.state.mode;
+    const palettes = ['dmg', 'kairos', 'gbc'].map(k => ({
+      label: k === 'dmg' ? 'DMG' : k === 'kairos' ? 'KAIROS' : 'COLOR',
+      bg: mode === k ? '#9bbc0f' : 'transparent', fg: mode === k ? '#0f380f' : '#9bbc0f',
+      pick: () => this.setState({ mode: k }, () => this.draw())
+    }));
+    const base = { mode, palettes, logoRef: el => { this.logo = el; this.logoDone = false; this.draw(); } };
+    if (!ready) return { ...base, screens: [], anims: [], tools: [], copy: [] };
+    const M = E.W.messages;
+    const Wt = E.W, P = E.seedProgress({ cleared: 2, facts: { os: 'macos' } });
+    const S = (o) => ({ dialog: '', action: '', hud: null, kind: 'step', tool: '', headline: '', sub: '', loadout: null, map: null, mapCursor: 0, mentor: null, items: null, player: { style: 'hoodie', name: 'Friend' }, date: '', ...o });
+    const screens = [
+      S({ screen: 'title', caption: 'Title' }),
+      S({ screen: 'loadout', dialog: M.loadout, loadout: E.C.facts.map((f, i) => ({ fact: f.id, value: i === 0 ? f.options[0].label : M.unsure })), caption: 'Loadout' }),
+      S({ screen: 'map', dialog: (() => { const ids = E.stageIds(), sid = ids[Math.min(2, ids.length - 1)]; return 'STOP ' + E.stageNo(sid) + ' ' + E.themeStage(sid).location + '\nWITH ' + E.first(E.mentor('Friend', sid)).toUpperCase(); })(), map: E.stageIds().map(id => ({ id, state: E.stageState(P, id), mentor: E.mentorPlan('Friend')[id] })), mapCursor: 2, hud: { xp: P.xp }, player: { style: 'cap', name: 'Friend' }, caption: 'Route across Europe' }),
+      S({ screen: 'mentor', mentor: E.W.mentors[3], dialog: (() => { const sid = E.stageIds()[Math.min(2, E.stageIds().length - 1)]; return E.fill(M.mentor_intro, { mentor: E.first(E.W.mentors[3]), goal: E.stage(sid).goal || E.stage(sid).title }); })(), player: { style: 'beanie', name: 'Friend' }, caption: 'Mentor intro' }),
+      S({ screen: 'character', dialog: E.fill(M.character_line, { name: 'Friend' }), caption: 'Character choice' }),
+      S({ screen: 'badge', player: { name: 'Friend' }, date: '2026-09-30', caption: 'Badge' }),
+      ...[['point', 0, 'Stage: point (commands)'], ['read', 1, 'Stage: read (text)'], ['think', 2, 'Stage: think (empty state)']].map(([action, i, caption]) => { const ids = E.stageIds(), sid = ids[Math.min(i, ids.length - 1)], st = E.stage(sid).steps[0]; return S({ screen: 'stage', action, hud: { stage: sid, done: 0, total: E.stage(sid).steps.filter(x => !x.optional).length, xp: 50 * i }, dialog: st.title + '\n' + (action === 'think' ? M.empty_line : (st.line || '')), caption }); }),
+      S({ screen: 'fail', headline: M.fail_head, sub: M.fail_sub, dialog: M.fail_line, caption: 'Check failed (sad)' }),
+      S({ screen: 'clear', kind: 'step', headline: M.step_clear, sub: '+50 XP', dialog: M.step_clear_line, action: 'celebrate', caption: 'Step cleared (celebrate)' }),
+      S({ screen: 'clear', kind: 'stage', headline: M.stage_clear, sub: '1/1 STEPS', dialog: E.fill(M.stage_clear_line || M.mentor_outro, { location: E.themeStage(E.stageIds()[1]).location, name: 'Friend', mentor: E.first(E.mentor('Friend', E.stageIds()[1])) }), caption: 'Stage cleared (jump)' }),
+      S({ screen: 'clear', kind: 'item', items: [{ icon: 'kairos-init' }, { icon: 'bootable-container' }, { icon: 'auroraboot', sub: '1/3' }], headline: M.item_head, dialog: E.fill(M.item_line, { item: 'KAIROS-INIT, BOOT IMAGE, AURORABOOT 1/3' }), caption: 'Items (mega item 1/3)' }),
+      S({ screen: 'complete', headline: M.complete_head, sub: M.complete_sub, dialog: M.complete_line, caption: 'Workshop complete' })
+    ];
+    const anims = Object.keys(E.S.animations).map(name => ({ name, ref: el => { this.cells[name] = el; } }));
+    const tools = Object.entries(E.W.items).map(([id, t]) => ({ name: t.name, desc: t.desc, stage: 'Earned at ' + (E.W.stages.find(s => s.items.includes(id)) || {}).location, ref: el => { this.icons[t.icon] = el; this.draw(); } })).concat([{ name: 'AURORABOOT 1–3/3', desc: E.W.mega.auroraboot.desc, stage: 'Parts at IMAGE FORGE and KAIROS FLEET; netboot coming soon', ref: el => { this.icons.auroraboot = el; this.draw(); } }, { name: 'NETBOOT (coming soon)', desc: 'AuroraBoot part 3', stage: 'No stage yet', ref: el => { this.icons.netboot = el; this.draw(); } }]);
+    const copy = Object.entries(M).map(([key, v]) => ({ key, items: Array.isArray(v) ? v : typeof v === 'object' ? Object.values(v) : [v] }));
+    copy.push({ key: 'labels', items: Object.values(E.W.labels) });
+    copy.push({ key: 'stages (content.json)', items: E.stageIds().map(id => `STOP ${E.stageNo(id)} · ${id} · ${E.themeStage(id).location} · ${E.stage(id).title} · goal: ${E.stage(id).goal}`) });
+    copy.push({ key: 'mentors (theme.json)', items: E.W.mentors.map(m => m.name + ' · ' + m.country) });
+    return { ...base, screens, anims, tools, copy };
+  }
+}
+</script>
+</body>
+</html>

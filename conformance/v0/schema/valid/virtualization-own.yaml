@@ -1,0 +1,7 @@
+format: kairos-workshop/v0
+id: own
+title: Own
+goal: use your own software
+sections:
+  - title: X
+    when: { virtualization: [own, kairos-lab] }

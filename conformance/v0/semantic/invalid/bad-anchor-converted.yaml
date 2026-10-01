@@ -1,0 +1,8 @@
+# expect-error: a link into a converted stage names a section that does not exist
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    text: See [stage 1](stage-1.md#no-such-section).

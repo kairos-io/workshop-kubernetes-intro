@@ -1,0 +1,10 @@
+# expect-error: a warning kind is not one of the five
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    warnings:
+      - kind: danger
+        text: Nope.

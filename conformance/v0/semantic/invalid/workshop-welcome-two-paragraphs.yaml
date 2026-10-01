@@ -1,0 +1,13 @@
+# expect-error: a welcome page holds two paragraphs
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages:
+    - |
+      One.
+
+      Two.
+stages:
+  - { id: s, title: S, markdown: s.md }

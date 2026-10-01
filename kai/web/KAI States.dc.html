@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="kai-engine.js"></script>
+<script src="kai-term.js"></script>
+<style>body{margin:0;background:#1a1d1a;}a{color:#9BBC0F;}a:hover{color:#E6EFC8;}</style>
+</helmet>
+<div style="padding:48px;display:flex;flex-direction:column;gap:64px;background:#1a1d1a;color:#E6EFC8;font-family:'IBM Plex Sans',sans-serif;min-width:1200px;">
+  <div style="display:flex;flex-direction:column;gap:10px;max-width:900px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:20px;line-height:28px;color:#9BBC0F;">KAI · every screen, every state</div>
+    <div style="font-size:17px;line-height:1.55;">Live instances of <a href="KAI Workshop.dc.html">KAI Workshop</a>, seeded to each state. Frames scroll. Terminal frames come from kai-term.js, which uses the same layout as tui/main.go. The state list is at the bottom and in STATES.md.</div>
+  </div>
+
+  <sc-for list="{{ groups }}" as="grp" hint-placeholder-count="3">
+    <section style="display:flex;flex-direction:column;gap:20px;">
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="font-family:'Press Start 2P',monospace;font-size:14px;line-height:20px;color:#9BBC0F;">{{ grp.title }}</div>
+        <div style="font-size:16px;max-width:900px;">{{ grp.note }}</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;">
+        <sc-for list="{{ grp.items }}" as="it" hint-placeholder-count="3">
+          <div id="{{ it.id }}" style="display:flex;flex-direction:column;gap:10px;width:{{ it.w }}px;">
+            <div style="display:flex;gap:10px;align-items:baseline;">
+              <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9BBC0F;color:#0F380F;padding:4px 6px;">{{ it.id }}</span>
+              <span style="font-size:16px;font-weight:600;">{{ it.label }}</span>
+            </div>
+            <div style="height:{{ it.h }}px;overflow:auto;border:3px solid #9BBC0F;background:#0F380F;">
+              <dc-import name="KAI Workshop" mode="{{ it.mode }}" boss="{{ it.boss }}" ws-size="{{ it.wsSize }}" ws-dark="{{ it.wsDark }}" view="{{ it.view }}" stage="{{ it.stage }}" step="{{ it.step }}" status="{{ it.status }}" seed="{{ it.seed }}" copy="{{ it.copy }}" clear="{{ it.clear }}" settings-open="{{ it.settingsOpen }}" name-draft="{{ it.nameDraft }}" skip-ask="{{ it.skipAsk }}" welcome-page="{{ it.welcomePage }}" lq="{{ it.lq }}" arch-help="{{ it.archHelp }}" tip-open="{{ it.tipOpen }}" palette="{{ it.palette }}" reduce-motion="{{ it.reduce }}" persist="{{ false }}" keys="{{ false }}" hint-size="100%,800px"></dc-import>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+  </sc-for>
+
+  <section style="display:flex;flex-direction:column;gap:20px;">
+    <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="font-family:'Press Start 2P',monospace;font-size:14px;line-height:20px;color:#9BBC0F;">TERMINAL</div>
+      <div style="font-size:16px;max-width:900px;">80×24 and 120×40. Keyboard only. Command lines are plain, indented text with no borders beside them, so terminal selection copies them cleanly. c copies with OSC 52 and o prints the command unwrapped. Truecolor unless labeled.</div>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start;">
+      <sc-for list="{{ terms }}" as="t" hint-placeholder-count="6">
+        <div id="{{ t.id }}" style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;gap:10px;align-items:baseline;">
+            <span style="font-family:'Press Start 2P',monospace;font-size:11px;background:#9BBC0F;color:#0F380F;padding:4px 6px;">{{ t.id }}</span>
+            <span style="font-size:16px;font-weight:600;">{{ t.label }}</span>
+          </div>
+          <pre ref="{{ t.ref }}" style="margin:0;padding:12px;background:#101414;color:#D8DEE0;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;line-height:15px;border:3px solid #3a403a;"></pre>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:16px;max-width:1100px;">
+    <div style="font-family:'Press Start 2P',monospace;font-size:14px;line-height:20px;color:#9BBC0F;">STATES</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px;">
+      <sc-for list="{{ stateNotes }}" as="n" hint-placeholder-count="9">
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="font-weight:600;font-size:17px;">{{ n.screen }}</div>
+          <sc-for list="{{ n.states }}" as="x" hint-placeholder-count="3"><div style="font-size:15px;line-height:1.45;">· {{ x }}</div></sc-for>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { ready: false };
+  componentDidMount() { window.KAIE.load().then(() => this.setState({ ready: true })).catch(e => console.error(e)); }
+  renderVals() {
+    const E = window.KAIE;
+    if (!(this.state.ready && E.ready())) return { groups: [], terms: [], stateNotes: [] };
+    // Everything below comes from the data: stage ids, counts and step ids are never hard-coded.
+    const ids = E.stageIds(), N = ids.length, at = i => ids[Math.max(0, Math.min(N - 1, i))], last = ids[N - 1];
+    // Sample loadouts built from content.facts: the first option of every fact, the last option of every fact, and the option that carries a notice.
+    const pickAll = idx => E.C.facts.reduce((acc, fc) => E.withFact(acc, fc.id, fc.options[idx(fc)].id), Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure'])));
+    const zen = pickAll(() => 0), master = pickAll(fc => fc.options.length - 1);
+    const noticeFact = E.C.facts.find(fc => fc.options.some(o => o.notice));
+    const win = noticeFact ? E.withFact(Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure'])), noticeFact.id, noticeFact.options.find(o => o.notice).id) : zen;
+    const unsetF = Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure']));
+    const who = { name: 'Ana', character: 'cap' };
+    const reqDone = (id, facts) => E.steps(id, facts).filter(s => !s.optional).map(s => E.stepKey(id, s.id));
+    const firstIdx = (id, facts, pred) => Math.max(0, E.steps(id, facts).findIndex(pred));
+    const linkStep = firstIdx(ids[0], zen, s => /\]\(stage:/.test(JSON.stringify(s.blocks)));
+    const D = (id, label, o) => ({ id, label, w: 1000, h: 860, mode: 'game', boss: false, wsSize: 3, wsDark: false, view: 'stage', stage: ids[0], step: 0, status: 'todo', copy: {}, clear: null, settingsOpen: false, palette: null, reduce: null, nameDraft: null, skipAsk: null, welcomePage: 0, lq: 0, archHelp: false, tipOpen: false, ...o, seed: { started: true, ...who, ...((o && o.seed) || {}) } });
+    const Mb = (id, label, o) => D(id, label, { w: 390, h: 800, ...o });
+    const all = { cleared: N, facts: zen, completedAt: '2026-09-30' };
+    const half = Math.floor(N / 2);
+    const groups = [
+      { title: 'NEW IN ROUND 4 · TWO MODES, PROJECTOR, BOSS KEY', note: 'The first screen asks for a mode. “Just the workshop” has no game: stage list on the left, the same steps, commands, notes and prompts in the middle. Esc turns either mode into a spreadsheet.', items: [
+        D('13a', 'First screen: choose a mode', { mode: null, view: 'chooser', seed: { started: false, name: '', character: '' } }),
+        D('13b', 'Just the workshop · light', { mode: 'workshop', w: 1280, seed: { facts: zen } }),
+        D('13c', 'Just the workshop · dark', { mode: 'workshop', w: 1280, wsDark: true, seed: { facts: zen, done: [E.stepKey(ids[0], E.steps(ids[0], zen)[0].id)] }, step: 1 }),
+        D('13d', 'Projector: text at 175%', { mode: 'workshop', w: 1280, wsSize: 6, seed: { facts: zen } }),
+        D('13e', 'Workshop: loadout on first visit', { mode: 'workshop', view: 'loadout', w: 1280, seed: { facts: unsetF } }),
+        D('13f', 'Unset facts: items keep their labels', { mode: 'workshop', w: 1280, seed: { facts: unsetF } }),
+        D('13g', 'Boss key from the game', { boss: true, step: 1, seed: { facts: zen } }),
+        D('13h', 'Boss key from the workshop', { mode: 'workshop', boss: true, stage: at(1), w: 1280, seed: { cleared: 1, facts: zen } }),
+        D('13i', 'Step help: tool + docs, check kind', { step: 2, seed: { facts: zen } }),
+        D('13j', 'Stage link inside a step', { step: linkStep, seed: { facts: zen } }),
+        D('13k', 'It did not work: prompt from the step help', { step: 2, status: 'failed', seed: { facts: zen } }),
+        D('13l', 'Prompt with unset facts', { mode: 'workshop', w: 1280, status: 'failed', seed: { facts: unsetF } })
+      ] },
+      { title: 'ROUND 3 · WELCOME, LOADOUT, HELP, SKIP RULES', note: '', items: [
+        D('11a', 'Name: field focused, caret visible', { view: 'name', seed: { name: '' }, nameDraft: 'Ana' }),
+        D('11b', 'Welcome, first page', { view: 'welcome', welcomePage: 0 }),
+        D('11c', 'Welcome, last page: patron link', { view: 'welcome', welcomePage: E.W.welcome.pages.length - 1 }),
+        D('11d', 'Loadout: first question', { view: 'loadout', lq: 0, seed: { facts: unsetF } }),
+        D('11e', 'Loadout: Windows notice', { view: 'loadout', lq: 1, seed: { facts: win } }),
+        D('11g', 'Loadout: architecture, help open', { view: 'loadout', lq: 2, archHelp: true, seed: { facts: zen } }),
+        D('11h', 'Loadout: runtime (Zen note)', { view: 'loadout', lq: 3, seed: { facts: zen } }),
+        D('11m', 'Ask KAI for a TIP (stages with tipOnly)', { stage: ids[0], tipOpen: true, seed: { facts: master, virtName: 'VirtualBox' } }),
+        D('11n', 'Route: first stop not skippable (Zen)', { view: 'map', stage: ids[0], seed: { facts: zen } }),
+        D('11o', 'Route: cleared stops in their own color', { view: 'map', stage: at(half), seed: { cleared: half, facts: zen } })
+      ] },
+      { title: 'ROUND 2 · MENTORS, ROUTE, ITEMS, BADGE', note: '', items: [
+        D('10c', 'Mentor intro', { view: 'mentor', stage: at(2), seed: { cleared: 2, facts: zen } }),
+        D('10d', 'Route with a skipped stop', { view: 'map', stage: at(3), seed: { cleared: 2, skipped: [at(2)], facts: zen } }),
+        D('10f', 'Stage clear with the mentor', { view: 'clear-stage', stage: at(2), seed: { cleared: 3, facts: zen } }),
+        D('10g', 'Items', { view: 'items', stage: at(2), seed: { cleared: 3, facts: zen } }),
+        D('10i', 'Complete: skipped stops show ??????', { view: 'complete', stage: last, seed: { facts: zen, done: ids.filter((x, i) => i % 3 !== 1).flatMap(x => reqDone(x, zen)), skipped: ids.filter((x, i) => i % 3 === 1), completedAt: '2026-09-30' } }),
+        D('10j', 'Badge', { view: 'badge', stage: last, seed: all })
+      ] },
+      { title: 'ROUND 1 · TITLE, STAGE, SETTINGS, MOBILE', note: '', items: [
+        D('1a', 'Title, new player', { view: 'title', seed: { started: false, name: '', character: '' } }),
+        D('4b', 'Stage, copied', { seed: { facts: zen }, copy: {} }),
+        D('7a', 'Settings (game)', { settingsOpen: true, seed: { facts: zen } }),
+        D('7d', 'Settings (workshop)', { mode: 'workshop', w: 1280, settingsOpen: true, seed: { facts: zen } }),
+        D('7b', 'Kairos palette, reduced motion', { palette: 'kairos', reduce: true, view: 'map', stage: at(half), seed: { cleared: half, facts: zen } }),
+        Mb('8b', 'Mobile: stage (game)', { seed: { facts: zen } }),
+        Mb('8d', 'Mobile: just the workshop', { mode: 'workshop', seed: { facts: zen } })
+      ] }
+    ];
+    const S = o => E.seedProgress({ ...who, ...o });
+    const spec = [
+      ['12a', 'Welcome · 80×24', 80, 24, { view: 'welcome', p: S({ facts: zen }), welcomePage: 0 }],
+      ['12c', 'Loadout · 120×40', 120, 40, { view: 'loadout', p: S({ facts: zen }), lq: 1, optCursor: 0 }],
+      ['14a', 'Stage with help line and $ prompt · 120×40', 120, 40, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 2 }],
+      ['14b', 'Stage · 80×24', 80, 24, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 1 }],
+      ['14c', 'Unset facts: labels + placeholders · 120×40', 120, 40, { view: 'stage', p: S({ facts: unsetF }), stage: ids[0], step: 0, status: 'failed', scroll: 30 }],
+      ['12e', 'It did not work: AI prompt · 120×40', 120, 40, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 2, status: 'failed', scroll: 8 }],
+      ['12g', 'Route · 120×40', 120, 40, { view: 'map', p: S({ cleared: half, facts: zen }), mapCursor: half }],
+      ['9j', 'Stage · 80×24 · ASCII, no color', 80, 24, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 0, ascii: true }],
+      ['9q', 'Badge · 80×24', 80, 24, { view: 'badge', p: S(all) }]
+    ];
+    const terms = spec.map(([id, label, w, h, o]) => ({ id, label, ref: el => { if (!el || !window.KAIT) return; el.innerHTML = window.KAIT.toHTML(window.KAIT.render(E, { w, h, palette: 'dmg', ...o })); } }));
+    const stateNotes = [
+      { screen: 'Round 4', states: ['First screen: Play the game / Just the workshop (saved in the browser)', 'Mode toggle in the header and in Settings', 'Workshop: stage list, same steps, light/dark, A− / A+ (90%–175%)', 'Boss key: Esc ⇄ spreadsheet, one sheet per stage, title + icon restored', 'Esc does nothing in dialogs and the loadout', 'Step help: tool + docs per step; prompts from step help', '$ prompt on every command', 'Unset facts: labels shown, placeholders from data', 'Stage count and list from data (' + N + ' stages now)'] },
+      { screen: 'Round 3', states: ['Name focus, welcome pages, one-question loadout, AI prompt, TIP, skip rules, cleared colors, lists'] },
+      { screen: 'Round 2', states: ['Name, character, mentors, route, items, mega item, badge'] },
+      { screen: 'Round 1', states: ['Title, stage, copy states, transitions, empty state, settings, mobile, terminal'] }
+    ];
+    return { groups, terms, stateNotes };
+  }
+}
+</script>
+</body>
+</html>

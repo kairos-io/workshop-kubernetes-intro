@@ -1,0 +1,23 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-step-when.yaml",
+  "facts": {
+    "os": "linux",
+    "runtime": "docker"
+  },
+  "expect": [
+    {"kind":"section","title":"Always here","state":"shown"},
+    {"kind":"step","id":"everyone","state":"shown"},
+    {"kind":"command","text":"echo everyone"},
+    {"kind":"step","id":"linux-only","state":"shown"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"command","text":"echo linux"},
+    {"kind":"check","checkKind":"command-available"},
+    {"kind":"step","id":"linux-with-variants","state":"shown"},
+    {"kind":"variant","id":"one","state":"shown"},
+    {"kind":"command","text":"echo one"},
+    {"kind":"step","id":"installers","state":"shown"},
+    {"kind":"variant","id":"apt","state":"shown"},
+    {"kind":"command","text":"sudo apt install tool"},
+    {"kind":"check","checkKind":"command-available"}
+  ]
+}

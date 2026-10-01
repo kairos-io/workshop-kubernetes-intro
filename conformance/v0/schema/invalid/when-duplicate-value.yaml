@@ -1,0 +1,8 @@
+# expect-error: a when list repeats a value
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    when: { os: [linux, linux] }

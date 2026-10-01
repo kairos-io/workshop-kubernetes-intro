@@ -1,0 +1,14 @@
+# expect-error: an option forces a value that is not a legal value of the fact
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: os
+      title: What is your computer running?
+      options:
+        - { value: linux, label: Linux }
+        - { value: windows, label: Windows, forces: { virtualization: other } }
+stages:
+  - { id: s, title: S, markdown: s.md }

@@ -1,0 +1,25 @@
+{
+  "stage": "stages/kairos-lab.yaml",
+  "facts": {
+    "os": "windows",
+    "virtualization": "kairos-lab"
+  },
+  "expect": [
+    {"kind":"section","title":"Installing kairos-lab","state":"shown"},
+    {"kind":"warning","warningKind":"caution","state":"shown"},
+    {"kind":"step","id":"install-kairos-lab","state":"shown"},
+    {"kind":"no-match","step":"install-kairos-lab"},
+    {"kind":"check","checkKind":"command-available"},
+    {"kind":"section","title":"Set up dependencies","state":"shown"},
+    {"kind":"step","id":"kairos-lab-setup","state":"shown"},
+    {"kind":"warning","warningKind":"note","state":"shown"},
+    {"kind":"variant","id":"docker","state":"conditional"},
+    {"kind":"command","text":"kairos-lab setup"},
+    {"kind":"variant","id":"podman","state":"conditional"},
+    {"kind":"command","text":"kairos-lab setup -runtime podman"},
+    {"kind":"check","checkKind":"manual"},
+    {"kind":"step","id":"auroraboot-version","state":"shown"},
+    {"kind":"command","text":"auroraboot --version"},
+    {"kind":"check","checkKind":"command-available"}
+  ]
+}

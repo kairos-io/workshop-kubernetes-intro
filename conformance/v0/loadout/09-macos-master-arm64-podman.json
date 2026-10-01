@@ -1,0 +1,5 @@
+{
+  "description": "The whole flow for macOS, Master, arm64 and Podman. Nothing is left to ask.",
+  "answers": [["os", "macos"], ["virtualization", "own"], ["arch", "arm64"], ["runtime", "podman"]],
+  "expect": { "next": null, "answers": { "os": "macos", "virtualization": "own", "arch": "arm64", "runtime": "podman" } }
+}

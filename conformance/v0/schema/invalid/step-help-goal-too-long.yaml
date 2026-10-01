@@ -1,0 +1,11 @@
+# expect-error: a step help goal has 101 characters
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: S
+    steps:
+      - id: a
+        help: { goal: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+        commands: [echo hi]

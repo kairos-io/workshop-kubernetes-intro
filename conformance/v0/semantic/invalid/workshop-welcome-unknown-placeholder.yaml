@@ -1,0 +1,10 @@
+# expect-error: a welcome page uses a placeholder other than name
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages:
+    - "Hi {name}, welcome to {place}."
+stages:
+  - { id: s, title: S, markdown: s.md }

@@ -1,0 +1,10 @@
+# expect-error: a verify needs a command
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: iso-exists, verify: { output: "0.1.3" } }

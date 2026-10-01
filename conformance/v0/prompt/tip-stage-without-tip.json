@@ -1,0 +1,6 @@
+{
+  "stage": "first-node",
+  "facts": { "os": "linux", "arch": "amd64", "runtime": "docker", "virtualization": "own" },
+  "kind": "tip",
+  "expect": null
+}

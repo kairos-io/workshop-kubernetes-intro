@@ -1,0 +1,8 @@
+# expect-error: a when has no key
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    when: {}

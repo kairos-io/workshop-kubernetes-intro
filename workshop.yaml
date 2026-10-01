@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=schema/v0/workshop.schema.json
+format: kairos-workshop/v0
+id: kubernetes-intro
+title: "From Zero to Immutable Kubernetes: Your First Cluster, Step by Step"
+subtitle: "CfgMgmtCamp 2026 Ghent, Feb. 4th 2026, 09:00-13:00, B.3.0.13"
+repository: kairos-io/workshop-kubernetes-intro
+intro: |
+  A hands-on workshop. You go through the stages at your own pace and type every
+  command yourself.
+welcome:
+  pages:
+    - "Hi {name}! I'm Mauro, one of the maintainers of Kairos, and this is KAI, our armadillo mascot. In this workshop you build and run an immutable Kubernetes cluster, one stage at a time. You type every command yourself, because that is how it sticks. KAI helps when you get stuck."
+    - "An immutable system treats the operating system like an application image. You never patch it in place. You build a new image, boot into it, and go back to the previous one if it misbehaves."
+    - "Why? Upgrades are predictable, rollbacks are instant, and every machine is identical, so nothing drifts."
+    - "Kairos is a fully open source CNCF Sandbox project. It turns the Linux distribution of your choice into an immutable, image-based system with Kubernetes built in. Bare metal, VMs, edge and public cloud, we have you covered!"
+    - "This workshop is brought to you by our generous patron, [Spectro Cloud](https://www.spectrocloud.com/solutions/kairos-support)."
+loadout:
+  questions:
+    - fact: os
+      title: "What is your computer running?"
+      options:
+        - value: linux
+          label: Linux
+        - value: macos
+          label: macOS
+        - value: windows
+          label: Windows
+          forces: { virtualization: own }
+          ends: true
+          text: "This is not game over. Zen is not available on Windows, so you play Master."
+    - fact: virtualization
+      title: "How will you run the VMs?"
+      when: { os: [linux, macos] }
+      options:
+        - value: kairos-lab
+          label: Zen
+          recommended: true
+          text: "kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos."
+        - value: own
+          label: Master
+          text: "You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant."
+    - fact: arch
+      title: "Which CPU architecture?"
+      when: { os: [linux, macos] }
+      options:
+        - { value: amd64, label: amd64 }
+        - { value: arm64, label: arm64 }
+      help:
+        label: "Not sure?"
+        command: "uname -m"
+        text: "x86_64 means amd64. arm64 or aarch64 means arm64."
+    - fact: runtime
+      title: "Which container runtime?"
+      when: { os: [linux, macos] }
+      text: "It is your choice, but Docker is the more battle-tested one for this workshop."
+      options:
+        - { value: docker, label: Docker }
+        - { value: podman, label: Podman }
+      notes:
+        - when: { virtualization: kairos-lab }
+          text: "If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman."
+prompts:
+  step: |
+    I'm following the Kairos workshop, stage "{stage}", step "{step}".
+    My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.
+    Goal of this step: {goal}.
+    Tool: {tool} ({source}). Docs: {docs}.
+    What I ran:
+    {commands}
+    What I expected: {expect}
+    What happened: [paste your logs or the error here]
+    Give me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses.
+  tip: |
+    I'm following the Kairos workshop, stage "{stage}".
+    My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.
+    {request}
+    Give me short numbered steps for my setup. If something is unclear, say what you need from me.
+stages:
+  - file: stages/kairos-lab.yaml
+  - { id: first-node, title: "Deploying a single node cluster", goal: boot a first node, markdown: stage-2.md }
+  - { id: build-image, title: "Build your own immutable OS", goal: build an image, markdown: stage-3.md }
+  - { id: pipelines, title: "Integrating OS builds into your CI/CD pipelines", goal: build images automatically, markdown: stage-4.md }
+  - { id: manual-upgrade, title: "Upgrading your cluster manually", goal: upgrade a node by hand, markdown: stage-5.md }
+  - { id: multi-node, title: "Deploying a multi-node cluster", goal: write a cloud-config, markdown: stage-6.md }
+  - { id: operator-upgrade, title: "Upgrading your cluster through Kubernetes", goal: upgrade through Kubernetes, markdown: stage-7.md }

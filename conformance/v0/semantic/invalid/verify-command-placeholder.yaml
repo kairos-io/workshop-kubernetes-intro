@@ -1,0 +1,10 @@
+# expect-error: a verify command is plain text the learner runs, so it holds no placeholder
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: S
+    steps:
+      - id: s
+        check: { kind: iso-exists, verify: { command: "ls <build-dir>" } }

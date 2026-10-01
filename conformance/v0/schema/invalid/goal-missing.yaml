@@ -1,0 +1,6 @@
+# expect-error: a stage file has no goal
+format: kairos-workshop/v0
+id: bad
+title: Bad
+sections:
+  - title: X

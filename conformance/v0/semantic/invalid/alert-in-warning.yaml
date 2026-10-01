@@ -1,0 +1,10 @@
+# expect-error: a warning text uses GitHub alert syntax
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    warnings:
+      - kind: note
+        text: "[!WARNING] Nope."

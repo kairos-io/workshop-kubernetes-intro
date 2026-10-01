@@ -1,0 +1,10 @@
+# expect-error: a text field uses GitHub alert syntax
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    text: |
+      > [!NOTE]
+      > Use warnings instead.

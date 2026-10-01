@@ -1,0 +1,11 @@
+# expect-error: a step help goal holds markdown
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: S
+    steps:
+      - id: a
+        help: { goal: "Run **setup** now" }
+        commands: [echo hi]

@@ -1,0 +1,15 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-warning-when.yaml",
+  "facts": {
+    "os": "windows",
+    "arch": "arm64"
+  },
+  "expect": [
+    {"kind":"section","title":"Visible section","state":"shown"},
+    {"kind":"warning","warningKind":"tip","state":"shown"},
+    {"kind":"step","id":"run","state":"shown"},
+    {"kind":"warning","warningKind":"caution","state":"shown"},
+    {"kind":"variant","id":"slow","state":"shown"},
+    {"kind":"command","text":"echo slow"}
+  ]
+}

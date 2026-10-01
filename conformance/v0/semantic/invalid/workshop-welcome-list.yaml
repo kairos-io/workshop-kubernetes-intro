@@ -1,0 +1,12 @@
+# expect-error: a welcome page holds a list
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome:
+  pages:
+    - |
+      - one
+      - two
+stages:
+  - { id: s, title: S, markdown: s.md }

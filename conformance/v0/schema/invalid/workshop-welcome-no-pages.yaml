@@ -1,0 +1,8 @@
+# expect-error: welcome has no pages key
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+welcome: {}
+stages:
+  - { id: s, title: S, markdown: s.md }

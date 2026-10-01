@@ -1,0 +1,8 @@
+# expect-error: the virtualization value "other" was renamed to "own"
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    when: { virtualization: other }

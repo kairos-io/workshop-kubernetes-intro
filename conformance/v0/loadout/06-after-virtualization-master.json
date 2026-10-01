@@ -1,0 +1,5 @@
+{
+  "description": "After Master (own) the architecture question comes next.",
+  "answers": [["os", "macos"], ["virtualization", "own"]],
+  "expect": { "next": "arch", "answers": { "os": "macos", "virtualization": "own" } }
+}

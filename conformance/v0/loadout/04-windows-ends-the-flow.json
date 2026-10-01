@@ -1,0 +1,5 @@
+{
+  "description": "Windows forces virtualization=own and ends the flow, so arch and runtime are never asked.",
+  "answers": [["os", "windows"]],
+  "expect": { "next": null, "answers": { "os": "windows", "virtualization": "own" } }
+}

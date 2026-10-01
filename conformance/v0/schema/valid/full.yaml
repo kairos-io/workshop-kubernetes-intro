@@ -1,0 +1,104 @@
+# yaml-language-server: $schema=../../../../schema/v0/stage.schema.json
+format: kairos-workshop/v0
+id: full
+title: "A stage that uses every field"
+goal: try the example
+docs:
+  - title: A doc
+    url: https://example.com/docs
+help:
+  tool: kairos-lab
+  source: https://example.com/source
+  docs: https://example.com/docs
+tip:
+  when: { virtualization: [own] }
+  request: "Explain how to install {runtime} on {os} ({arch}) with {virtualization}."
+not_skippable_when: { virtualization: kairos-lab }
+not_skippable_reason: "Set this up first, every later stage needs it."
+sections:
+  - title: Section with a condition
+    when: { virtualization: kairos-lab }
+    text: |
+      Some **markdown** with a [link](https://example.com) and a table:
+
+      | a | b |
+      |---|---|
+      | 1 | 2 |
+    warnings:
+      - kind: note
+        text: A note.
+      - kind: tip
+        text: A tip.
+      - kind: important
+        when: { os: [macos, linux] }
+        text: Important.
+      - kind: warning
+        text: A warning.
+      - kind: caution
+        when: { os: windows, arch: arm64 }
+        text: A caution.
+    steps:
+      - id: with-variants
+        title: Step with variants
+        when: { os: linux }
+        optional: true
+        help:
+          goal: Pick a way to install it
+          tool: A different tool
+          source: https://example.com/other
+          docs: https://example.com/other-docs
+        text: Pick one.
+        warnings:
+          - kind: note
+            text: Read this first.
+        variants:
+          - id: docker
+            title: Docker
+            when: { runtime: docker }
+            text: Before.
+            warnings:
+              - kind: tip
+                text: A variant tip.
+            commands:
+              - docker version
+              - |
+                docker run --rm hello-world
+            expect: |
+              Hello from Docker!
+            after: After.
+          - id: podman
+            title: Podman
+            when: { runtime: podman }
+            commands:
+              - podman version
+        check:
+          kind: image-exists
+          image: "quay.io/kairos/auroraboot:latest"
+          verify:
+            command: docker images quay.io/kairos/auroraboot
+            output: |
+              REPOSITORY                 TAG       IMAGE ID
+              quay.io/kairos/auroraboot  latest    0123456789ab
+        onFail: The image did not pull.
+      - id: with-commands
+        help: { goal: Say hello }
+        commands:
+          - echo hello
+        expect: hello
+        after: Done.
+        check: { kind: command-available, command: kairos-lab, verify: { command: kairos-lab --version, output: "0.1.3" } }
+      - id: iso
+        check: { kind: iso-exists, verify: { command: ls -l build } }
+      - id: vm
+        check: { kind: vm-running, name: my-vm, verify: { command: ps aux | grep qemu } }
+      - id: vm-any
+        check: { kind: vm-running }
+        onFail: Start the VM.
+      - id: manual
+        check: { kind: manual, text: Setup finished and the status command lists what it manages. }
+      - id: manual-verify
+        check: { kind: manual, text: The setup finished., verify: { command: kairos-lab status, output: "platform: linux/amd64\nvms: none" } }
+      - id: prose-only
+        text: A step that is only text.
+  - title: Section with no steps
+    text: Just text.

@@ -1,0 +1,542 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kairos-io.github.io/workshop-kubernetes-intro/schema/v0/stage.schema.json",
+  "title": "Kairos workshop stage, format v0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "id",
+    "title",
+    "goal",
+    "sections"
+  ],
+  "properties": {
+    "format": {
+      "const": "kairos-workshop/v0"
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "title": {
+      "$ref": "#/$defs/plain"
+    },
+    "goal": {
+      "$ref": "#/$defs/goal"
+    },
+    "docs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "url"
+        ],
+        "properties": {
+          "title": {
+            "$ref": "#/$defs/plain"
+          },
+          "url": {
+            "$ref": "#/$defs/httpsUrl"
+          }
+        }
+      }
+    },
+    "help": {
+      "$ref": "#/$defs/stage-help"
+    },
+    "tip": {
+      "$ref": "#/$defs/tip"
+    },
+    "not_skippable_when": {
+      "$ref": "#/$defs/when"
+    },
+    "not_skippable_reason": {
+      "$ref": "#/$defs/skip-reason"
+    },
+    "sections": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/section"
+      }
+    }
+  },
+  "dependentRequired": {
+    "not_skippable_when": [
+      "not_skippable_reason"
+    ],
+    "not_skippable_reason": [
+      "not_skippable_when"
+    ]
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "maxLength": 64
+    },
+    "plain": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200,
+      "pattern": "^[^\\n<>]*$"
+    },
+    "markdown": {
+      "type": "string",
+      "minLength": 1
+    },
+    "httpsUrl": {
+      "type": "string",
+      "pattern": "^https://[^\\s]+$"
+    },
+    "stage-help": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "tool": {
+          "$ref": "#/$defs/plain"
+        },
+        "source": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "docs": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    },
+    "step-help": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "goal"
+      ],
+      "properties": {
+        "goal": {
+          "$ref": "#/$defs/help-goal"
+        },
+        "tool": {
+          "$ref": "#/$defs/plain"
+        },
+        "source": {
+          "$ref": "#/$defs/httpsUrl"
+        },
+        "docs": {
+          "$ref": "#/$defs/httpsUrl"
+        }
+      }
+    },
+    "tip": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "request"
+      ],
+      "properties": {
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "request": {
+          "$ref": "#/$defs/plain"
+        }
+      }
+    },
+    "when": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "os": {
+          "$ref": "#/$defs/fact-os"
+        },
+        "arch": {
+          "$ref": "#/$defs/fact-arch"
+        },
+        "runtime": {
+          "$ref": "#/$defs/fact-runtime"
+        },
+        "virtualization": {
+          "$ref": "#/$defs/fact-virtualization"
+        }
+      }
+    },
+    "warning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "text"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "note",
+            "tip",
+            "important",
+            "warning",
+            "caution"
+          ]
+        },
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "text": {
+          "$ref": "#/$defs/markdown"
+        }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/warning"
+      }
+    },
+    "commands": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "verify": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^\\n]+$"
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "required": [
+        "kind"
+      ],
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "required": [
+            "command"
+          ],
+          "properties": {
+            "kind": {
+              "const": "command-available"
+            },
+            "command": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9._+-]+$"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "required": [
+            "image"
+          ],
+          "properties": {
+            "kind": {
+              "const": "image-exists"
+            },
+            "image": {
+              "type": "string",
+              "pattern": "^[a-z0-9./:_@-]+$"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "iso-exists"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "vm-running"
+            },
+            "name": {
+              "$ref": "#/$defs/id"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
+            }
+          }
+        },
+        {
+          "additionalProperties": false,
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "manual"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^\\n`]+$"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
+            }
+          }
+        }
+      ]
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/plain"
+        },
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "text": {
+          "$ref": "#/$defs/markdown"
+        },
+        "warnings": {
+          "$ref": "#/$defs/warnings"
+        },
+        "commands": {
+          "$ref": "#/$defs/commands"
+        },
+        "expect": {
+          "$ref": "#/$defs/expect"
+        },
+        "after": {
+          "$ref": "#/$defs/markdown"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "title": {
+          "$ref": "#/$defs/plain"
+        },
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "optional": {
+          "type": "boolean"
+        },
+        "help": {
+          "$ref": "#/$defs/step-help"
+        },
+        "text": {
+          "$ref": "#/$defs/markdown"
+        },
+        "warnings": {
+          "$ref": "#/$defs/warnings"
+        },
+        "variants": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "$ref": "#/$defs/variant"
+          }
+        },
+        "commands": {
+          "$ref": "#/$defs/commands"
+        },
+        "expect": {
+          "$ref": "#/$defs/expect"
+        },
+        "after": {
+          "$ref": "#/$defs/markdown"
+        },
+        "check": {
+          "$ref": "#/$defs/check"
+        },
+        "onFail": {
+          "$ref": "#/$defs/markdown"
+        }
+      },
+      "dependentSchemas": {
+        "variants": {
+          "properties": {
+            "commands": false,
+            "expect": false
+          }
+        }
+      }
+    },
+    "section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/plain"
+        },
+        "when": {
+          "$ref": "#/$defs/when"
+        },
+        "text": {
+          "$ref": "#/$defs/markdown"
+        },
+        "warnings": {
+          "$ref": "#/$defs/warnings"
+        },
+        "steps": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/step"
+          }
+        }
+      }
+    },
+    "fact-os": {
+      "oneOf": [
+        {
+          "enum": [
+            "linux",
+            "macos",
+            "windows"
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "linux",
+              "macos",
+              "windows"
+            ]
+          }
+        }
+      ]
+    },
+    "fact-arch": {
+      "oneOf": [
+        {
+          "enum": [
+            "amd64",
+            "arm64"
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "amd64",
+              "arm64"
+            ]
+          }
+        }
+      ]
+    },
+    "fact-runtime": {
+      "oneOf": [
+        {
+          "enum": [
+            "docker",
+            "podman"
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "docker",
+              "podman"
+            ]
+          }
+        }
+      ]
+    },
+    "fact-virtualization": {
+      "oneOf": [
+        {
+          "enum": [
+            "kairos-lab",
+            "own"
+          ]
+        },
+        {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "kairos-lab",
+              "own"
+            ]
+          }
+        }
+      ]
+    },
+    "expect": {
+      "type": "string",
+      "minLength": 1
+    },
+    "goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 60,
+      "pattern": "^[^\\n<>`*\\[\\]]*$"
+    },
+    "skip-reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160,
+      "pattern": "^[^\\n<>`]*$"
+    },
+    "help-goal": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[^\\n<>`*\\[\\]]*$"
+    }
+  }
+}

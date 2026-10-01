@@ -1,0 +1,88 @@
+{
+  "id": "helpful",
+  "title": "Helpful",
+  "goal": "get help",
+  "steps": [
+    {
+      "id": "a",
+      "title": "One",
+      "line": "One",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo a"
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "You finished this step.",
+        "fail": []
+      },
+      "goal": "Do A",
+      "help": {
+        "tool": "demo",
+        "source": "https://example.com/src",
+        "docs": "https://example.com/docs",
+        "expect": "the step finishes without errors"
+      }
+    },
+    {
+      "id": "b",
+      "title": "One",
+      "line": "One",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo b"
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "You finished this step.",
+        "fail": []
+      },
+      "goal": "Do B",
+      "help": {
+        "tool": "other",
+        "source": "https://example.com/src",
+        "docs": "https://example.com/docs",
+        "expect": "the step finishes without errors"
+      }
+    },
+    {
+      "id": "c",
+      "title": "One",
+      "line": "One",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo c"
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    }
+  ],
+  "tool": {
+    "name": "demo",
+    "url": "https://example.com/src"
+  },
+  "docs": "https://example.com/docs",
+  "tip": "Install {runtime} on {os}.",
+  "tipOnly": {
+    "virtualization": [
+      "own"
+    ]
+  },
+  "noSkip": {
+    "when": {
+      "virtualization": [
+        "kairos-lab"
+      ]
+    },
+    "reason": "Set this up first, every later stage needs it."
+  }
+}

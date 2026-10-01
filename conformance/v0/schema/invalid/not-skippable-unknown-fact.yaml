@@ -1,0 +1,12 @@
+# expect-error: not_skippable_when names a fact that does not exist
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+not_skippable_when: { colour: red }
+not_skippable_reason: "You need this first."
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

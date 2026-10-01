@@ -1,0 +1,21 @@
+# expect-error: two questions ask about os
+format: kairos-workshop/v0
+id: bad
+title: Bad
+repository: kairos-io/bad
+loadout:
+  questions:
+    - fact: os
+      title: What is your computer running?
+      options:
+        - { value: linux, label: Linux }
+        - { value: macos, label: macOS }
+        - { value: windows, label: Windows }
+    - fact: os
+      title: What is your computer running?
+      options:
+        - { value: linux, label: Linux }
+        - { value: macos, label: macOS }
+        - { value: windows, label: Windows }
+stages:
+  - { id: s, title: S, markdown: s.md }

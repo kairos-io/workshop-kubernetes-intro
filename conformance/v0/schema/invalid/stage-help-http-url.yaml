@@ -1,0 +1,11 @@
+# expect-error: a stage help names an http URL
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+help: { source: "http://example.com/src" }
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

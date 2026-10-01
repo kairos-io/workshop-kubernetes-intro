@@ -1,0 +1,5 @@
+{
+  "description": "After Linux the VM question comes next.",
+  "answers": [["os", "linux"]],
+  "expect": { "next": "virtualization", "answers": { "os": "linux" } }
+}

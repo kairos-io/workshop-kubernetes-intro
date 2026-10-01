@@ -1,0 +1,9 @@
+# expect-error: a text field holds inline HTML
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    text: |
+      Some <b>bold</b> text.

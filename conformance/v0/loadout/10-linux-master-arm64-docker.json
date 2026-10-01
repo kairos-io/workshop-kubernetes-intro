@@ -1,0 +1,5 @@
+{
+  "description": "The whole flow for Linux, Master, arm64 and Docker.",
+  "answers": [["os", "linux"], ["virtualization", "own"], ["arch", "arm64"], ["runtime", "docker"]],
+  "expect": { "next": null, "answers": { "os": "linux", "virtualization": "own", "arch": "arm64", "runtime": "docker" } }
+}

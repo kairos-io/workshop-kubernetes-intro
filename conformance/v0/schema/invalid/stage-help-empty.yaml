@@ -1,0 +1,11 @@
+# expect-error: a stage help has no key
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+help: {}
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

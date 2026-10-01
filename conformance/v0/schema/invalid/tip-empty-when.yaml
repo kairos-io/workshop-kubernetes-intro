@@ -1,0 +1,11 @@
+# expect-error: a stage tip has a when with no key
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+tip: { when: {}, request: Explain it. }
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

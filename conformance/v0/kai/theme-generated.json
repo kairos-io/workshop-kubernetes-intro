@@ -1,0 +1,181 @@
+{
+  "welcome": {
+    "mentor": "mauro",
+    "pages": [
+      {
+        "line": "Hi {name}! Welcome aboard.",
+        "md": "Hi {name}! I'm Mauro, one of the maintainers of Kairos, and this is KAI, our armadillo mascot. In this workshop you build and run an immutable Kubernetes cluster, one stage at a time. You type every command yourself, because that is how it sticks. KAI helps when you get stuck."
+      },
+      {
+        "line": "Immutable Linux?",
+        "md": "An immutable system treats the operating system like an application image. You never patch it in place. You build a new image, boot into it, and go back to the previous one if it misbehaves."
+      },
+      {
+        "line": "Predictable. Instant. Identical.",
+        "md": "Why? Upgrades are predictable, rollbacks are instant, and every machine is identical, so nothing drifts."
+      },
+      {
+        "line": "Open source, CNCF Sandbox.",
+        "md": "Kairos is a fully open source CNCF Sandbox project. It turns the Linux distribution of your choice into an immutable, image-based system with Kubernetes built in. Bare metal, VMs, edge and public cloud, we have you covered!"
+      },
+      {
+        "line": "Thanks to our patron!",
+        "md": "This workshop is brought to you by our generous patron, [Spectro Cloud](https://www.spectrocloud.com/solutions/kairos-support)."
+      }
+    ],
+    "next": "Next",
+    "back": "Back",
+    "start": "Start your quest"
+  },
+  "loadout": {
+    "title": "Choose your loadout",
+    "progress": "Question {n} of {total}",
+    "next": "Next",
+    "back": "Back",
+    "done": "Start the trip",
+    "questions": {
+      "os": {
+        "title": "What is your computer running?",
+        "options": {
+          "linux": {},
+          "macos": {},
+          "windows": {}
+        }
+      },
+      "virtualization": {
+        "title": "How will you run the VMs?",
+        "options": {
+          "kairos-lab": {
+            "badge": "recommended",
+            "md": "kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos."
+          },
+          "own": {
+            "md": "You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant."
+          }
+        }
+      },
+      "arch": {
+        "title": "Which CPU architecture?",
+        "options": {
+          "amd64": {},
+          "arm64": {}
+        },
+        "help": {
+          "label": "Not sure?",
+          "md": "Run this in a terminal:",
+          "code": "uname -m",
+          "after": "x86_64 means amd64. arm64 or aarch64 means arm64."
+        }
+      },
+      "runtime": {
+        "title": "Which container runtime?",
+        "md": "It is your choice, but Docker is the more battle-tested one for this workshop.",
+        "options": {
+          "docker": {},
+          "podman": {}
+        },
+        "when": [
+          {
+            "only": {
+              "virtualization": [
+                "kairos-lab"
+              ]
+            },
+            "md": "If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman."
+          }
+        ]
+      }
+    },
+    "notices": {
+      "windows": {
+        "title": "Windows: you play Master",
+        "line": "Not game over! You play MASTER.",
+        "md": "This is not game over. Zen is not available on Windows, so you play Master."
+      }
+    }
+  },
+  "prompts": {
+    "virtPlaceholder": "[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]",
+    "logsPlaceholder": "[paste your logs or the error here]",
+    "unsetPlaceholder": "[YOUR {fact}]",
+    "noCommands": "(this step has no commands)",
+    "warning": "Remove tokens, passwords and private addresses before you paste.",
+    "fail": [
+      "I'm following the Kairos workshop, stage \"{stage}\", step \"{step}\".",
+      "My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.",
+      "Goal of this step: {goal}.",
+      "Tool: {tool} ({source}). Docs: {docs}.",
+      "What I ran:",
+      "{commands}",
+      "What I expected: {expected}",
+      "What happened: {logs}",
+      "Give me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses."
+    ],
+    "tip": [
+      "I'm following the Kairos workshop, stage \"{stage}\".",
+      "My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.",
+      "{ask}",
+      "Give me short numbered steps for my setup. If something is unclear, say what you need from me."
+    ]
+  },
+  "stages": [
+    {
+      "id": "kairos-lab",
+      "location": "KAIROS-LAB",
+      "nodes": 0,
+      "items": [
+        "kairos-lab"
+      ]
+    },
+    {
+      "id": "first-node",
+      "location": "FIRST BOOT",
+      "nodes": 1,
+      "items": [
+        "hadron"
+      ]
+    },
+    {
+      "id": "build-image",
+      "location": "IMAGE FORGE",
+      "nodes": 0,
+      "items": [
+        "kairos-init",
+        "bootable-container",
+        "auroraboot#1"
+      ]
+    },
+    {
+      "id": "pipelines",
+      "location": "THE PIPELINE",
+      "nodes": 0,
+      "items": [
+        "gh-workflow"
+      ]
+    },
+    {
+      "id": "manual-upgrade",
+      "location": "A/B BRIDGE",
+      "nodes": 1,
+      "items": [
+        "kairos-agent"
+      ]
+    },
+    {
+      "id": "multi-node",
+      "location": "THE CLUSTER",
+      "nodes": 3,
+      "items": [
+        "cloud-config"
+      ]
+    },
+    {
+      "id": "operator-upgrade",
+      "location": "OPERATOR TOWER",
+      "nodes": 3,
+      "items": [
+        "kairos-operator"
+      ]
+    }
+  ]
+}

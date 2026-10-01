@@ -1,0 +1,6 @@
+format: kairos-workshop/v0
+id: minimal
+title: Minimal
+goal: try the example
+sections:
+  - title: Only a title

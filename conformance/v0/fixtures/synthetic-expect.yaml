@@ -1,0 +1,19 @@
+format: kairos-workshop/v0
+id: synthetic-expect
+title: A step with commands and expected output
+goal: try the example
+sections:
+  - title: Run it
+    steps:
+      - id: run
+        text: Run the command.
+        commands:
+          - echo one
+          - echo two
+        expect: |
+          one
+          two
+        check: { kind: vm-running, name: demo }
+      - id: no-output
+        commands:
+          - echo quiet

@@ -1,64 +1,165 @@
+<!-- Generated from stages/kairos-lab.yaml by tools/publish-md.mjs. Do not edit by hand. -->
+
 # Stage 1: Setting up kairos-lab
 
 Docs:
   - [kairos-lab](https://github.com/kairos-io/kairos-lab)
   - [AuroraBoot](https://kairos.io/docs/reference/auroraboot/)
 
-## Before we begin
+## Choose your setup
 
-You'll need virtualization software to run the VMs in this workshop. You're free to use whatever you're comfortable with, but these instructions use [`kairos-lab`](https://github.com/kairos-io/kairos-lab), a small CLI that downloads a Kairos ISO and boots a VM for you, so we don't have to walk through setting up VMs and networking on every possible virtualization stack.
+### What is your computer running?
 
-`kairos-lab` only works on Linux and macOS, so you'll need a host machine running one of those. If you know your way around your own virtualization software, you're welcome to use that instead, and should still be able to follow along on Windows, but you're on your own for that part.
+- **Linux**
+- **macOS**
+- **Windows:** This is not game over. Zen is not available on Windows, so you play Master.
+
+### How will you run the VMs?
+
+*Only if you use: Linux or macOS.*
+
+- **Zen** (recommended): kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos.
+- **Master:** You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant.
+
+### Which CPU architecture?
+
+*Only if you use: Linux or macOS.*
+
+- **amd64**
+- **arm64**
+
+Not sure? Run `uname -m`. x86_64 means amd64. arm64 or aarch64 means arm64.
+
+### Which container runtime?
+
+*Only if you use: Linux or macOS.*
+
+It is your choice, but Docker is the more battle-tested one for this workshop.
+
+- **Docker**
+- **Podman**
+
+If you chose Zen: If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman.
 
 ## Installing kairos-lab
 
-### Homebrew (macOS only)
+*Only if you use: kairos-lab.*
+
+> [!CAUTION]
+> **If you use Windows:** `kairos-lab` only works on Linux and macOS. On Windows, use your own
+> virtualization software instead.
+
+### Install kairos-lab
+
+#### Homebrew
+
+*Only if you use: macOS.*
 
 ```bash
 brew tap kairos-io/kairos
 brew install kairos-lab
 ```
 
-### YOLO script from the internet (Linux only)
+#### YOLO script from the internet
+
+*Only if you use: Linux.*
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/kairos-io/kairos-lab/main/install.sh | sh
 ```
 
-### Build from source (MacOS or Linux)
+#### Build from source
+
+*Only if you use: macOS or Linux.*
 
 ```bash
 git clone https://github.com/kairos-io/kairos-lab.git && cd kairos-lab
 go build -o kairos-lab ./cmd/kairos-lab
 ```
 
-### Or download the binaries from the [releases page](https://github.com/kairos-io/kairos-lab/releases) (MacOS or Linux)
+#### Download a release binary
+
+*Only if you use: macOS or Linux.*
+
+Or download the binaries from the [releases page](https://github.com/kairos-io/kairos-lab/releases).
 
 > [!NOTE]
-> On macOS, the downloaded binary is not signed. Authorize it in System Settings > Privacy & Security after the first run.
+> **If you use macOS:** On macOS, the downloaded binary is not signed. Authorize it in System Settings > Privacy & Security after the first run.
+
+*Check: the `kairos-lab` command is available in a new terminal.*
+
+To check, run:
+
+```bash
+kairos-lab --version
+```
+
+Example output:
+
+```text
+0.1.3
+```
 
 ## Set up dependencies
 
+*Only if you use: kairos-lab.*
+
+### Run kairos-lab setup
+
+> [!NOTE]
+> If `kairos-lab setup` installed the container runtime for you, it does not
+> start it. On macOS, open Docker Desktop once (or run `podman machine init` and
+> `podman machine start`), then run `kairos-lab setup` again to finish.
+
+#### Docker
+
+*Only if you use: Docker.*
+
 ```bash
 kairos-lab setup
+```
+
+#### Podman
+
+*Only if you use: Podman.*
+
+```bash
+kairos-lab setup -runtime podman
 ```
 
 Detects your package manager and installs `qemu` if it is missing.
 
 It also gets you `auroraboot`, the command you use in [stage 3](stage-3.md) to
 turn an image you build into an ISO. For that it needs a container runtime,
-Docker or Podman:
+Docker or Podman. It pulls the AuroraBoot container image and installs a small
+`auroraboot` command in `~/.local/bin`.
 
-- If you already have one, `kairos-lab setup` uses it and installs nothing.
-- If you have none, it asks before it installs one. Docker is the default. Run
-  `kairos-lab setup -runtime podman` to use Podman instead.
-- It pulls the AuroraBoot container image and installs a small `auroraboot`
-  command in `~/.local/bin`.
+*Check: Setup finished and kairos-lab status lists what it manages.*
 
-> [!NOTE]
-> If `kairos-lab setup` installed the container runtime for you, it does not
-> start it. On macOS, open Docker Desktop once (or run `podman machine init` and
-> `podman machine start`), then run `kairos-lab setup` again to finish.
+To check, run:
+
+```bash
+kairos-lab status
+```
+
+Example output:
+
+```text
+platform: darwin/arm64
+package manager: brew
+dependencies present now: qemu
+dependencies pre-existing: docker, qemu
+dependencies installed by kairos-lab: none
+managed dirs: /Users/you/Library/Application Support/kairos-lab, /Users/you/Library/Caches/kairos-lab
+managed files: none
+auroraboot runtime: docker
+auroraboot shim: /Users/you/.local/bin/auroraboot
+auroraboot images pulled by kairos-lab: none
+auroraboot images pre-existing: quay.io/kairos/auroraboot:v0.27.1
+vms: none
+```
+
+### Check the auroraboot command
 
 Check that the command works:
 
@@ -66,10 +167,24 @@ Check that the command works:
 auroraboot --version
 ```
 
+*Check: the `auroraboot` command is available in a new terminal.*
+
+To check, run:
+
+```bash
+auroraboot --version
+```
+
+<details><summary>If it does not work</summary>
+
 If your shell says the command is not found, `~/.local/bin` is not on your
 `PATH`. `kairos-lab setup` tells you what to add.
 
+</details>
+
 ## Not using kairos-lab? Get AuroraBoot yourself
+
+*Only if you use: your own virtualization software.*
 
 If you are using your own virtualization software, `kairos-lab setup` does not
 run for you, so you need to get AuroraBoot yourself. There are two ways:
@@ -82,15 +197,35 @@ Wherever the workshop says `auroraboot build-iso ...`, you either run the
 container or use your local build instead. The examples below are the command
 from the end of [stage 3](stage-3.md).
 
-### Docker
+### Pull the image
 
-Pull the image:
+#### Docker
+
+*Only if you use: Docker.*
 
 ```bash
 docker pull quay.io/kairos/auroraboot:latest
 ```
 
-Then run it. This is the same as `auroraboot build-iso --output ./build stage-2:v1.0.0`:
+#### Podman
+
+*Only if you use: Podman.*
+
+```bash
+podman pull quay.io/kairos/auroraboot:latest
+```
+
+*Check: the `quay.io/kairos/auroraboot:latest` image is present in your container runtime.*
+
+### Run the container
+
+You do not need to run this now. You will use it at the end of stage 3.
+
+#### Docker
+
+*Only if you use: Docker.*
+
+This is the same as `auroraboot build-iso --output ./build stage-2:v1.0.0`:
 
 ```bash
 mkdir -p build && docker run -it --rm \
@@ -103,13 +238,9 @@ mkdir -p build && docker run -it --rm \
 The Docker socket lets AuroraBoot find the image you built locally, and
 `$PWD/build` is where the ISO ends up.
 
-### Podman
+#### Podman
 
-Pull the image:
-
-```bash
-podman pull quay.io/kairos/auroraboot:latest
-```
+*Only if you use: Podman.*
 
 Podman has trouble using a locally built image, so stage 3 has you push your
 image to a temporary public registry first (see
@@ -124,19 +255,25 @@ mkdir -p build && sudo podman run -it --rm \
   build-iso --output /result ttl.sh/stage-2:24h
 ```
 
-### Build it locally (Linux only)
+## Build it locally (Linux only)
+
+*Only if you use: your own virtualization software.*
 
 Use this if you would rather have a plain `auroraboot` command than run the
 container.
 
 > [!WARNING]
-> **Do not build AuroraBoot on macOS. Use the container instead.** AuroraBoot is
+> **If you use macOS:** **Do not build AuroraBoot on macOS. Use the container instead.** AuroraBoot is
 > built for Linux. To make an ISO it calls Linux tools (`xorriso`, `mtools`,
 > `mkfs.fat`, `mksquashfs`), it creates files owned by root, and it expects
 > boot files that only exist inside its container image. macOS has none of
 > that, so a build made there will not give you a working `auroraboot`. The
 > container is a Linux system with everything in place, which is why Docker and
 > Podman work on macOS.
+
+### Build AuroraBoot
+
+*Only if you use: Linux.*
 
 You need:
 
@@ -160,6 +297,12 @@ make build
 
 `make build` builds the web UI and then the Go binary, `./auroraboot`.
 
+### Run your local build
+
+*Only if you use: Linux.*
+
+You do not need to run this now. You will use it at the end of stage 3.
+
 Run it as root, because it changes file ownership to root while it unpacks the
 image. This is the same as the container command above:
 
@@ -169,10 +312,12 @@ sudo ./auroraboot build-iso --output ./build stage-2:v1.0.0
 
 The files in `./build` belong to root.
 
+<details><summary>If it does not work</summary>
+
 If the build stops with `could not find any shim file to copy`, the image does
 not include a shim. The container carries a fallback for that case and a local
 build does not, so use the container for that image.
 
-You do not need to run these now. You will use them at the end of stage 3.
+</details>
 
 → [Stage 2: Deploying a single node cluster](stage-2.md)

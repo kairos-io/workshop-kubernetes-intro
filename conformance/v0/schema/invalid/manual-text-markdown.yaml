@@ -1,0 +1,10 @@
+# expect-error: the text of a manual check is plain text, so it holds no backtick
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: manual, text: "The `ls` command printed a list." }

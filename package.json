@@ -1,0 +1,25 @@
+{
+  "name": "workshop-kubernetes-intro",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Kairos Kubernetes intro workshop: content format, tools and site.",
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "validate": "node tools/validate.mjs",
+    "test": "node --test \"tests/**/*.test.mjs\"",
+    "publish:md": "node tools/publish-md.mjs",
+    "compile:kai": "node tools/compile-kai.mjs",
+    "build": "node tools/build-site.mjs",
+    "check:links": "node tools/check-links.mjs",
+    "preview": "npm run build && python3 -m http.server -d _site 8000"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0",
+    "linkedom": "0.18.13",
+    "markdown-it": "15.0.2",
+    "yaml": "2.9.1"
+  }
+}

@@ -1,0 +1,36 @@
+format: kairos-workshop/v0
+id: sections-text-only
+title: "Stage 9: Sections without steps"
+goal: read the sections
+sections:
+  - title: Just text
+    text: |
+      First paragraph.
+
+      Second paragraph with a [link](stage:sections-text-only#just-text).
+    warnings:
+      - kind: note
+        text: A note.
+      - kind: tip
+        text: A tip is shown as a note.
+  - title: Only a warning
+    when: { os: windows }
+    warnings:
+      - kind: important
+        text: Important becomes a warning.
+  - title: Empty steps list
+    text: Text with an empty list of steps.
+    steps: []
+  - title: Text and two steps
+    text: Section text.
+    warnings:
+      - kind: caution
+        text: Section caution.
+    steps:
+      - id: first
+        title: The first step
+        commands:
+          - echo first
+      - id: second
+        commands:
+          - echo second

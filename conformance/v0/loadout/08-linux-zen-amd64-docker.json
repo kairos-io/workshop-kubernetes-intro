@@ -1,0 +1,5 @@
+{
+  "description": "The whole flow for Linux, Zen, amd64 and Docker. Nothing is left to ask.",
+  "answers": [["os", "linux"], ["virtualization", "kairos-lab"], ["arch", "amd64"], ["runtime", "docker"]],
+  "expect": { "next": null, "answers": { "os": "linux", "virtualization": "kairos-lab", "arch": "amd64", "runtime": "docker" } }
+}

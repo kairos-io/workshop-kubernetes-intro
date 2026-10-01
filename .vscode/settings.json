@@ -1,5 +1,9 @@
 {
     "githubPullRequests.ignoredPullRequestBranches": [
         "main"
-    ]
+    ],
+    "yaml.schemas": {
+        "schema/v0/stage.schema.json": "stages/*.yaml",
+        "schema/v0/workshop.schema.json": "workshop.yaml"
+    }
 }

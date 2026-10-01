@@ -1,0 +1,15 @@
+format: kairos-workshop/v0
+id: lines
+title: Game lines
+goal: say a line
+sections:
+  - title: Has a line
+    steps:
+      - id: with-line
+        title: With a line
+        commands:
+          - echo a
+      - id: without-line
+        title: Without a line
+        commands:
+          - echo b

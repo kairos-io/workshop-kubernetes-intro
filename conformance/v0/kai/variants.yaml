@@ -1,0 +1,38 @@
+format: kairos-workshop/v0
+id: variants
+title: A step with variants
+goal: pick a variant
+sections:
+  - title: Install it
+    steps:
+      - id: install
+        text: Step text comes first.
+        warnings:
+          - kind: note
+            text: Step warning.
+        variants:
+          - id: mac
+            title: On a Mac
+            when: { os: macos }
+            text: Variant text.
+            warnings:
+              - kind: warning
+                when: { arch: arm64 }
+                text: Variant warning.
+            commands:
+              - brew install it
+              - it --version
+            expect: |
+              it 1.0
+            after: Variant after.
+          - id: linux
+            title: On Linux
+            when: { os: [linux] }
+            commands:
+              - apt install it
+          - id: everywhere
+            title: Everywhere
+            commands:
+              - go install it
+        after: Step after comes last.
+        check: { kind: command-available, command: it }

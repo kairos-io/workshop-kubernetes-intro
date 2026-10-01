@@ -1,0 +1,7 @@
+# expect-error: a goal holds angle brackets
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: "set up <b>it</b>"
+sections:
+  - title: X

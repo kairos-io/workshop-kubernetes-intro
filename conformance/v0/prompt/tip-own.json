@@ -1,0 +1,6 @@
+{
+  "stage": "kairos-lab",
+  "facts": { "os": "linux", "arch": "amd64", "runtime": "docker", "virtualization": "own" },
+  "kind": "tip",
+  "expect": "I'm following the Kairos workshop, stage \"Setting up kairos-lab\".\nMy setup: Linux, amd64, container runtime Docker, VMs with [NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox].\nExplain how to install Docker on Linux (amd64) and how to check that it works.\nGive me short numbered steps for my setup. If something is unclear, say what you need from me."
+}

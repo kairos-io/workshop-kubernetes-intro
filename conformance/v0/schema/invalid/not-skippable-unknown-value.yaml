@@ -1,0 +1,12 @@
+# expect-error: not_skippable_when names a value that is not a legal value of the fact
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+not_skippable_when: { virtualization: other }
+not_skippable_reason: "You need this first."
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

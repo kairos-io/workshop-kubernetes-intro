@@ -1,0 +1,14 @@
+# expect-error: two steps share an id
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: A
+    steps:
+      - id: same
+        text: One.
+  - title: B
+    steps:
+      - id: same
+        text: Two.

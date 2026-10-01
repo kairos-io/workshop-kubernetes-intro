@@ -1,0 +1,15 @@
+{
+  "stage": "conformance/v0/fixtures/synthetic-variants-no-when.yaml",
+  "facts": {
+    "os": "linux"
+  },
+  "expect": [
+    {"kind":"section","title":"Pick an option","state":"shown"},
+    {"kind":"step","id":"pick","state":"shown"},
+    {"kind":"variant","id":"option-a","state":"shown"},
+    {"kind":"command","text":"echo a"},
+    {"kind":"variant","id":"option-b","state":"shown"},
+    {"kind":"command","text":"echo b"},
+    {"kind":"expect"}
+  ]
+}

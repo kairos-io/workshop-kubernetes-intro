@@ -11,6 +11,8 @@ This repository is meant to guide the participants of the ["From Zero to Immutab
 
 ## Contents
 
+`stage-1.md` is generated from `stages/kairos-lab.yaml`.
+
 - [Abstract](abstract.md)
 - [Description](description.md)
 - Workshop

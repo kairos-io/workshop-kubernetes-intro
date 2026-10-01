@@ -1,0 +1,11 @@
+format: kairos-workshop/v0
+id: sample-workshop
+title: A sample workshop
+subtitle: A subtitle
+repository: kairos-io/sample
+intro: |
+  Some intro.
+stages:
+  - file: stages/first-one.yaml
+  - { id: second-one, title: "Second", goal: do the second thing, markdown: stage-2.md }
+  - { id: third-one, title: "Third", markdown: stage-3.md }

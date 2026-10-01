@@ -1,0 +1,11 @@
+# expect-error: a step help has a key the format does not know
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: S
+    steps:
+      - id: a
+        help: { goal: Do it, hint: nope }
+        commands: [echo hi]

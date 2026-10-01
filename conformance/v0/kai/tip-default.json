@@ -1,0 +1,29 @@
+{
+  "id": "tip-default",
+  "title": "A tip with no condition",
+  "goal": "try the default tip",
+  "steps": [
+    {
+      "id": "only-section",
+      "title": "Only section",
+      "line": "Only section",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Read this."
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "You read this.",
+        "fail": []
+      }
+    }
+  ],
+  "tip": "Install {runtime} on {os}.",
+  "tipOnly": {
+    "virtualization": [
+      "own"
+    ]
+  }
+}

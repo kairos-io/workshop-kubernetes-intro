@@ -1,0 +1,11 @@
+# expect-error: a stage tip has no request
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+tip: { when: { virtualization: own } }
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

@@ -1,0 +1,183 @@
+{
+  "id": "step-shapes",
+  "title": "Everything a step without variants can hold",
+  "goal": "show step shapes",
+  "steps": [
+    {
+      "id": "everything",
+      "title": "Everything",
+      "line": "Everything",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Step text."
+        },
+        {
+          "type": "callout",
+          "kind": "note",
+          "md": "A note for everyone."
+        },
+        {
+          "type": "callout",
+          "kind": "caution",
+          "only": {
+            "os": [
+              "windows"
+            ]
+          },
+          "md": "A caution for Windows."
+        },
+        {
+          "type": "callout",
+          "kind": "warning",
+          "only": {
+            "runtime": [
+              "docker",
+              "podman"
+            ]
+          },
+          "md": "A warning for both runtimes."
+        },
+        {
+          "type": "command",
+          "code": "echo one"
+        },
+        {
+          "type": "command",
+          "code": "echo two\necho three"
+        },
+        {
+          "type": "output",
+          "text": "one\ntwo\nthree"
+        },
+        {
+          "type": "text",
+          "md": "After text."
+        }
+      ],
+      "check": {
+        "kind": "image-exists",
+        "prompt": "The quay.io/kairos/auroraboot:latest image is present in your container runtime.",
+        "verify": {
+          "command": "docker images quay.io/kairos/auroraboot",
+          "output": "REPOSITORY                 TAG       IMAGE ID\nquay.io/kairos/auroraboot  latest    0123456789ab"
+        },
+        "fail": [
+          {
+            "type": "text",
+            "md": "It did not work.\n\nTry again."
+          }
+        ]
+      }
+    },
+    {
+      "id": "named-checks",
+      "title": "Named checks",
+      "line": "Named checks",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo x"
+        }
+      ],
+      "check": {
+        "kind": "vm-running",
+        "prompt": "The demo VM is running.",
+        "verify": {
+          "command": "ps aux | grep demo"
+        },
+        "fail": []
+      }
+    },
+    {
+      "id": "iso",
+      "title": "Steps",
+      "line": "Steps",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo iso"
+        }
+      ],
+      "check": {
+        "kind": "iso-exists",
+        "prompt": "The ISO file exists.",
+        "fail": []
+      }
+    },
+    {
+      "id": "vm",
+      "title": "Steps",
+      "line": "Steps",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo vm"
+        }
+      ],
+      "check": {
+        "kind": "vm-running",
+        "prompt": "The VM is running.",
+        "fail": []
+      }
+    },
+    {
+      "id": "manual",
+      "title": "Steps",
+      "line": "Steps",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo done"
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "The command printed done.",
+        "verify": {
+          "command": "echo done",
+          "output": "done"
+        },
+        "fail": []
+      }
+    },
+    {
+      "id": "no-check",
+      "title": "No check",
+      "line": "No check",
+      "optional": true,
+      "blocks": [
+        {
+          "type": "text",
+          "md": "Optional and without a check."
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "only-on-fail",
+      "title": "Steps",
+      "line": "Steps",
+      "blocks": [
+        {
+          "type": "text",
+          "md": "A step with a failure text and no check."
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "You finished this step.",
+        "fail": [
+          {
+            "type": "text",
+            "md": "Look at the logs."
+          }
+        ]
+      }
+    }
+  ]
+}

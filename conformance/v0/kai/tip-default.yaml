@@ -1,0 +1,8 @@
+format: kairos-workshop/v0
+id: tip-default
+title: A tip with no condition
+goal: try the default tip
+tip: { request: "Install {runtime} on {os}." }
+sections:
+  - title: Only section
+    text: Read this.

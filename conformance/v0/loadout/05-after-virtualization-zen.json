@@ -1,0 +1,5 @@
+{
+  "description": "After Zen (kairos-lab) the architecture question comes next.",
+  "answers": [["os", "linux"], ["virtualization", "kairos-lab"]],
+  "expect": { "next": "arch", "answers": { "os": "linux", "virtualization": "kairos-lab" } }
+}

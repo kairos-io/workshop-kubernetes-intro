@@ -1,0 +1,28 @@
+format: kairos-workshop/v0
+id: synthetic-step-when
+title: A step that a fact hides as a whole
+goal: try the example
+sections:
+  - title: Always here
+    steps:
+      - id: everyone
+        commands:
+          - echo everyone
+      - id: linux-only
+        when: { os: linux }
+        warnings:
+          - kind: note
+            text: Only Linux readers see this step.
+        commands:
+          - echo linux
+        check: { kind: command-available, command: sh }
+      - id: linux-with-variants
+        when: { os: linux }
+        variants:
+          - { id: one, title: One, when: { runtime: docker }, commands: [echo one] }
+          - { id: two, title: Two, when: { runtime: podman }, commands: [echo two] }
+      - id: installers
+        variants:
+          - { id: apt, title: apt, when: { os: linux }, commands: [sudo apt install tool] }
+          - { id: brew, title: brew, when: { os: macos }, commands: [brew install tool] }
+        check: { kind: command-available, command: tool }
