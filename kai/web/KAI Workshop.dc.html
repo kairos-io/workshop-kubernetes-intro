@@ -104,10 +104,6 @@ button:disabled{cursor:not-allowed;}
               <div style="font-size:15px;">{{ g.hint }}</div>
             </div>
           </sc-for>
-          <div style="display:flex;flex-direction:column;gap:6px;">
-            <div style="font-weight:600;">{{ modeHeading }}</div>
-            <div style="font-size:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;"><span>The same workshop as a normal page, without the game. Good for projectors.</span><button onClick="{{ toggleMode }}" style="background:transparent;color:var(--ink);border:2px solid var(--ink);padding:8px 12px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ modeLabel }}</button></div>
-          </div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;">
             <button onClick="{{ toggleSettings }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Done</button>
             <button onClick="{{ resetProgress }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">{{ resetLabel }}</button>
