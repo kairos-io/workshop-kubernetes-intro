@@ -158,9 +158,8 @@
 
     if (view === 'title') {
       g.bar(0, ' ' + W.game.title + ' ' + W.game.edition, 'kai ', barSt);
-      const lx = Math.floor((w - 36) / 2);
+      const lx = Math.floor((w - 16) / 2);
       g.sprite(lx, 2, E.S.logos.kairos, E.pal(mode, 'kairos'), codes);
-      g.sprite(lx + 20, 2, E.S.logos.hadron, E.pal(mode, 'hadron'), codes);
       T.center(g, 11, W.game.title.split('').join(' ') + '   ' + W.game.edition.split('').join(' '), { b: true });
       T.center(g, 12, 'with ' + W.game.subtitle + ' Linux');
       let y = 14;

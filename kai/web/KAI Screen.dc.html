@@ -164,8 +164,7 @@ class Component extends DCLogic {
       hudBar(P.hud ? P.hud.done : 0, P.hud ? P.hud.total : 0, 80, 34);
       E.box(x, U, 0, 96, 160, 48); arrowDown();
     } else if (s === 'title') {
-      E.draw(x, E.S.logos.kairos, E.pal(m, 'kairos'), 44, 6, { scale: 2 });
-      E.draw(x, E.S.logos.hadron, E.pal(m, 'hadron'), 84, 6, { scale: 2 });
+      E.draw(x, E.S.logos.kairos, E.pal(m, 'kairos'), 64, 6, { scale: 2 });
       E.tile(x, E.S.tiles.path, Wc, 0, 74, 160, 18);
       kai(72, 75, 1, P.action || (red ? 'idle' : 'walk'));
       E.box(x, U, 20, 94, 120, 46);

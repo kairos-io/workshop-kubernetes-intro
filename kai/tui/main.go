@@ -1947,9 +1947,8 @@ func (a *App) render(w, h int) *Grid {
 	switch a.view {
 	case "title":
 		g.bar(0, " "+W.Game.Title+" "+W.Game.Edition, "kai ", barSt)
-		lx := (w - 36) / 2
+		lx := (w - 16) / 2
 		g.sprite(lx, 2, S.Logos["kairos"], pal(mode, "kairos"), false, -1)
-		g.sprite(lx+20, 2, S.Logos["hadron"], pal(mode, "hadron"), false, -1)
 		g.center(11, strings.Join(strings.Split(W.Game.Title, ""), " ")+"   "+strings.Join(strings.Split(W.Game.Edition, ""), " "), St{B: true})
 		g.center(12, "with "+W.Game.Subtitle+" Linux", St{})
 		y := 14
