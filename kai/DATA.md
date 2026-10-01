@@ -201,7 +201,7 @@ For stage 1 the value is `{ "when": { "virtualization": ["kairos-lab"] }, "reaso
 
 `tipOnly` says when to offer the TIP. It is an `only` object, and every stage that has a `tip` has one: the `when` of the stage tip, or `{ "virtualization": ["own"] }` when the stage sets none (Master). The round 5 reader offers the TIP only for a stage that has `tipOnly`, so a stage with a `tip` and no `tipOnly` would never show it.
 
-Our rule (SPEC, "Stage tip") offers the TIP when the check gives a match or conditional, so a learner whose `virtualization` is not set also gets it. The round 5 reader checks that every fact in `tipOnly` is set and matches, so it does not offer the TIP while `virtualization` is not set. See "Where the reader and our reference differ".
+Our rule (SPEC, "Stage tip") offers the TIP when the check gives a match or conditional, so a learner whose `virtualization` is not set also gets it. The reader does the same (`E.tipFor`, and `tipFor` in `tui/main.go`): a fact of `tipOnly` that is unset or "unsure" counts as a match, and a fact that is set to another value does not. `tests/kai-engine.test.mjs` checks this against our rule for every combination of facts.
 
 ### Steps
 
@@ -242,7 +242,7 @@ Each block has a `type` and may have an `only`. When `only` does not match, hide
 
 ## What the reader reads
 
-Round 5 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `content.json` and `theme.json` that we write, except the ones in "Not used yet". `tests/kai-engine.test.mjs`, `tests/kai-tui.test.mjs` and `tests/kai-theme.test.mjs` pin each use below.
+The reader (`kai/web/`, `kai/tui/main.go`, round 5 of the designer's export, then ours) reads every field of `content.json` and `theme.json` that we write, except the ones in "Not used yet". `tests/kai-engine.test.mjs`, `tests/kai-tui.test.mjs` and `tests/kai-theme.test.mjs` pin each use below.
 
 | Field of ours | What the reader does with it |
 |---|---|
@@ -252,7 +252,7 @@ Round 5 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `cont
 | `theme.welcome.pages` | The welcome pages and their short lines. |
 | `stage.id`, `title`, `goal`, `steps` | The route, the stage page and the mentor screen. The number of stages is the length of the list. |
 | `stage.tool`, `docs`, `tip` | The stage tip prompt: `{tool}`, `{source}`, `{docs}` and `{ask}`. |
-| `stage.tipOnly` | Who is offered the TIP (`E.tipFor`, the `t` key in the terminal, the banner in the web). A stage without `tipOnly` has no TIP. |
+| `stage.tipOnly` | Who is offered the TIP (`E.tipFor`, the `t` key in the terminal, the banner in the web). A fact that is unset or "unsure" counts as a match. A stage without `tipOnly` has no TIP. |
 | `theme.factPrompt` | The text that stands for a fact value in a prompt, and which value needs a free text (the name of the learner's own virtualization software). |
 | `theme.messages.boss_hint` | The line about the Esc key: on the mode chooser, on page 1 of the welcome in the game, and above the first step in "Just the workshop". Not in the terminal, which has no boss key. |
 | `theme.labels.take_home`, `tip_banner`, `free_text_hint` | The "Take KAI home" line at the end of the workshop, the text of the TIP banner, and the hint to type the name of the software. |
@@ -272,9 +272,8 @@ The web reader asks first for a mode ("Play the game" or "Just the workshop", sa
 
 ### Where the reader and our reference differ
 
-Round 4 closed three differences of round 3, and round 5 adds one (the TIP and an unset fact): the reader now takes `{tool}`, `{source}` and `{docs}` from the step (so a step that names its own tool, AuroraBoot in the kairos-lab stage, shows it), `{expected}` is `help.expect`, and it drops a line whose placeholders have no value. What is left (the tests pin it):
+Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{source}` and `{docs}` from the step (so a step that names its own tool, AuroraBoot in the kairos-lab stage, shows it), `{expected}` is `help.expect`, and it drops a line whose placeholders have no value. We then changed `tipFor` in this repository (web engine and `tui/main.go`), so the TIP and an unset `virtualization` is no longer a difference: the reader and our rule give the same answer for every combination of facts. What is left (the tests pin it):
 
-- The TIP and an unset `virtualization`: our rule (SPEC, "Stage tip") offers the TIP when the condition gives true or unknown, so a learner with no `virtualization` gets it. The reader offers it only when every fact in `tipOnly` is set and matches (`E.strict`, where "unsure" counts as unset), so that learner gets no TIP. The compiler cannot close this, because `only` has no way to say "or unset". It matters only for a learner who did not answer the question (the loadout asks it unless `os` forces it). `tests/kai-engine.test.mjs` pins both sides.
 - `{commands}`: the reader writes the commands without `$ ` and separates them with a blank line. We write one `$ ` line per command line.
 - An unset fact: the reader writes `[YOUR OS]`, `[YOUR ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION]` (`unsetPlaceholder` and the label of the fact). We write `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
 - A step with no `help`: we have no prompt for it. The reader builds one, with the title of the step as its goal, no tool and docs lines, and the check sentence as the expected result.

@@ -345,30 +345,35 @@ const tipCases = () => {
   return out;
 };
 
-test("tip: the reader offers the stage TIP to kairos-lab never and to your own virtualization always, like our rule", () => {
+test("tip: the reader offers the stage TIP exactly when our rule does, in every case, including an unset virtualization", () => {
   let own = 0;
   let zen = 0;
+  let unset = 0;
   for (const facts of tipCases()) {
-    if (facts.virtualization === undefined) continue;
     const reader = E.tipFor(progress(facts), "kairos-lab");
     assert.equal(reader, tipRule(stageDoc, facts), JSON.stringify(facts));
     if (facts.virtualization === "own") {
       own++;
       assert.equal(reader, true);
-    } else {
+    } else if (facts.virtualization === "kairos-lab") {
       zen++;
       assert.equal(reader, false);
+    } else {
+      unset++;
+      assert.equal(reader, true, "an unset virtualization is offered the TIP, as SPEC says");
     }
   }
-  assert.ok(own >= 20 && zen >= 20, `${own} own cases, ${zen} kairos-lab cases`);
+  assert.ok(own >= 20 && zen >= 20 && unset >= 20, `${own} own, ${zen} kairos-lab, ${unset} unset cases`);
 });
 
-test("tip: with virtualization unset our rule offers the TIP and the reader does not (a known difference)", () => {
-  for (const facts of tipCases().filter((f) => f.virtualization === undefined)) {
-    assert.equal(tipRule(stageDoc, facts), true, `ours, ${JSON.stringify(facts)}`);
-    assert.equal(E.tipFor(progress(facts), "kairos-lab"), false, `reader, ${JSON.stringify(facts)}`);
-  }
-  // The cause: E.strict wants every fact of tipOnly to be set and to match, and "unsure" counts as unset.
+test("tip: a fact of tipOnly that is unset or unsure counts as a match, and a fact set to another value does not", () => {
+  const unsure = progress({}).facts;
+  for (const k of Object.keys(unsure)) assert.equal(unsure[k], "unsure", `${k} starts as unsure`);
+  assert.equal(E.tipFor({ facts: unsure }, "kairos-lab"), true, "unsure virtualization");
+  assert.equal(E.tipFor({ facts: {} }, "kairos-lab"), true, "no facts at all");
+  assert.equal(E.tipFor({ facts: { virtualization: "kairos-lab" } }, "kairos-lab"), false, "set to another value");
+  assert.equal(E.tipFor({ facts: { virtualization: "own" } }, "kairos-lab"), true);
+  // E.strict is unchanged: it still wants every fact to be set (the loadout and noSkip use it).
   assert.equal(E.strict({ virtualization: ["own"] }, engineFacts({})), false);
   assert.equal(E.strict({ virtualization: ["own"] }, { virtualization: "unsure" }), false);
   assert.equal(E.strict({ virtualization: ["own"] }, { virtualization: "own" }), true);
@@ -397,7 +402,8 @@ test("tip: the reader reads the condition from content.stages[].tipOnly, and a s
     assert.equal(E.tipFor(progress({ virtualization: "kairos-lab", os: "macos" }), "kairos-lab"), true);
     assert.equal(E.tipFor(progress({ virtualization: "kairos-lab", os: "windows" }), "kairos-lab"), false);
     assert.equal(E.tipFor(progress({ virtualization: "own", os: "macos" }), "kairos-lab"), false);
-    assert.equal(E.tipFor(progress({ virtualization: "kairos-lab" }), "kairos-lab"), false, "os is unset, so the reader does not offer it");
+    assert.equal(E.tipFor(progress({ virtualization: "kairos-lab" }), "kairos-lab"), true, "os is unset, so the condition is unknown and the TIP is offered");
+    assert.equal(E.tipFor(progress({ virtualization: "kairos-lab", os: "unsure" }), "kairos-lab"), true, "unsure counts as unset");
   } finally {
     stage.tipOnly = saved;
   }

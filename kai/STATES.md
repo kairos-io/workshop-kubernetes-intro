@@ -6,7 +6,7 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 
 - First visit: a standalone page (no seed, keys on) with no saved `kai.mode` always opens the mode chooser, whatever the `view` default is. Embedded pages (KAI States, keys=false + seed) keep using `view`. Header buttons and the footer mode link are hidden on the chooser. Screenshot: `assets/first-visit-chooser.png`
 - Fact ids and values come only from `content.facts`. Prompt placeholders are built for every fact id. A value can be rewritten through `theme.factPrompt` (design-owned), where `@freeText` means "what the learner typed", e.g. the name of their virtualization software
-- TIP: shown only where `content.stages[].tipOnly` matches the loadout (an "only" map). No `tipOnly` in the data means no TIP
+- TIP: shown only where `content.stages[].tipOnly` matches the loadout (an "only" map; a fact that is unset or "unsure" counts as a match). No `tipOnly` in the data means no TIP
 - Spreadsheet Goal column: `step.goal`, then `help.goal`, then the step title
 - Boss key line: `messages.boss_hint`. Shown once in the intro (welcome page 1 in the game, the first step in "Just the workshop") and as the small hint on the mode chooser. Not in the terminal: it has no boss key
 - "Take KAI home…" and the TIP banner are now `labels.take_home` and `labels.tip_banner`

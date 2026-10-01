@@ -357,7 +357,8 @@
     // Free text: a fact option mapped to "@freeText" in theme.factPrompt (e.g. your own virtualization software)
     freeTextFact(facts) { const fp = E.W.factPrompt || {}; return E.C.facts.map(f => f.id).find(id => !E.unset(facts, id) && fp[id] && fp[id][facts[id]] === '@freeText') || null; },
     // Who gets the stage TIP: content.stages[].tipOnly (an "only" map). No tipOnly in the data means no TIP.
-    tipFor(p, sid) { const s = E.stage(sid); return !!(s && s.tipOnly && E.strict(s.tipOnly, p.facts)); },
+    // A fact that is unset or "unsure" counts as a match (the TIP is offered while the condition is unknown); a fact set to another value does not.
+    tipFor(p, sid) { const s = E.stage(sid), t = s && s.tipOnly, ks = Object.keys(t || {}); return ks.length > 0 && ks.every(k => E.unset(p.facts, k) || t[k].includes(p.facts[k])); },
     factValue(p, id) {
       const P = E.W.prompts, f = p.facts, map = ((E.W.factPrompt || {})[id] || {})[f[id]];
       if (E.unset(f, id)) return E.fill(P.unsetPlaceholder, { fact: E.fact(id).label.toUpperCase() });

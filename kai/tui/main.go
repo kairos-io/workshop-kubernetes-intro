@@ -744,9 +744,29 @@ func freeTextFact(facts map[string]string) string {
 }
 
 // tipFor: content.stages[].tipOnly decides who gets the stage TIP. No tipOnly means no TIP.
+// A fact that is unset or "unsure" counts as a match (the TIP is offered while the condition is unknown);
+// a fact set to another value does not.
 func tipFor(p *Progress, sid string) bool {
 	s := stageC(sid)
-	return len(s.TipOnly) > 0 && strict(s.TipOnly, p.Facts)
+	if len(s.TipOnly) == 0 {
+		return false
+	}
+	for k, vals := range s.TipOnly {
+		if unset(p.Facts, k) {
+			continue
+		}
+		ok := false
+		for _, v := range vals {
+			if v == p.Facts[k] {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func factValue(p *Progress, id string) string {

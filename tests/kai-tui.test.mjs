@@ -225,7 +225,7 @@ shows("the help prompt of a failed step names the tool of the step and its goal"
   assert.ok(out.includes(`Tool: ${own.help.tool} (${own.help.source}).`));
 });
 
-shows("the stage screen offers the TIP key to Master only, as content.stages[].tipOnly says, and not to Zen or an unset virtualization", () => {
+shows("the stage screen offers the TIP key to Master and to an unset virtualization, as content.stages[].tipOnly says, and not to Zen", () => {
   const base = { os: "linux", arch: "amd64", runtime: "docker" };
   const keys = (virtualization) => {
     const facts = virtualization ? { ...base, virtualization } : base;
@@ -234,8 +234,9 @@ shows("the stage screen offers the TIP key to Master only, as content.stages[].t
   assert.deepEqual(stage1.tipOnly, { virtualization: ["own"] });
   assert.match(keys("own"), /c copy · t TIP · m route/, "Master is offered the TIP");
   assert.doesNotMatch(keys("kairos-lab"), /t TIP/, "Zen is not");
-  // SPEC offers the tip while virtualization is unset. The reader's strict check does not: a known difference.
-  assert.doesNotMatch(keys(undefined), /t TIP/, "an unset virtualization is not offered the TIP by the reader");
+  // SPEC offers the tip while virtualization is unset, and the reader does the same.
+  assert.match(keys(undefined), /t TIP/, "an unset virtualization is offered the TIP");
+  assert.match(keys("unsure"), /t TIP/, "an unsure virtualization is offered the TIP");
 });
 
 shows("the TIP screen of Master writes the stage prompt with the placeholder for the name of the software", () => {
