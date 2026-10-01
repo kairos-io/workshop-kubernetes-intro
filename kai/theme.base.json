@@ -484,6 +484,10 @@
    "label": "Presentation",
    "md": "A plain workshop page with the same steps and commands. Good for projectors."
   },
+  "boss": {
+   "label": "Boss",
+   "md": "Looks like a spreadsheet. Press Esc to come back."
+  },
   "switchToGame": "Switch to Quest",
   "switchToWorkshop": "Switch to Presentation",
   "toggleLabel": "Mode"

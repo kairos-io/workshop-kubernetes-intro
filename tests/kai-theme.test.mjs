@@ -241,6 +241,14 @@ test("round 4: checkKinds, modes, sheet and the new labels are the base copied u
   assert.deepEqual(GENERATED_THEME_KEYS, ["welcome", "loadout", "prompts", "stages"]);
 });
 
+test("modes: the base names the three modes Quest, Presentation and Boss, and theme.json carries them", () => {
+  const b = base();
+  const t = theme();
+  assert.deepEqual(["game", "workshop", "boss"].map((m) => b.modes[m].label), ["Quest", "Presentation", "Boss"]);
+  assert.deepEqual(["game", "workshop", "boss"].map((m) => t.modes[m].label), ["Quest", "Presentation", "Boss"]);
+  for (const m of ["game", "workshop", "boss"]) assert.equal(typeof t.modes[m].md, "string", `modes.${m}.md`);
+});
+
 // ---- the keys that round 5 added to the designer's base ----
 
 test("round 5: boss_hint, take_home, tip_banner, free_text_hint and factPrompt are design copy, copied from the base unchanged", () => {

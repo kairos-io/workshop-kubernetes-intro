@@ -19,7 +19,7 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 
 ### Mode chooser (first screen)
 - "Quest" / "Presentation". The internal values are `game` and `workshop`, and `kai.mode` keeps them. Saved in localStorage `kai.mode` (try/catch). Shown when nothing is saved
-- Switch: the Mode group in Settings. The title menu's 3rd item ("Presentation") opens the Presentation mode
+- Switch: the Mode group in Settings, with three options: Quest, Presentation and Boss. Boss turns the spreadsheet on, like Esc, and is not saved in `kai.mode`. The chooser offers only Quest and Presentation. The title menu's 3rd item ("Presentation") opens the Presentation mode
 - The website panel under the title screen is gone. The section under the game only shows when it has content
 
 ### Presentation (internal value `workshop`)
@@ -29,7 +29,7 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 - Projector: light (default) or dark; A− / A+ in the header scale the whole page 90%–175%. Saved in `kai.workshop.view`
 
 ### Boss key (web, both modes)
-- Esc → spreadsheet: title bar "Q4 budget", menu row, toolbar, formula bar (address + selected cell), columns A–F, numbered rows, one sheet tab per stage. Each step is a row: #, title, goal, commands (with $), check, status
+- Esc, or "Boss" in the Settings Mode group → spreadsheet: title bar "Q4 budget", menu row, toolbar, formula bar (address + selected cell), columns A–F, numbered rows, one sheet tab per stage. Each step is a row: #, title, goal, commands (with $), check, status
 - Commands stay selectable. Clicking a cell shows its content in the formula bar
 - The tab title and icon change, and are restored on Esc again (or on unmount). The reader returns to the same mode, stage and step
 - Esc does nothing while Settings, the skip confirm, the mode chooser or the loadout flow is open. The loadout uses Backspace / Back to go back

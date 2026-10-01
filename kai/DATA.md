@@ -269,7 +269,7 @@ The reader (`kai/web/`, `kai/tui/main.go`, round 5 of the designer's export, the
 | `theme.prompts.fail`, `tip`, `unsetPlaceholder` | The prompt templates. An unset fact is written with `unsetPlaceholder`. |
 | `theme.stages` | The location, nodes and items of each stage of the route. |
 
-The web reader asks first for a mode ("Quest" or "Presentation", saved as `kai.mode` with the internal values `game` and `workshop`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows the goal, the commands, `check.prompt` and the state for each step. The goal is `step.goal`, then the `goal` of the step help, then the title of the step, so no cell is empty. On a first visit with no saved mode the page always asks for the mode first (a mode saved in `kai.mode` skips the question).
+The web reader asks first for a mode ("Quest" or "Presentation", saved as `kai.mode` with the internal values `game` and `workshop`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` (Quest, Presentation and the Boss option of the Settings Mode group) and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows the goal, the commands, `check.prompt` and the state for each step. The goal is `step.goal`, then the `goal` of the step help, then the title of the step, so no cell is empty. On a first visit with no saved mode the page always asks for the mode first (a mode saved in `kai.mode` skips the question).
 
 ### Where the reader and our reference differ
 

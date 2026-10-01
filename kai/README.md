@@ -31,7 +31,7 @@ STATES.md                every screen and state, plus the mentor-pick function
 - `items {id: {name, icon, desc}}`, `mega {id: {name, icon, desc, parts[] {label, icon?}}}`: a part no stage grants shows as "coming soon"
 
 ## Modes
-- First visit asks: "Quest" (the game) or "Presentation" (the plain workshop page). The choice is saved in localStorage `kai.mode`. The internal values stay `game` and `workshop`. Switch in the Settings Mode group.
+- First visit asks: "Quest" (the game) or "Presentation" (the plain workshop page). The choice is saved in localStorage `kai.mode`. The internal values stay `game` and `workshop`. Switch in the Settings Mode group, which also lists "Boss" (`modes.boss`): it opens the spreadsheet like Esc does. Boss is not saved in `kai.mode`.
 - Esc in the web reader opens the spreadsheet boss key; Esc again returns. The intro announces it (`messages.boss_hint`). The terminal app has no boss key, so it does not show the line.
 
 ## Run
