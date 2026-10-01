@@ -17,6 +17,7 @@
     {"kind":"command","text":"kairos-lab setup"},
     {"kind":"variant","id":"podman","state":"conditional"},
     {"kind":"command","text":"kairos-lab setup -runtime podman"},
+    {"kind":"check","checkKind":"manual"},
     {"kind":"step","id":"auroraboot-version","state":"shown"},
     {"kind":"command","text":"auroraboot --version"},
     {"kind":"check","checkKind":"command-available"}

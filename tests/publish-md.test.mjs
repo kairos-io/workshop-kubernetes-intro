@@ -181,8 +181,10 @@ test("a verify is written under the check sentence", () => {
   assert.ok(output.includes(`${sentence}\n\nTo check, run:\n\n\`\`\`bash\nkairos-lab --version\n\`\`\`\n\nExample output:\n\n\`\`\`text\n0.1.3\n\`\`\`\n`));
   // No output in the file, so no example output block.
   assert.ok(output.includes("To check, run:\n\n```bash\nauroraboot --version\n```\n\n<details>"));
-  assert.equal((output.match(/^To check, run:$/gm) ?? []).length, 2);
-  assert.equal((output.match(/^Example output:$/gm) ?? []).length, 1);
+  assert.equal((output.match(/^To check, run:$/gm) ?? []).length, 3);
+  assert.equal((output.match(/^Example output:$/gm) ?? []).length, 2);
+  // A manual check has its own text as the sentence, in the same italic line.
+  assert.ok(output.includes("*Check: Setup finished and kairos-lab status lists what it manages.*\n\nTo check, run:\n\n```bash\nkairos-lab status\n```\n\nExample output:\n\n```text\nplatform: darwin/arm64\n"));
 });
 
 test("a warning comes before the commands it warns about", () => {

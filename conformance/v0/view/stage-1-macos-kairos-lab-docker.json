@@ -20,6 +20,7 @@
     {"kind":"warning","warningKind":"note","state":"shown"},
     {"kind":"variant","id":"docker","state":"shown"},
     {"kind":"command","text":"kairos-lab setup"},
+    {"kind":"check","checkKind":"manual"},
     {"kind":"step","id":"auroraboot-version","state":"shown"},
     {"kind":"command","text":"auroraboot --version"},
     {"kind":"check","checkKind":"command-available"}

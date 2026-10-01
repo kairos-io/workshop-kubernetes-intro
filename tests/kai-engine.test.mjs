@@ -7,7 +7,7 @@ import { view } from "../tools/lib/view.mjs";
 import { evaluate } from "../tools/lib/when.mjs";
 import { VALUES, FACTS } from "../tools/lib/facts.mjs";
 import { loadWorkshop } from "../tools/lib/load.mjs";
-import { compileWorkshop } from "../tools/lib/kai.mjs";
+import { compileWorkshop, PROMPTS } from "../tools/lib/kai.mjs";
 import { serialize, compileRootFiles } from "../tools/compile-kai.mjs";
 import { nextQuestion, applyAnswer } from "../tools/lib/loadout.mjs";
 import { buildStepPrompt, buildTipPrompt } from "../tools/lib/prompt.mjs";
@@ -275,7 +275,8 @@ test("prompts: for every answered fact set the reader's step prompt, built from 
       // "the step finishes without errors", where the reader used to say "You finished this step.".
       assert.equal(a.expected, `What I expected: ${step.help.expect}`);
       assert.equal(a.expected, b.expected);
-      if (step.check.kind === "manual") {
+      // A manual check that the stage wrote has its own text, and that text is the expected line.
+      if (step.check.kind === "manual" && Object.values(PROMPTS).includes(step.check.prompt)) {
         manual++;
         assert.equal(a.expected, "What I expected: the step finishes without errors");
         assert.notEqual(step.check.prompt, step.help.expect);

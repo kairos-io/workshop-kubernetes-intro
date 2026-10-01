@@ -263,7 +263,11 @@
           ],
           "check": {
             "kind": "manual",
-            "prompt": "You finished this step.",
+            "prompt": "Setup finished and kairos-lab status lists what it manages.",
+            "verify": {
+              "command": "kairos-lab status",
+              "output": "platform: darwin/arm64\npackage manager: brew\ndependencies present now: qemu\ndependencies pre-existing: docker, qemu\ndependencies installed by kairos-lab: none\nmanaged dirs: /Users/you/Library/Application Support/kairos-lab, /Users/you/Library/Caches/kairos-lab\nmanaged files: none\nauroraboot runtime: docker\nauroraboot shim: /Users/you/.local/bin/auroraboot\nauroraboot images pulled by kairos-lab: none\nauroraboot images pre-existing: quay.io/kairos/auroraboot:v0.27.1\nvms: none"
+            },
             "fail": []
           },
           "goal": "Run the first-time setup of kairos-lab and AuroraBoot",
@@ -271,7 +275,7 @@
             "tool": "kairos-lab",
             "source": "https://github.com/kairos-io/kairos-lab",
             "docs": "https://github.com/kairos-io/kairos-lab#readme",
-            "expect": "the step finishes without errors"
+            "expect": "Setup finished and kairos-lab status lists what it manages."
           }
         },
         {

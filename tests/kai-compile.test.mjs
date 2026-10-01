@@ -526,14 +526,15 @@ test("every check has a kind: the named kind, or manual for a default prompt", (
   const byId = Object.fromEntries(out.stages[0].steps.map((s) => [s.id, s.check]));
   assert.deepEqual(byId["install-kairos-lab"], { kind: "command-available", prompt: "The kairos-lab command is available in a new terminal.", verify: { command: "kairos-lab --version", output: "0.1.3" }, fail: [] });
   assert.equal(byId["pull-auroraboot"].kind, "image-exists");
-  assert.equal(byId["kairos-lab-setup"].kind, "manual");
-  assert.equal(byId["kairos-lab-setup"].prompt, PROMPTS.step);
+  assert.deepEqual(byId["kairos-lab-setup"], { kind: "manual", prompt: "Setup finished and kairos-lab status lists what it manages.", verify: { command: "kairos-lab status", output: byId["kairos-lab-setup"].verify.output }, fail: [] }, "the stage wrote this manual check");
+  assert.equal(byId["kairos-lab-setup"].verify.output.split("\n").length, 12);
   assert.equal(byId["build-it-locally-linux-only"].kind, "manual");
   assert.equal(byId["build-it-locally-linux-only"].prompt, PROMPTS.read);
   for (const s of out.stages.slice(1)) assert.deepEqual([s.steps[0].check.kind, s.steps[0].check.prompt], ["manual", PROMPTS.stage]);
   for (const st of out.stages.flatMap((s) => s.steps)) {
     assert.ok(["command-available", "image-exists", "iso-exists", "vm-running", "manual"].includes(st.check.kind), st.id);
-    assert.equal(st.check.kind === "manual", [PROMPTS.step, PROMPTS.read, PROMPTS.stage].includes(st.check.prompt), st.id);
+    // A default sentence goes with kind manual. A manual check can also carry a sentence of its own.
+    if ([PROMPTS.step, PROMPTS.read, PROMPTS.stage].includes(st.check.prompt)) assert.equal(st.check.kind, "manual", st.id);
   }
 });
 
@@ -561,11 +562,12 @@ test("every help has an expect: the check sentence, or the default sentence", ()
   const steps = out.stages[0].steps.filter((s) => s.help);
   assert.equal(steps.length, 7);
   for (const s of steps) {
-    assert.equal(s.help.expect, s.check.kind === "manual" ? "the step finishes without errors" : s.check.prompt, s.id);
+    const isDefault = [PROMPTS.step, PROMPTS.read, PROMPTS.stage].includes(s.check.prompt);
+    assert.equal(s.help.expect, isDefault ? "the step finishes without errors" : s.check.prompt, s.id);
     assert.deepEqual(Object.keys(s.help), ["tool", "source", "docs", "expect"]);
   }
   assert.equal(steps.find((s) => s.id === "auroraboot-version").help.expect, "The auroraboot command is available in a new terminal.");
-  assert.equal(steps.find((s) => s.id === "kairos-lab-setup").help.expect, "the step finishes without errors");
+  assert.equal(steps.find((s) => s.id === "kairos-lab-setup").help.expect, "Setup finished and kairos-lab status lists what it manages.");
 });
 
 test("the validator checks check.kind and help.expect", () => {

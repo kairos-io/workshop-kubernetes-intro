@@ -134,6 +134,31 @@ turn an image you build into an ISO. For that it needs a container runtime,
 Docker or Podman. It pulls the AuroraBoot container image and installs a small
 `auroraboot` command in `~/.local/bin`.
 
+*Check: Setup finished and kairos-lab status lists what it manages.*
+
+To check, run:
+
+```bash
+kairos-lab status
+```
+
+Example output:
+
+```text
+platform: darwin/arm64
+package manager: brew
+dependencies present now: qemu
+dependencies pre-existing: docker, qemu
+dependencies installed by kairos-lab: none
+managed dirs: /Users/you/Library/Application Support/kairos-lab, /Users/you/Library/Caches/kairos-lab
+managed files: none
+auroraboot runtime: docker
+auroraboot shim: /Users/you/.local/bin/auroraboot
+auroraboot images pulled by kairos-lab: none
+auroraboot images pre-existing: quay.io/kairos/auroraboot:v0.27.1
+vms: none
+```
+
 ### Check the auroraboot command
 
 Check that the command works:
