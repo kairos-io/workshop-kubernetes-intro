@@ -1,0 +1,7 @@
+{
+  "stage": "kairos-lab",
+  "step": "build-auroraboot",
+  "facts": { "os": "macos", "arch": "arm64", "runtime": "docker", "virtualization": "own" },
+  "kind": "step",
+  "expect": null
+}

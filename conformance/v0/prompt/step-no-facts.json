@@ -1,0 +1,7 @@
+{
+  "stage": "kairos-lab",
+  "step": "install-kairos-lab",
+  "facts": {},
+  "kind": "step",
+  "expect": "I'm following the Kairos workshop, stage \"Setting up kairos-lab\", step \"Install kairos-lab\".\nMy setup: [YOUR OPERATING SYSTEM], [YOUR CPU ARCHITECTURE], container runtime [YOUR CONTAINER RUNTIME], VMs with [YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE].\nGoal of this step: Install the kairos-lab command.\nTool: kairos-lab (https://github.com/kairos-io/kairos-lab). Docs: https://github.com/kairos-io/kairos-lab#readme.\nWhat I ran:\n$ brew tap kairos-io/kairos\n$ brew install kairos-lab\n$ curl -sSL https://raw.githubusercontent.com/kairos-io/kairos-lab/main/install.sh | sh\n$ git clone https://github.com/kairos-io/kairos-lab.git && cd kairos-lab\n$ go build -o kairos-lab ./cmd/kairos-lab\nWhat I expected: The kairos-lab command is available in a new terminal.\nWhat happened: [paste your logs or the error here]\nGive me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses."
+}

@@ -6,7 +6,6 @@
     "runtime": "docker"
   },
   "expect": [
-    {"kind":"section","title":"Before we begin","state":"shown"},
     {"kind":"section","title":"Installing kairos-lab","state":"shown"},
     {"kind":"step","id":"install-kairos-lab","state":"shown"},
     {"kind":"variant","id":"homebrew","state":"shown"},

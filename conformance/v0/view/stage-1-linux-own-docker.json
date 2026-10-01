@@ -6,7 +6,6 @@
     "runtime": "docker"
   },
   "expect": [
-    {"kind":"section","title":"Before we begin","state":"shown"},
     {"kind":"section","title":"Not using kairos-lab? Get AuroraBoot yourself","state":"shown"},
     {"kind":"step","id":"pull-auroraboot","state":"shown"},
     {"kind":"variant","id":"docker","state":"shown"},

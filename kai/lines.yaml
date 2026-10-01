@@ -1,7 +1,6 @@
 # The line the game shows in the dialogue box for each step. It is theme, not workshop content.
 # Keys are <stage-id>/<step-id>. A missing key falls back to the step title.
 # A line is plain text on one line, at most 60 characters.
-kairos-lab/before-we-begin: "First, a quick look at what you need."
 kairos-lab/install-kairos-lab: "Let's get kairos-lab onto your machine."
 kairos-lab/kairos-lab-setup: "One command gets your tools ready."
 kairos-lab/auroraboot-version: "Let's make sure the new tool answers."

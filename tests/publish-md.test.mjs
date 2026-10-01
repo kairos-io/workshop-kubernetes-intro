@@ -17,9 +17,49 @@ const stage = parse(readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8"));
 const loaded = loadWorkshop(root);
 const byId = new Map(loaded.stages.map((x) => [x.id, x]));
 const stageHref = (id, anchor) => `${byId.get(id).outFile}${anchor ? `#${anchor}` : ""}`;
-const opts = { n: 1, next: loaded.stages[0].next, stageHref };
+const opts = { n: 1, next: loaded.stages[0].next, stageHref, loadout: loaded.workshop.loadout };
 const output = renderStage(stage, opts);
 const tokens = new MarkdownIt().parse(output, {});
+
+// The loadout section written out by hand from the loadout in workshop.yaml.
+const LOADOUT_MD = [
+  "## Choose your setup",
+  "",
+  "### What is your computer running?",
+  "",
+  "- **Linux**",
+  "- **macOS**",
+  "- **Windows:** This is not game over. Zen is not available on Windows, so you play Master.",
+  "",
+  "### How will you run the VMs?",
+  "",
+  "*Only if you use: Linux or macOS.*",
+  "",
+  "- **Zen** (recommended): kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos.",
+  "- **Master:** You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant.",
+  "",
+  "### Which CPU architecture?",
+  "",
+  "*Only if you use: Linux or macOS.*",
+  "",
+  "- **amd64**",
+  "- **arm64**",
+  "",
+  "Not sure? Run `uname -m`. x86_64 means amd64. arm64 or aarch64 means arm64.",
+  "",
+  "### Which container runtime?",
+  "",
+  "*Only if you use: Linux or macOS.*",
+  "",
+  "It is your choice, but Docker is the more battle-tested one for this workshop.",
+  "",
+  "- **Docker**",
+  "- **Podman**",
+  "",
+  "If you chose Zen: If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman.",
+  "",
+  "",
+].join("\n");
 
 test("the first line is the generated-file banner", () => {
   assert.equal(
@@ -28,9 +68,9 @@ test("the first line is the generated-file banner", () => {
   );
 });
 
-test("the five section headings appear verbatim", () => {
+test("the stage section headings appear verbatim", () => {
   for (const heading of [
-    "## Before we begin",
+    "## Choose your setup",
     "## Installing kairos-lab",
     "## Set up dependencies",
     "## Not using kairos-lab? Get AuroraBoot yourself",
@@ -40,12 +80,12 @@ test("the five section headings appear verbatim", () => {
   }
 });
 
-test("the section anchors are the five published anchors", () => {
+test("the section anchors are the four published anchors, after the loadout section", () => {
   const anchors = tokens
     .filter((t, i) => t.type === "heading_open" && t.tag === "h2")
     .map((t) => githubSlug(tokens[tokens.indexOf(t) + 1].content));
   assert.deepEqual(anchors, [
-    "before-we-begin",
+    "choose-your-setup",
     "installing-kairos-lab",
     "set-up-dependencies",
     "not-using-kairos-lab-get-auroraboot-yourself",
@@ -66,6 +106,36 @@ test("the title and the docs list come first", () => {
   assert.equal(lines[4], "Docs:");
   assert.equal(lines[5], "  - [kairos-lab](https://github.com/kairos-io/kairos-lab)");
   assert.equal(lines[6], "  - [AuroraBoot](https://kairos.io/docs/reference/auroraboot/)");
+});
+
+test("the loadout section follows the docs list and holds every question, option and note", () => {
+  const lines = output.split("\n");
+  assert.equal(lines[7], "");
+  assert.equal(lines[8], "## Choose your setup");
+  const at = output.indexOf("## Choose your setup");
+  const end = output.indexOf("## Installing kairos-lab");
+  assert.ok(at > 0 && end > at);
+  assert.equal(output.slice(at, end), LOADOUT_MD);
+});
+
+test("without a loadout there is no loadout section", () => {
+  const plain = renderStage(stage, { n: 1, next: opts.next, stageHref });
+  assert.ok(!plain.includes("Choose your setup"));
+  assert.ok(plain.startsWith(output.slice(0, output.indexOf("## Choose your setup"))));
+});
+
+test("a note with a condition on one fact starts with the label of that option", () => {
+  const doc = { format: "kairos-workshop/v0", id: "x", title: "X", goal: "try x", sections: [{ title: "S" }] };
+  const loadout = { questions: [
+    { fact: "virtualization", title: "VMs?", options: [{ value: "kairos-lab", label: "Zen" }, { value: "own", label: "Master" }] },
+    { fact: "runtime", title: "Runtime?", options: [{ value: "docker", label: "Docker" }, { value: "podman", label: "Podman" }],
+      notes: [{ when: { virtualization: ["kairos-lab", "own"] }, text: "Both." }, { when: { virtualization: "own" }, text: "Own." }, { when: { virtualization: "own", os: "linux" }, text: "Two facts." }, { text: "Always." }] },
+  ] };
+  const text = renderStage(doc, { n: 1, loadout });
+  assert.ok(text.includes("If you chose Zen or Master: Both.\n"));
+  assert.ok(text.includes("If you chose Master: Own.\n"));
+  assert.ok(text.includes("\nTwo facts.\n"));
+  assert.ok(text.includes("\nAlways.\n"));
 });
 
 test("every command from the outline with no facts appears in a bash fence", () => {
@@ -222,9 +292,9 @@ const linkDoc = (body) => ({
 });
 
 test("a stage link resolves to the generated or the markdown file name, with its anchor", () => {
-  const text = renderStage(linkDoc("See [a](stage:kairos-lab#before-we-begin) and [b](stage:build-image) and [c](stage:first-node)."), { n: 2, stageHref });
-  assert.ok(text.includes("See [a](stage-1.md#before-we-begin) and [b](stage-3.md) and [c](stage-2.md)."));
-  assert.ok(text.includes("> See [a](stage-1.md#before-we-begin)"));
+  const text = renderStage(linkDoc("See [a](stage:kairos-lab#installing-kairos-lab) and [b](stage:build-image) and [c](stage:first-node)."), { n: 2, stageHref });
+  assert.ok(text.includes("See [a](stage-1.md#installing-kairos-lab) and [b](stage-3.md) and [c](stage-2.md)."));
+  assert.ok(text.includes("> See [a](stage-1.md#installing-kairos-lab)"));
   assert.equal(text.split("stage:").length - 1, 1, "only the command keeps the text it was given");
   assert.ok(text.includes("echo [a](stage:build-image)"), "commands are not markdown");
 });

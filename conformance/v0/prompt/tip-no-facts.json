@@ -1,0 +1,6 @@
+{
+  "stage": "kairos-lab",
+  "facts": {},
+  "kind": "tip",
+  "expect": "I'm following the Kairos workshop, stage \"Setting up kairos-lab\".\nMy setup: [YOUR OPERATING SYSTEM], [YOUR CPU ARCHITECTURE], container runtime [YOUR CONTAINER RUNTIME], VMs with [YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE].\nExplain how to install [YOUR CONTAINER RUNTIME] on [YOUR OPERATING SYSTEM] ([YOUR CPU ARCHITECTURE]) and how to check that it works.\nGive me short numbered steps for my setup. If something is unclear, say what you need from me."
+}

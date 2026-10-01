@@ -18,11 +18,43 @@ function fence(code, info) {
   return `${ticks}${info}\n${trim(code)}\n${ticks}`;
 }
 
+// The "Choose your setup" section. The loadout is the same for every reader, so all of it shows:
+// every option and every note, with the condition of a question written out below its heading.
+function renderLoadout(loadout) {
+  const blocks = ["## Choose your setup"];
+  const optionLabel = (fact, value) => loadout.questions.find((q) => q.fact === fact)?.options.find((o) => o.value === value)?.label ?? value;
+  for (const q of loadout.questions) {
+    blocks.push(`### ${q.title}`);
+    if (q.when) blocks.push(`*Only if you use: ${conditionLabel(q.when)}.*`);
+    if (q.text) blocks.push(trim(q.text));
+    blocks.push(
+      q.options
+        .map((o) => {
+          const label = o.recommended ? `**${o.label}** (recommended)` : o.text ? `**${o.label}:**` : `**${o.label}**`;
+          return o.text ? `- ${label}${o.recommended ? ":" : ""} ${trim(o.text)}` : `- ${label}`;
+        })
+        .join("\n"),
+    );
+    if (q.help) blocks.push(`${q.help.label} Run \`${q.help.command}\`. ${trim(q.help.text)}`);
+    for (const note of q.notes ?? []) {
+      const facts = Object.keys(note.when ?? {});
+      if (facts.length === 1) {
+        const values = Array.isArray(note.when[facts[0]]) ? note.when[facts[0]] : [note.when[facts[0]]];
+        blocks.push(`If you chose ${values.map((v) => optionLabel(facts[0], v)).join(" or ")}: ${trim(note.text)}`);
+      } else {
+        blocks.push(trim(note.text));
+      }
+    }
+  }
+  return blocks;
+}
+
 // Render one converted stage as GitHub markdown. This is a reader with no facts set:
 // every conditional item shows with its condition written out below its heading.
 // `n` is the 1-based position of the stage in workshop.yaml. `next` is { n, title, file } or null.
 // `stageHref(id, anchor)` resolves a `stage:` link to a file name and an optional anchor.
-export function renderStage(stage, { n, next, stageHref = unresolved } = {}) {
+// `loadout` is the loadout of workshop.yaml. Pass it for the first stage to get the "Choose your setup" section.
+export function renderStage(stage, { n, next, stageHref = unresolved, loadout } = {}) {
   const blocks = [];
   const add = (text) => blocks.push(text);
   // Markdown from the stage file, with links to other stages resolved.
@@ -52,6 +84,7 @@ export function renderStage(stage, { n, next, stageHref = unresolved } = {}) {
   add(`<!-- Generated from stages/${stage.id}.yaml by tools/publish-md.mjs. Do not edit by hand. -->`);
   add(`# Stage ${n}: ${stage.title}`);
   if (stage.docs) add(["Docs:", ...stage.docs.map((d) => `  - [${d.title}](${d.url})`)].join("\n"));
+  if (loadout) renderLoadout(loadout).forEach(add);
 
   for (const section of stage.sections) {
     add(`## ${section.title}`);
@@ -91,7 +124,7 @@ function main(argv) {
   for (const s of loaded.stages.filter((x) => x.kind === "converted")) {
     const name = s.outFile;
     const path = join(root, name);
-    const text = renderStage(s.doc, { n: s.n, next: s.next, stageHref });
+    const text = renderStage(s.doc, { n: s.n, next: s.next, stageHref, loadout: s.n === 1 ? loaded.workshop.loadout : undefined });
     if (check) {
       if (!existsSync(path) || readFileSync(path, "utf8") !== text) {
         console.error(`${name} is generated from ${s.file}. Edit the YAML and run \`npm run publish:md\`.`);

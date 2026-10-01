@@ -2,7 +2,6 @@
   "stage": "stages/kairos-lab.yaml",
   "facts": {},
   "expect": [
-    {"kind":"section","title":"Before we begin","state":"shown"},
     {"kind":"section","title":"Installing kairos-lab","state":"conditional"},
     {"kind":"warning","warningKind":"caution","state":"conditional"},
     {"kind":"step","id":"install-kairos-lab","state":"shown"},

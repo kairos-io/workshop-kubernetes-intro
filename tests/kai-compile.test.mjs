@@ -49,7 +49,7 @@ test("golden: the real stage 1", () => {
   const got = compileStage(stageOf(readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8")), lines);
   assert.equal(serialize(got), readFileSync(new URL("kairos-lab.json", dir), "utf8"));
   assert.deepEqual(got.steps.map((s) => s.id), [
-    "before-we-begin", "install-kairos-lab", "kairos-lab-setup", "auroraboot-version", "pull-auroraboot",
+    "install-kairos-lab", "kairos-lab-setup", "auroraboot-version", "pull-auroraboot",
     "run-auroraboot-container", "build-it-locally-linux-only", "build-auroraboot", "run-auroraboot-local",
   ]);
 });
@@ -218,10 +218,19 @@ test("facts are emitted in the reader's shape from facts.mjs", () => {
   for (const f of facts) assert.deepEqual(Object.keys(f), ["id", "label", "question", "options"]);
 });
 
+test("the stage 1 steps have distinct titles, so the game never shows the same name twice", () => {
+  const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
+  const titles = out.stages[0].steps.map((s) => s.title);
+  assert.deepEqual(titles, [
+    "Install kairos-lab", "Run kairos-lab setup", "Check the auroraboot command", "Pull the image",
+    "Run the container", "Build it locally (Linux only)", "Build AuroraBoot", "Run your local build",
+  ]);
+});
+
 test("the whole workshop compiles to seven stages, stage 1 in full and six pointers", () => {
   const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
   assert.deepEqual(out.stages.map((s) => s.id), ["kairos-lab", "first-node", "build-image", "pipelines", "manual-upgrade", "multi-node", "operator-upgrade"]);
-  assert.equal(out.stages[0].steps.length, 9);
+  assert.equal(out.stages[0].steps.length, 8);
   for (const s of out.stages.slice(1)) assert.deepEqual(s.steps.map((x) => x.id), ["on-github"]);
   for (const s of out.stages) assert.ok(s.goal.length > 0 && !/^Stage \d/.test(s.title));
 });

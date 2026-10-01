@@ -86,7 +86,7 @@ FACT_SETS.forEach((facts, i) => {
 test("the terminal tells a Windows reader with kairos-lab that no install option matches", { skip: !haveGo && "no go toolchain" }, () => {
   const facts = { os: "windows", virtualization: "kairos-lab", runtime: "docker" };
   const flag = Object.entries(facts).map(([k, v]) => `${k}=${v}`).join(",");
-  const r = spawnSync(bin, ["render", "--assets", join(root, "kai/web"), "--screen", "stage", "--stage", "kairos-lab", "--step", "1", "--facts", flag, "--color", "none", "--size", "220x90"], { encoding: "utf8" });
+  const r = spawnSync(bin, ["render", "--assets", join(root, "kai/web"), "--screen", "stage", "--stage", "kairos-lab", "--step", "0", "--facts", flag, "--color", "none", "--size", "220x90"], { encoding: "utf8" });
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /only works on Linux and macOS/);
   assert.match(r.stdout, /None of the options here match your setup/);

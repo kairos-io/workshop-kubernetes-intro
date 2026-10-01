@@ -36,12 +36,11 @@ test("stage 1 and the workshop index validate", () => {
   assert.deepEqual(validateWorkshop(root), []);
 });
 
-test("stage 1 section slugs equal the five published anchors", () => {
+test("stage 1 section slugs equal the four published anchors", () => {
   const loaded = loadWorkshop(root);
   assert.equal(loaded.ok, true);
   const stage1 = loaded.stages.find((s) => s.id === "kairos-lab");
   assert.deepEqual(stage1.slugs, [
-    "before-we-begin",
     "installing-kairos-lab",
     "set-up-dependencies",
     "not-using-kairos-lab-get-auroraboot-yourself",
@@ -64,9 +63,9 @@ test("scalar when is normalized to a list", () => {
 
 test("the loader normalizes every when in stage 1", () => {
   const stage1 = loadWorkshop(root).stages.find((s) => s.id === "kairos-lab");
-  const homebrew = stage1.doc.sections[1].steps[0].variants[0];
+  const homebrew = stage1.doc.sections[0].steps[0].variants[0];
   assert.deepEqual(homebrew.when, { os: ["macos"] });
-  assert.deepEqual(stage1.doc.sections[1].when, { virtualization: ["kairos-lab"] });
+  assert.deepEqual(stage1.doc.sections[0].when, { virtualization: ["kairos-lab"] });
 });
 
 test("the loader computes next links and referenced facts", () => {
@@ -376,4 +375,48 @@ test("a stage help, tip and skip rule are normalized by the loader", () => {
   const bare = normalizeStage(parse("format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\ntip: { request: R }\nsections:\n  - title: S\n    text: x\n"));
   assert.deepEqual(bare.tip, { request: "R" });
   assert.equal("not_skippable_when" in bare, false);
+});
+
+// Stage 1 after the welcome pages and the loadout took over "Before we begin".
+test("stage 1 no longer has a section called Before we begin, and nothing links to its anchor", () => {
+  const stage1 = loadWorkshop(root).stages[0];
+  assert.ok(!stage1.doc.sections.some((sec) => sec.title === "Before we begin"));
+  for (const f of ["workshop.yaml", "stages/kairos-lab.yaml", "stage-2.md", "stage-3.md", "stage-4.md", "stage-5.md", "stage-6.md", "stage-7.md", "README.md", "abstract.md", "description.md", "hybrid-cloud-deployment.md"]) {
+    assert.ok(!readFileSync(join(root, f), "utf8").includes("before-we-begin"), f);
+  }
+});
+
+test("stage 1 has help on every step that has commands, a tip and a skip rule", () => {
+  const stage1 = loadWorkshop(root).stages[0].doc;
+  assert.deepEqual(stage1.help, { tool: "kairos-lab", source: "https://github.com/kairos-io/kairos-lab", docs: "https://github.com/kairos-io/kairos-lab#readme" });
+  assert.deepEqual(stage1.tip, { request: "Explain how to install {runtime} on {os} ({arch}) and how to check that it works." });
+  assert.deepEqual(stage1.not_skippable_when, { virtualization: ["kairos-lab"] });
+  const steps = stage1.sections.flatMap((sec) => sec.steps ?? []);
+  for (const st of steps) {
+    const hasCommands = Boolean(st.commands) || (st.variants ?? []).some((v) => v.commands);
+    assert.equal(Boolean(st.help), hasCommands, st.id);
+    if (st.help) assert.ok(st.help.goal.length <= 100, st.id);
+  }
+  const auroraboot = steps.filter((st) => st.help?.tool === "AuroraBoot").map((st) => st.id);
+  assert.deepEqual(auroraboot, ["auroraboot-version", "pull-auroraboot", "run-auroraboot-container", "build-auroraboot", "run-auroraboot-local"]);
+  for (const id of auroraboot) {
+    const h = steps.find((st) => st.id === id).help;
+    assert.equal(h.source, "https://github.com/kairos-io/AuroraBoot");
+    assert.equal(h.docs, "https://kairos.io/docs/reference/auroraboot/");
+  }
+});
+
+test("every step of stage 1 has its own title", () => {
+  const steps = loadWorkshop(root).stages[0].doc.sections.flatMap((sec) => sec.steps ?? []);
+  assert.ok(steps.every((st) => st.title), "every step has an explicit title");
+  assert.equal(new Set(steps.map((st) => st.title)).size, steps.length, "the titles are distinct");
+});
+
+test("stage 1 no longer lists the container runtime bullets, the loadout notes do", () => {
+  const text = readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8");
+  assert.ok(!text.includes("If you already have one"));
+  assert.ok(!text.includes("If you have none"));
+  assert.ok(text.includes("It pulls the AuroraBoot container image and installs a small"));
+  const note = loadWorkshop(root).workshop.loadout.questions.find((q) => q.fact === "runtime").notes[0];
+  assert.ok(note.text.includes("If you already have a runtime") && note.text.includes("If you have none"));
 });

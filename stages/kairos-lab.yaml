@@ -8,14 +8,15 @@ docs:
     url: https://github.com/kairos-io/kairos-lab
   - title: AuroraBoot
     url: https://kairos.io/docs/reference/auroraboot/
+help:
+  tool: kairos-lab
+  source: https://github.com/kairos-io/kairos-lab
+  docs: https://github.com/kairos-io/kairos-lab#readme
+tip:
+  request: "Explain how to install {runtime} on {os} ({arch}) and how to check that it works."
+not_skippable_when: { virtualization: kairos-lab }
 
 sections:
-  - title: Before we begin
-    text: |
-      You'll need virtualization software to run the VMs in this workshop. You're free to use whatever you're comfortable with, but these instructions use [`kairos-lab`](https://github.com/kairos-io/kairos-lab), a small CLI that downloads a Kairos ISO and boots a VM for you, so we don't have to walk through setting up VMs and networking on every possible virtualization stack.
-
-      `kairos-lab` only works on Linux and macOS, so you'll need a host machine running one of those. If you know your way around your own virtualization software, you're welcome to use that instead, and should still be able to follow along on Windows, but you're on your own for that part.
-
   - title: Installing kairos-lab
     when: { virtualization: kairos-lab }
     warnings:
@@ -26,6 +27,8 @@ sections:
           virtualization software instead.
     steps:
       - id: install-kairos-lab
+        title: Install kairos-lab
+        help: { goal: Install the kairos-lab command }
         check: { kind: command-available, command: kairos-lab }
         variants:
           - id: homebrew
@@ -62,6 +65,8 @@ sections:
     when: { virtualization: kairos-lab }
     steps:
       - id: kairos-lab-setup
+        title: Run kairos-lab setup
+        help: { goal: Run the first-time setup of kairos-lab and AuroraBoot }
         warnings:
           - kind: note
             text: |
@@ -84,14 +89,15 @@ sections:
 
           It also gets you `auroraboot`, the command you use in [stage 3](stage:build-image) to
           turn an image you build into an ISO. For that it needs a container runtime,
-          Docker or Podman:
-
-          - If you already have one, `kairos-lab setup` uses it and installs nothing.
-          - If you have none, it asks before it installs one. Docker is the default. Run
-            `kairos-lab setup -runtime podman` to use Podman instead.
-          - It pulls the AuroraBoot container image and installs a small `auroraboot`
-            command in `~/.local/bin`.
+          Docker or Podman. It pulls the AuroraBoot container image and installs a small
+          `auroraboot` command in `~/.local/bin`.
       - id: auroraboot-version
+        title: Check the auroraboot command
+        help:
+          goal: Check that the auroraboot command works
+          tool: AuroraBoot
+          source: https://github.com/kairos-io/AuroraBoot
+          docs: https://kairos.io/docs/reference/auroraboot/
         text: |
           Check that the command works:
         commands:
@@ -117,6 +123,11 @@ sections:
     steps:
       - id: pull-auroraboot
         title: Pull the image
+        help:
+          goal: Get the AuroraBoot container image
+          tool: AuroraBoot
+          source: https://github.com/kairos-io/AuroraBoot
+          docs: https://kairos.io/docs/reference/auroraboot/
         check: { kind: image-exists, image: "quay.io/kairos/auroraboot:latest" }
         variants:
           - id: docker
@@ -132,6 +143,11 @@ sections:
       - id: run-auroraboot-container
         title: Run the container
         optional: true
+        help:
+          goal: Run AuroraBoot in a container
+          tool: AuroraBoot
+          source: https://github.com/kairos-io/AuroraBoot
+          docs: https://kairos.io/docs/reference/auroraboot/
         text: |
           You do not need to run this now. You will use it at the end of stage 3.
         variants:
@@ -184,8 +200,14 @@ sections:
           Podman work on macOS.
     steps:
       - id: build-auroraboot
+        title: Build AuroraBoot
         optional: true
         when: { os: linux }
+        help:
+          goal: Build AuroraBoot locally on Linux
+          tool: AuroraBoot
+          source: https://github.com/kairos-io/AuroraBoot
+          docs: https://kairos.io/docs/reference/auroraboot/
         text: |
           You need:
 
@@ -208,8 +230,14 @@ sections:
         after: |
           `make build` builds the web UI and then the Go binary, `./auroraboot`.
       - id: run-auroraboot-local
+        title: Run your local build
         optional: true
         when: { os: linux }
+        help:
+          goal: Run your local AuroraBoot build
+          tool: AuroraBoot
+          source: https://github.com/kairos-io/AuroraBoot
+          docs: https://kairos.io/docs/reference/auroraboot/
         text: |
           You do not need to run this now. You will use it at the end of stage 3.
 

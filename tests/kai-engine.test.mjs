@@ -64,7 +64,7 @@ function shownByModel(facts) {
 
 test("the engine loads the generated content and sees seven stages", () => {
   assert.deepEqual(E.stageIds(), ["kairos-lab", "first-node", "build-image", "pipelines", "manual-upgrade", "multi-node", "operator-upgrade"]);
-  assert.equal(E.stage("kairos-lab").steps.length, 9);
+  assert.equal(E.stage("kairos-lab").steps.length, 8);
 });
 
 test("the committed kai/web/content.json equals the compiler output", () => {

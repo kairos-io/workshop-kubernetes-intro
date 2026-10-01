@@ -6,11 +6,40 @@ Docs:
   - [kairos-lab](https://github.com/kairos-io/kairos-lab)
   - [AuroraBoot](https://kairos.io/docs/reference/auroraboot/)
 
-## Before we begin
+## Choose your setup
 
-You'll need virtualization software to run the VMs in this workshop. You're free to use whatever you're comfortable with, but these instructions use [`kairos-lab`](https://github.com/kairos-io/kairos-lab), a small CLI that downloads a Kairos ISO and boots a VM for you, so we don't have to walk through setting up VMs and networking on every possible virtualization stack.
+### What is your computer running?
 
-`kairos-lab` only works on Linux and macOS, so you'll need a host machine running one of those. If you know your way around your own virtualization software, you're welcome to use that instead, and should still be able to follow along on Windows, but you're on your own for that part.
+- **Linux**
+- **macOS**
+- **Windows:** This is not game over. Zen is not available on Windows, so you play Master.
+
+### How will you run the VMs?
+
+*Only if you use: Linux or macOS.*
+
+- **Zen** (recommended): kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos.
+- **Master:** You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant.
+
+### Which CPU architecture?
+
+*Only if you use: Linux or macOS.*
+
+- **amd64**
+- **arm64**
+
+Not sure? Run `uname -m`. x86_64 means amd64. arm64 or aarch64 means arm64.
+
+### Which container runtime?
+
+*Only if you use: Linux or macOS.*
+
+It is your choice, but Docker is the more battle-tested one for this workshop.
+
+- **Docker**
+- **Podman**
+
+If you chose Zen: If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman.
 
 ## Installing kairos-lab
 
@@ -20,7 +49,9 @@ You'll need virtualization software to run the VMs in this workshop. You're free
 > **If you use Windows:** `kairos-lab` only works on Linux and macOS. On Windows, use your own
 > virtualization software instead.
 
-### Homebrew
+### Install kairos-lab
+
+#### Homebrew
 
 *Only if you use: macOS.*
 
@@ -29,7 +60,7 @@ brew tap kairos-io/kairos
 brew install kairos-lab
 ```
 
-### YOLO script from the internet
+#### YOLO script from the internet
 
 *Only if you use: Linux.*
 
@@ -37,7 +68,7 @@ brew install kairos-lab
 curl -sSL https://raw.githubusercontent.com/kairos-io/kairos-lab/main/install.sh | sh
 ```
 
-### Build from source
+#### Build from source
 
 *Only if you use: macOS or Linux.*
 
@@ -46,7 +77,7 @@ git clone https://github.com/kairos-io/kairos-lab.git && cd kairos-lab
 go build -o kairos-lab ./cmd/kairos-lab
 ```
 
-### Download a release binary
+#### Download a release binary
 
 *Only if you use: macOS or Linux.*
 
@@ -61,12 +92,14 @@ Or download the binaries from the [releases page](https://github.com/kairos-io/k
 
 *Only if you use: kairos-lab.*
 
+### Run kairos-lab setup
+
 > [!NOTE]
 > If `kairos-lab setup` installed the container runtime for you, it does not
 > start it. On macOS, open Docker Desktop once (or run `podman machine init` and
 > `podman machine start`), then run `kairos-lab setup` again to finish.
 
-### Docker
+#### Docker
 
 *Only if you use: Docker.*
 
@@ -74,7 +107,7 @@ Or download the binaries from the [releases page](https://github.com/kairos-io/k
 kairos-lab setup
 ```
 
-### Podman
+#### Podman
 
 *Only if you use: Podman.*
 
@@ -86,13 +119,10 @@ Detects your package manager and installs `qemu` if it is missing.
 
 It also gets you `auroraboot`, the command you use in [stage 3](stage-3.md) to
 turn an image you build into an ISO. For that it needs a container runtime,
-Docker or Podman:
+Docker or Podman. It pulls the AuroraBoot container image and installs a small
+`auroraboot` command in `~/.local/bin`.
 
-- If you already have one, `kairos-lab setup` uses it and installs nothing.
-- If you have none, it asks before it installs one. Docker is the default. Run
-  `kairos-lab setup -runtime podman` to use Podman instead.
-- It pulls the AuroraBoot container image and installs a small `auroraboot`
-  command in `~/.local/bin`.
+### Check the auroraboot command
 
 Check that the command works:
 
@@ -198,6 +228,8 @@ container.
 > container is a Linux system with everything in place, which is why Docker and
 > Podman work on macOS.
 
+### Build AuroraBoot
+
 *Only if you use: Linux.*
 
 You need:
@@ -221,6 +253,8 @@ make build
 ```
 
 `make build` builds the web UI and then the Go binary, `./auroraboot`.
+
+### Run your local build
 
 *Only if you use: Linux.*
 

@@ -1,7 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { parse } from "yaml";
+import { loadWorkshop } from "../tools/lib/load.mjs";
 import { fillPrompt, buildStepPrompt, buildTipPrompt } from "../tools/lib/prompt.mjs";
 
 const root = new URL("../", import.meta.url);
@@ -155,4 +156,50 @@ test("a stage with no tip has no tip prompt", () => {
 test("the workshop templates only use the allowed placeholders", () => {
   const allowed = new Set(["stage", "step", "os", "arch", "runtime", "virtualization", "goal", "tool", "source", "docs", "commands", "expect", "request"]);
   for (const t of Object.values(workshop.prompts)) for (const m of t.matchAll(/\{([^{}]*)\}/g)) assert.ok(allowed.has(m[1]), m[1]);
+});
+
+// The conformance cases: exact texts, written by hand.
+const dir = new URL("conformance/v0/prompt/", root);
+const cases = readdirSync(dir).filter((f) => f.endsWith(".json")).sort();
+const loaded = loadWorkshop(root.pathname);
+
+test("there are at least eight prompt cases, and they cover step and tip, set and unset facts, and null results", () => {
+  assert.ok(cases.length >= 8);
+  const all = cases.map((f) => JSON.parse(readFileSync(new URL(f, dir), "utf8")));
+  assert.ok(all.some((c) => c.kind === "step") && all.some((c) => c.kind === "tip"));
+  assert.ok(all.some((c) => Object.keys(c.facts).length === 0));
+  assert.ok(all.some((c) => c.expect === null));
+  assert.ok(all.some((c) => c.facts.virtualization === "own") && all.some((c) => c.facts.virtualization === "kairos-lab"));
+});
+
+for (const f of cases) {
+  test(`prompt: ${f}`, () => {
+    const c = JSON.parse(readFileSync(new URL(f, dir), "utf8"));
+    assert.deepEqual(Object.keys(c).filter((k) => k !== "step").sort(), ["expect", "facts", "kind", "stage"]);
+    const entry = loaded.stages.find((s) => s.id === c.stage);
+    assert.ok(entry, `no stage ${c.stage}`);
+    // A stage that is still markdown has no sections, so no help and no tip.
+    const stageDoc = entry.doc ?? { id: entry.id, title: entry.title, sections: [] };
+    const got = c.kind === "step" ? buildStepPrompt(loaded.workshop, stageDoc, c.step, c.facts) : buildTipPrompt(loaded.workshop, stageDoc, c.facts);
+    assert.equal(got, c.expect);
+    // A reader that gets the normalized stage must give the same text.
+    if (entry.file) {
+      const raw = parse(readFileSync(new URL(entry.file, root), "utf8"));
+      const again = c.kind === "step" ? buildStepPrompt(loaded.workshop, raw, c.step, c.facts) : buildTipPrompt(loaded.workshop, raw, c.facts);
+      assert.equal(again, c.expect, "the raw stage file gives the same text");
+    }
+  });
+}
+
+test("no prompt of stage 1 has an em dash, a leftover placeholder or a double blank line", () => {
+  const stage1 = loaded.stages[0].doc;
+  for (const st of stage1.sections.flatMap((s) => s.steps ?? []).filter((x) => x.help)) {
+    for (const facts of [{}, { os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" }]) {
+      const text = buildStepPrompt(loaded.workshop, stage1, st.id, facts);
+      if (text === null) continue;
+      assert.ok(!text.includes("\u2014"), st.id);
+      assert.ok(!/\{[a-z]+\}/.test(text), st.id);
+      assert.ok(!text.includes("\n\n"), st.id);
+    }
+  }
 });

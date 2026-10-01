@@ -1,0 +1,7 @@
+{
+  "stage": "kairos-lab",
+  "step": "run-auroraboot-container",
+  "facts": { "os": "linux", "arch": "amd64", "runtime": "docker", "virtualization": "own" },
+  "kind": "step",
+  "expect": "I'm following the Kairos workshop, stage \"Setting up kairos-lab\", step \"Run the container\".\nMy setup: Linux, amd64, container runtime Docker, VMs with [NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox].\nGoal of this step: Run AuroraBoot in a container.\nTool: AuroraBoot (https://github.com/kairos-io/AuroraBoot). Docs: https://kairos.io/docs/reference/auroraboot/.\nWhat I ran:\n$ mkdir -p build && docker run -it --rm \\\n  -v /var/run/docker.sock:/var/run/docker.sock \\\n  -v $PWD/build:/result \\\n  quay.io/kairos/auroraboot:latest \\\n  build-iso --output /result stage-2:v1.0.0\nWhat I expected: the step finishes without errors\nWhat happened: [paste your logs or the error here]\nGive me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses."
+}

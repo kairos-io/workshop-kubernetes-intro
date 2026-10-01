@@ -1,0 +1,7 @@
+{
+  "stage": "kairos-lab",
+  "step": "pull-auroraboot",
+  "facts": { "os": "linux", "arch": "amd64", "runtime": "podman", "virtualization": "own" },
+  "kind": "step",
+  "expect": "I'm following the Kairos workshop, stage \"Setting up kairos-lab\", step \"Pull the image\".\nMy setup: Linux, amd64, container runtime Podman, VMs with [NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox].\nGoal of this step: Get the AuroraBoot container image.\nTool: AuroraBoot (https://github.com/kairos-io/AuroraBoot). Docs: https://kairos.io/docs/reference/auroraboot/.\nWhat I ran:\n$ podman pull quay.io/kairos/auroraboot:latest\nWhat I expected: The quay.io/kairos/auroraboot:latest image is present in your container runtime.\nWhat happened: [paste your logs or the error here]\nGive me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses."
+}
