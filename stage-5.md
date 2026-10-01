@@ -20,7 +20,7 @@ When you upgrade, the new image is written to the passive partition. After reboo
 
 ## Check the current version
 
-SSH into your VM (see [Find the VM's IP address](stage-2.md#find-the-vms-ip-address) if needed):
+SSH into your VM (see [Create and boot the VM](stage-2.md#create-and-boot-the-vm) to find its IP address if needed):
 
 ```bash
 ssh kairos@<VM_IP>

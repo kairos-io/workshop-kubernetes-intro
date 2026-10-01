@@ -45,7 +45,7 @@ k3s:
 
 ## Find the master's IP and join token
 
-Find the master's IP the same way as in [Stage 2](stage-2.md#find-the-vms-ip-address):
+Find the master's IP the same way as in [Stage 2](stage-2.md#create-and-boot-the-vm):
 
 ```bash
 arp -a | grep -i "52:54"
@@ -93,7 +93,7 @@ Replace `<MASTER_SERVER_IP>` and `<MASTER_SERVER_TOKEN>` with the values from th
 sudo kairos-agent manual-install config.yaml
 ```
 
-The worker reboots after installation. Boot it from disk the same way as in [Stage 2](stage-2.md#boot-the-installed-system):
+The worker reboots after installation. Boot it from disk the same way as in [Stage 2](stage-2.md#installing-kairos):
 
 ```bash
 kairos-lab start -name worker
