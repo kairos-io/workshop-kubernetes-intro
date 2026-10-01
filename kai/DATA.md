@@ -255,7 +255,8 @@ The reader (`kai/web/`, `kai/tui/main.go`, round 5 of the designer's export, the
 | `stage.tipOnly` | Who is offered the TIP (`E.tipFor`, the `t` key in the terminal, the banner in the web). A fact that is unset or "unsure" counts as a match. A stage without `tipOnly` has no TIP. |
 | `theme.factPrompt` | The text that stands for a fact value in a prompt, and which value needs a free text (the name of the learner's own virtualization software). |
 | `theme.messages.boss_hint` | The line about the Esc key: on the mode chooser, on page 1 of the welcome in the game, and above the first step in "Just the workshop". Not in the terminal, which has no boss key. |
-| `theme.labels.take_home`, `tip_banner`, `free_text_hint` | The "Take KAI home" line at the end of the workshop, the text of the TIP banner, and the hint to type the name of the software. |
+| `theme.labels.take_home`, `tip_banner`, `free_text_hint`, `free_text_placeholder` | The "Take KAI home" line at the end of the workshop, the text of the TIP banner, the hint to type the name of the software, and the placeholder of that field. |
+| `theme.labels.app_title`, `app_title_stages`, `badge_file_prefix`, `badge_aria` | The title in the page header (with the number of stages in "Just the workshop"), the start of the file name of the badge download, and the aria text of the badge. |
 | `stage.noSkip` | The reason shown when a Zen learner tries to skip stage 1. |
 | `step.line` | The text of the dialogue box. |
 | `step.only`, block `only` | Hide the item, or show it with an "Only if" label while the fact is unset. A step with `only` shows its label in the web and in the terminal. |
@@ -289,10 +290,9 @@ Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{so
 
 ### Still hard-coded in the reader
 
-Checked in round 5 (`grep` over `kai/web/*.js`, `kai/web/*.html` and `kai/tui/main.go`). The reader no longer holds a fact id, a fact value, a stage id or a workshop sentence in its logic. What is left:
+Checked after round 5 (`grep` over `kai/web/*.js`, `kai/web/*.html` and `kai/tui/main.go`). The reader no longer holds a fact id, a fact value, a stage id or a workshop sentence in its logic. What is left:
 
-- The free text field of the TIP has the placeholder `e.g. VirtualBox` in `KAI Workshop.dc.html`. It assumes that the free text is the name of a virtualization software.
-- The page title and the badge file name say "Kairos workshop" (`headTitle`, `kairos-workshop-badge-`), and the boss key sheet is called "Q4 budget" on purpose.
+- Nothing of the workshop text is left in `KAI Workshop.dc.html` apart from the boss key sheet title "Q4 budget", which is kept on purpose (it is `sheet.docTitle` in the base). The placeholder of the free text field of the TIP, the page title, the badge file name and the badge aria text are design copy: `labels.free_text_placeholder`, `app_title`, `app_title_stages` (with `{n}`), `badge_file_prefix` and `badge_aria` (with `{name}` and `{date}`). The free text is still assumed to be the name of a virtualization software, through `virt_field` and `virt_hint`.
 - The variable `isMaster` (web) and the name `master` are still used for the result of `tipFor` and `freeTextFact`. Only the name is left.
 - Sample data in the design pages (`KAI Kit`, `KAI States`): `os: 'macos'`, `virtName: 'VirtualBox'` and a date. They are not part of the reader. The usage text of the terminal app names `--facts os=macos,...` and `--stage build-image`, which is now a real stage id.
 - The route is Europe and the mentors are four. Those are design assets in `kai-sprites.json` and `theme.base.json`.

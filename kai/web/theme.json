@@ -330,7 +330,12 @@
     "next_stage": "Next stage",
     "take_home": "Take KAI home: kairos-lab runs the same stops from your terminal.",
     "tip_banner": "KAI can write a prompt for this stage for your AI assistant.",
-    "free_text_hint": "Press v to type the name of your virtualization software into the prompt."
+    "free_text_hint": "Press v to type the name of your virtualization software into the prompt.",
+    "free_text_placeholder": "e.g. VirtualBox",
+    "app_title": "Kairos workshop",
+    "app_title_stages": "Kairos workshop · {n} stages",
+    "badge_file_prefix": "kairos-workshop-badge-",
+    "badge_aria": "Kairos workshop badge for {name}, {date}"
   },
   "footer": "KAI v2 designed by Mauro Morales. Apache-2.0.",
   "welcome": {

@@ -268,3 +268,24 @@ test("round 5: every fact and value that factPrompt names exists in the content,
   }
   assert.equal(freeText, 1);
 });
+
+// ---- the workshop text that the page used to hold itself ----
+
+test("the page title, the badge file name and aria text, and the free text placeholder are design copy that the page reads from theme.labels", () => {
+  const generated = readJson(join(root, "kai/web/theme.json"));
+  const page = readFileSync(join(root, "kai/web/KAI Workshop.dc.html"), "utf8");
+  const want = {
+    free_text_placeholder: "e.g. VirtualBox",
+    app_title: "Kairos workshop",
+    app_title_stages: "Kairos workshop · {n} stages",
+    badge_file_prefix: "kairos-workshop-badge-",
+    badge_aria: "Kairos workshop badge for {name}, {date}",
+  };
+  for (const [key, text] of Object.entries(want)) {
+    assert.equal(base().labels[key], text, `the base holds labels.${key}`);
+    assert.equal(generated.labels[key], text, `the generated theme.json carries labels.${key}`);
+    assert.ok(page.includes(`L.${key}`) || page.includes(`labels.${key}`), `the page reads labels.${key}`);
+    assert.ok(!page.includes(text), `the page no longer holds the text of labels.${key}`);
+  }
+  assert.ok(!/Kairos workshop/.test(page), "no workshop title left in the page");
+});

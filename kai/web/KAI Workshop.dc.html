@@ -430,7 +430,7 @@ button:disabled{cursor:not-allowed;}
               <sc-if value="{{ ai.hasVirt }}" hint-placeholder-val="{{ false }}">
                 <label style="display:flex;flex-direction:column;gap:6px;max-width:420px;">
                   <span style="font-weight:600;">{{ ai.virtLabel }}</span>
-                  <input value="{{ ai.virtVal }}" onInput="{{ ai.onVirt }}" placeholder="e.g. VirtualBox" autocomplete="off" style="font:600 18px 'IBM Plex Mono',monospace;padding:10px 12px;border:3px dashed var(--ink);background:var(--surface);color:var(--ink);caret-color:var(--ink);min-height:48px;box-sizing:border-box;">
+                  <input value="{{ ai.virtVal }}" onInput="{{ ai.onVirt }}" placeholder="{{ ai.virtPlaceholder }}" autocomplete="off" style="font:600 18px 'IBM Plex Mono',monospace;padding:10px 12px;border:3px dashed var(--ink);background:var(--surface);color:var(--ink);caret-color:var(--ink);min-height:48px;box-sizing:border-box;">
                   <span style="font-size:15px;">{{ ai.virtHint }}</span>
                 </label>
               </sc-if>
@@ -800,7 +800,7 @@ class Component extends DCLogic {
   }
   downloadBadge() {
     const c = document.createElement('canvas'); this.drawBadge(c, 6);
-    const a = document.createElement('a'); a.download = 'kairos-workshop-badge-' + this.pname().toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png';
+    const a = document.createElement('a'); a.download = window.KAIE.W.labels.badge_file_prefix + this.pname().toLowerCase().replace(/[^a-z0-9]+/g, '-') + '.png';
     a.href = c.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
   }
 
@@ -951,7 +951,7 @@ class Component extends DCLogic {
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
       nameRef: el => { this.nameEl = el; if (el && !el.kaiFocused) { el.kaiFocused = true; this.focusName(); } }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
-      boss: { on: false }, appDisplay: 'block', headTitle: 'Kairos workshop', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
+      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
       toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
     if (!s.ready || !E.ready() || !s.p) return base;
@@ -973,7 +973,7 @@ class Component extends DCLogic {
     const MO = W.modes || {}, isWs = this.isWorkshop();
     Object.assign(out, {
       isWorkshop: isWs, hasMode: !!s.mode, noMode: !s.mode, showViewport: !!s.mode && !isWs,
-      headTitle: isWs ? 'Kairos workshop · ' + E.stageIds().length + ' stages' : 'Kairos workshop',
+      headTitle: isWs ? E.fill(L.app_title_stages, { n: E.stageIds().length }) : L.app_title,
       modeLabel: isWs ? MO.switchToGame : MO.switchToWorkshop, modeAria: (MO.toggleLabel || 'Mode') + ': ' + (isWs ? MO.workshop.label : MO.game.label) + '. ' + (isWs ? MO.switchToGame : MO.switchToWorkshop),
       modeHeading: MO.toggleLabel || 'Mode', footerModeLabel: isWs ? MO.switchToGame : MO.workshop.label,
       smallerLabel: L.text_smaller, biggerLabel: L.text_bigger, noSmaller: s.ws.size <= 1, noBigger: s.ws.size >= 6, isDark: s.ws.dark, darkLabel: s.ws.dark ? '☀ ' + L.theme_light : '☾ ' + L.theme_dark,
@@ -1087,7 +1087,7 @@ class Component extends DCLogic {
         const key = 'ai/' + kind, cm = this.cmdModel(key, text, [], '');
         return { ...cm, title, intro, closeLabel: L.close, warnLabel: L.warning, warning: W.prompts.warning, segs: E.promptSegs(text).map(x => ({ ...x, plain: !x.ph })),
           copyLabel: this.state.copy[key] === 'copied' ? '✓ ' + L.copied : this.state.copy[key] === 'failed' ? '✗ Copy failed' : L.copy_prompt, copyAria: 'Copy AI prompt',
-          hasVirt: master, virtLabel: L.virt_field, virtHint: L.virt_hint, virtVal: p.virtName || '', onVirt: e => { const val = e.target.value.slice(0, 40); this.setP(q2 => { q2.virtName = val; return q2; }); },
+          hasVirt: master, virtLabel: L.virt_field, virtPlaceholder: L.free_text_placeholder, virtHint: L.virt_hint, virtVal: p.virtName || '', onVirt: e => { const val = e.target.value.slice(0, 40); this.setP(q2 => { q2.virtName = val; return q2; }); },
           ref: this.aiRef(kind), iconRef: el => E.drawIcon(el, kind === 'fail' ? 'sad' : 'think1', mode), warnRef: el => E.drawIcon(el, 'warning', mode),
           close: () => kind === 'fail' ? this.setState({ status: 'todo' }) : this.setState({ tipOpen: false }) };
       };
@@ -1132,7 +1132,7 @@ class Component extends DCLogic {
     }) : [];
     // badge
     out.badgeRef = el => this.drawBadge(el, 1);
-    out.badgeAria = 'Kairos workshop badge for ' + name + ', ' + (p.completedAt || E.today());
+    out.badgeAria = E.fill(L.badge_aria, { name, date: p.completedAt || E.today() });
     out.downloadLabel = L.download_badge;
     // settings
     const set = this.settings(), sysRed = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
