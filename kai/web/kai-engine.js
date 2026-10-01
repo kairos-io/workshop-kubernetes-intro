@@ -388,6 +388,8 @@
       const v = E.promptVars(p, sid, st, sel);
       return E.W.prompts[kind].filter(l => (l.match(/\{(\w+)\}/g) || []).every(m => { const k = m.slice(1, -1); return !(k in v) || String(v[k]).trim() !== ''; })).map(l => E.fill(l, v)).join('\n');
     },
+    // The verify of the step check: the command to run by hand and, optionally, an example of its output.
+    stepVerify(st) { const v = (st && st.check && st.check.verify) || null; return { has: !!v, command: v ? v.command : '', output: v && v.output ? v.output : '', hasOutput: !!(v && v.output) }; },
     stepHelp(st) { const h = (st && st.help) || {}; return { tool: h.tool || '', source: h.source || '', docs: h.docs || '', expect: h.expect || '', has: !!(h.tool || h.docs) }; },
     stepOnly(st, facts) { return E.onlyLabel(st && st.only, facts); },
     checkKind(st) { const k = st && st.check && st.check.kind; return { id: k || 'manual', label: (E.W.checkKinds && E.W.checkKinds[k]) || k || '' }; },

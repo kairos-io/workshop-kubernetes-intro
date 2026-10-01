@@ -304,6 +304,15 @@ test("prompts: every stage 1 step that has help is read by the reader from the s
   }
 });
 
+test("verify: the reader reads the check verify of each step from content.json, and a step with none gets nothing", () => {
+  const steps = E.stage("kairos-lab").steps;
+  const byId = Object.fromEntries(steps.map((s) => [s.id, E.stepVerify(s)]));
+  assert.deepEqual(byId["install-kairos-lab"], { has: true, command: "kairos-lab --version", output: "0.1.3", hasOutput: true });
+  assert.deepEqual(byId["auroraboot-version"], { has: true, command: "auroraboot --version", output: "", hasOutput: false });
+  assert.deepEqual(byId["pull-auroraboot"], { has: false, command: "", output: "", hasOutput: false });
+  assert.equal(E.stepVerify(undefined).has, false);
+});
+
 test("prompts: a step with no help has no prompt of ours, and the reader drops the lines that need a tool and docs", () => {
   const bare = E.stage("kairos-lab").steps.find((s) => !s.help);
   assert.ok(bare, "stage 1 has a step without help");

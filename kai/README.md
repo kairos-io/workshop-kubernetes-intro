@@ -23,7 +23,7 @@ STATES.md                every screen and state, plus the mentor-pick function
 ```
 
 ## theme.json sections
-- design-owned in theme.base.json: `footer`, `checkKinds`, `modes`, `sheet`, `factPrompt`, `messages.boss_hint`, `labels.take_home`, `labels.tip_banner`, `labels.free_text_hint`, `labels.free_text_placeholder`, `labels.app_title`, `labels.app_title_stages`, `labels.badge_file_prefix`, `labels.badge_aria` (the last five keys were added in this repository, not by the designer)
+- design-owned in theme.base.json: `footer`, `checkKinds`, `modes`, `sheet`, `factPrompt`, `messages.boss_hint`, `labels.take_home`, `labels.tip_banner`, `labels.free_text_hint`, `labels.free_text_placeholder`, `labels.app_title`, `labels.app_title_stages`, `labels.badge_file_prefix`, `labels.badge_aria`, `labels.check_ok`, `labels.check_verify_title`, `labels.check_output_label` (the last eight keys were added in this repository, not by the designer)
 - generated: `welcome {mentor, pages[] {line, md}}`, `loadout {questions, notices}`, `prompts {fail[], tip[], placeholders, warning}`
 - `player`: `nameMax`, `defaultName`, `characters[] {id, label, desc}`, `poses[]`
 - `mentors[] {id, name, country, portrait, github}`: `portrait` keys into `kai-sprites.json → portraits`. `mentorPick` describes the hash (see STATES.md)

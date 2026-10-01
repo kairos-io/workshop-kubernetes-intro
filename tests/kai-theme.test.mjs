@@ -304,3 +304,15 @@ test("the boss sheet tells the learner how to leave it, from the theme", () => {
   const page = readFileSync(join(root, "kai/web/KAI Sheet.dc.html"), "utf8");
   assert.ok(page.includes("{{ exitHint }}"), "the sheet page shows exitHint");
 });
+
+test("the check labels are design copy that the page reads from theme.labels", () => {
+  const generated = readJson(join(root, "kai/web/theme.json"));
+  const page = readFileSync(join(root, "kai/web/KAI Workshop.dc.html"), "utf8");
+  const want = { check_ok: "OK", check_verify_title: "How to check", check_output_label: "You should see something like" };
+  for (const [key, text] of Object.entries(want)) {
+    assert.equal(base().labels[key], text, `the base holds labels.${key}`);
+    assert.equal(generated.labels[key], text, `the generated theme.json carries labels.${key}`);
+    assert.ok(page.includes(`L.${key}`), `the page reads labels.${key}`);
+    assert.ok(!page.includes(text), `the page does not hold the text of labels.${key}`);
+  }
+});

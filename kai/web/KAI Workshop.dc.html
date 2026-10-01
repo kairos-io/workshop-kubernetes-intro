@@ -397,10 +397,26 @@ button:disabled{cursor:not-allowed;}
             <div style="display:flex;flex-direction:column;gap:4px;min-width:min(100%,260px);flex:1;">
               <div style="font-size:15px;font-weight:600;">Check · {{ checkKind }}</div>
               <div style="font-weight:600;text-wrap:pretty;">{{ checkPrompt }}</div>
+              <sc-if value="{{ verify.has }}" hint-placeholder-val="{{ false }}">
+                <div style="border:3px solid var(--ink);background:var(--codeBg);color:var(--codeInk);min-width:0;margin-top:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 6px 0 16px;">
+                    <span style="font-size:14px;font-family:'IBM Plex Mono',monospace;">{{ verify.head }}</span>
+                    <button onClick="{{ verify.copy }}" aria-label="{{ verify.copyAria }}" style="font:600 15px 'IBM Plex Sans',sans-serif;padding:8px 14px;min-height:44px;border:2px solid var(--codeInk);background:{{ verify.copyBg }};color:{{ verify.copyFg }};cursor:pointer;white-space:nowrap;">{{ verify.copyLabel }}</button>
+                  </div>
+                  <div ref="{{ verify.preRef }}" style="margin:0;padding:8px 16px 12px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:var(--fsCode);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;"><sc-for list="{{ verify.lines }}" as="l" hint-placeholder-count="1"><div style="padding-left:2ch;text-indent:-2ch;"><span aria-hidden="true" style="user-select:none;-webkit-user-select:none;">{{ l.pfx }}</span>{{ l.text }}</div></sc-for></div>
+                  <sc-if value="{{ verify.hasOutput }}" hint-placeholder-val="{{ false }}">
+                    <div style="padding:0 16px 14px;opacity:.7;display:flex;flex-direction:column;gap:4px;">
+                      <div style="font-size:14px;font-family:'IBM Plex Sans',sans-serif;">{{ verify.outLabel }}</div>
+                      <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:calc(var(--fsCode) * .9);line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;">{{ verify.output }}</div>
+                    </div>
+                  </sc-if>
+                  <sc-if value="{{ verify.failed }}" hint-placeholder-val="{{ false }}"><div role="status" style="padding:0 16px 12px;font-size:15px;font-weight:600;">✗ {{ verify.failMsg }}</div></sc-if>
+                </div>
+              </sc-if>
             </div>
             <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
               <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                <button onClick="{{ didIt }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ didItLabel }} ▶</button>
+                <button onClick="{{ didIt }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ didItLabel }}</button>
                 <button onClick="{{ didNot }}" aria-pressed="{{ isFailed }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">✗ {{ didNotLabel }}</button>
               </div>
             </sc-if>
@@ -945,7 +961,7 @@ class Component extends DCLogic {
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
       nameRef: el => { this.nameEl = el; if (el && !el.kaiFocused) { el.kaiFocused = true; this.focusName(); } }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
-      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
+      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', verify: { has: false }, stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
       toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
     if (!s.ready || !E.ready() || !s.p) return base;
@@ -1066,6 +1082,8 @@ class Component extends DCLogic {
       out.rows = v === 'stage' ? this.stageRows().map(r => this.decorate(r)) : [];
       out.checkPrompt = st.check.prompt;
       out.checkKind = E.checkKind(st).label;
+      const vf = E.stepVerify(st);
+      out.verify = vf.has ? { ...this.cmdModel('verify/' + E.stepKey(sid, st.id), vf.command, E.cmdLines(vf.command), L.check_verify_title), has: true, hasOutput: vf.hasOutput, output: vf.output, outLabel: L.check_output_label } : { has: false };
       if (isWs) out.crumb = v === 'loadout' ? 'Loadout' : 'Stage ' + no + ' of ' + ids.length + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length;
       out.wsIntro = isWs && sid === ids[0] && s.step === 0; out.bossHint = M.boss_hint;
       out.stageHead = isWs ? 'Stage ' + no + ' of ' + ids.length + ': ' + sc.title : 'Stage ' + no + ' · ' + th.location + ': ' + sc.title;
@@ -1074,7 +1092,7 @@ class Component extends DCLogic {
       out.stepOnly = E.stepOnly(st, p.facts); out.hasStepOnly = !!out.stepOnly;
       const isDone = !!p.done[E.stepKey(sid, st.id)];
       out.isDone = isDone; out.notDone = !isDone; out.isFailed = s.status === 'failed';
-      out.didItLabel = L.next_step; out.didNotLabel = L.did_not_work;
+      out.didItLabel = L.check_ok; out.didNotLabel = L.did_not_work;
       const master = !!E.freeTextFact(p.facts);
       out.isMaster = E.tipFor(p, sid); out.tipBanner = L.tip_banner; out.takeHome = L.take_home; out.tipOpen = s.tipOpen; out.askTipLabel = (s.tipOpen ? '▾ ' : '') + L.ask_tip;
       const panel = (kind, text, title, intro) => {

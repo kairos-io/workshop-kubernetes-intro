@@ -265,6 +265,8 @@ The reader (`kai/web/`, `kai/tui/main.go`, round 5 of the designer's export, the
 | `step.goal`, `step.help` | The line "Tool: ... Docs: ..." under the step title, in the web (both modes) and in the terminal. The step help prompt: `{goal}`, `{tool}`, `{source}`, `{docs}` and `{expected}` (`help.expect`). A line of the template whose placeholders are all empty is dropped. |
 | `step.check.kind` | The check row names the kind with `theme.checkKinds` ("Command available"). The reader never runs a check. |
 | `step.check.prompt`, `fail` | The sentence to confirm, and the blocks of the "It did not work" panel. |
+| `step.check.verify` | The "How to check" block under the check sentence (`E.stepVerify`, and `stepVerify` in `tui/main.go`): `$ <command>` with a Copy button that copies the bare command, then `output` as an example in a dimmer style. Nothing is shown for a step with no `verify`. The reader never runs the command. |
+| `theme.labels.check_ok`, `check_verify_title`, `check_output_label` | The text of the button that confirms the check ("OK"), the title of the verify block and the label before the example output. |
 | `step.optional` | The side quest marker. |
 | `stage:<id>` links | Open that stage in the web, and write "(stage N)" in the terminal. |
 | `theme.prompts.fail`, `tip`, `unsetPlaceholder` | The prompt templates. An unset fact is written with `unsetPlaceholder`. |
