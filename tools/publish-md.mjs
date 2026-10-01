@@ -102,6 +102,14 @@ export function renderStage(stage, { n, next, stageHref = unresolved, loadout } 
       }
       commands(step);
       if (step.check) add(`*Check: ${checkSentence(step.check)}*`);
+      if (step.check?.verify) {
+        add("To check, run:");
+        add(fence(step.check.verify.command, "bash"));
+        if (step.check.verify.output !== undefined) {
+          add("Example output:");
+          add(fence(step.check.verify.output, "text"));
+        }
+      }
       if (step.onFail) add(`<details><summary>If it does not work</summary>\n\n${md(step.onFail)}\n\n</details>`);
     }
   }

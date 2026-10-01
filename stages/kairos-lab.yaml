@@ -30,7 +30,10 @@ sections:
       - id: install-kairos-lab
         title: Install kairos-lab
         help: { goal: Install the kairos-lab command }
-        check: { kind: command-available, command: kairos-lab }
+        check:
+          kind: command-available
+          command: kairos-lab
+          verify: { command: kairos-lab --version, output: "0.1.3" }
         variants:
           - id: homebrew
             title: Homebrew
@@ -103,7 +106,10 @@ sections:
           Check that the command works:
         commands:
           - auroraboot --version
-        check: { kind: command-available, command: auroraboot }
+        check:
+          kind: command-available
+          command: auroraboot
+          verify: { command: auroraboot --version }
         onFail: |
           If your shell says the command is not found, `~/.local/bin` is not on your
           `PATH`. `kairos-lab setup` tells you what to add.

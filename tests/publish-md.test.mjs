@@ -139,7 +139,9 @@ test("a note with a condition on one fact starts with the label of that option",
 });
 
 test("every command from the outline with no facts appears in a bash fence", () => {
-  const fences = tokens.filter((t) => t.type === "fence" && t.info.trim() === "bash").map((t) => t.content.trimEnd());
+  // The verify command of a check is not a step command. It follows the paragraph "To check, run:".
+  const isVerify = (i) => tokens[i - 3]?.type === "paragraph_open" && tokens[i - 2]?.content === "To check, run:";
+  const fences = tokens.filter((t, i) => t.type === "fence" && t.info.trim() === "bash" && !isVerify(i)).map((t) => t.content.trimEnd());
   const commands = view(stage, {}).filter((i) => i.kind === "command").map((i) => i.text.trimEnd());
   assert.ok(commands.length >= 10);
   assert.deepEqual(fences, commands);
@@ -172,6 +174,15 @@ test("checks and onFail are rendered", () => {
   assert.ok(output.includes("*Check: the `auroraboot` command is available in a new terminal.*"));
   assert.ok(output.includes("<details><summary>If it does not work</summary>"));
   assert.equal((output.match(/<\/details>/g) ?? []).length, 2);
+});
+
+test("a verify is written under the check sentence", () => {
+  const sentence = "*Check: the `kairos-lab` command is available in a new terminal.*";
+  assert.ok(output.includes(`${sentence}\n\nTo check, run:\n\n\`\`\`bash\nkairos-lab --version\n\`\`\`\n\nExample output:\n\n\`\`\`text\n0.1.3\n\`\`\`\n`));
+  // No output in the file, so no example output block.
+  assert.ok(output.includes("To check, run:\n\n```bash\nauroraboot --version\n```\n\n<details>"));
+  assert.equal((output.match(/^To check, run:$/gm) ?? []).length, 2);
+  assert.equal((output.match(/^Example output:$/gm) ?? []).length, 1);
 });
 
 test("a warning comes before the commands it warns about", () => {

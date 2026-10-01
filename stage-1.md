@@ -88,6 +88,18 @@ Or download the binaries from the [releases page](https://github.com/kairos-io/k
 
 *Check: the `kairos-lab` command is available in a new terminal.*
 
+To check, run:
+
+```bash
+kairos-lab --version
+```
+
+Example output:
+
+```text
+0.1.3
+```
+
 ## Set up dependencies
 
 *Only if you use: kairos-lab.*
@@ -131,6 +143,12 @@ auroraboot --version
 ```
 
 *Check: the `auroraboot` command is available in a new terminal.*
+
+To check, run:
+
+```bash
+auroraboot --version
+```
 
 <details><summary>If it does not work</summary>
 
