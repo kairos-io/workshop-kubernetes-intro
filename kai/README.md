@@ -53,7 +53,7 @@ KAI, the Kairos armadillo, designed by Mauro Morales. Apache-2.0.
 
 The content in this repository is generated. Two files in `web/` come from `npm run compile:kai -- --out kai/web`, which reads `workshop.yaml`, `stages/*.yaml`, `kai/lines.yaml` (the short lines of the dialogue box) and `kai/theme.base.json`:
 
-- `web/content.json` holds the facts and the stages, with the step help, the check kinds and `tipOnly` (who is offered the TIP: the `when` of the stage tip, or `{ virtualization: own }`). It is all ours. The designer's copy has no `tipOnly`, and the reader then shows no TIP.
+- `web/content.json` holds the facts and the stages, with the step help, the check kinds (`manual` included: a check the stage wrote with its own text, which can carry a `verify`) and `tipOnly` (who is offered the TIP: the `when` of the stage tip, or `{ virtualization: own }`). It is all ours. The designer's copy has no `tipOnly`, and the reader then shows no TIP.
 - `web/theme.json` is the designer's theme with four keys generated from our data: `welcome`, `loadout`, `prompts` and `stages`. Every other key is copied from `theme.base.json`.
 
 Do not edit either file by hand. CI fails when one is stale. [DATA.md](DATA.md) describes every field of both, who owns each key, what the reader does with each field, and what the reader does not use yet.

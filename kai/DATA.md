@@ -137,7 +137,7 @@ Our reference implementation is `tools/lib/prompt.mjs`, with the fixtures in `co
 - `{os}`: Linux, macOS or Windows. `{arch}`: amd64 or arm64. `{runtime}`: Docker or Podman. `{virtualization}`: `kairos-lab` when the fact is `kairos-lab`, and `[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]` when it is `own`.
 - A fact that is unset renders as `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
 - `{commands}`: the commands the step shows for those facts (every `command` block that matches, in the order shown, including the ones inside an alternatives item that matches), one per line, each starting with `$ `. A command with several lines gives one line per command line. A line that ends with a backslash continues on the next line, and the continuation lines are written as they are, with no `$ `. When there are none, write `(this step has no commands)`. With no facts set, every command of every alternative shows.
-- `{expect}`: `help.expect` of the step. It is a ready sentence: the sentence of the step's named check (for example "The auroraboot command is available in a new terminal."), or `the step finishes without errors` when the step has no named check.
+- `{expect}`: `help.expect` of the step. It is a ready sentence: the sentence of the step's named check (for example "The auroraboot command is available in a new terminal."), or the `text` of a manual check, capitalized ("Setup finished and kairos-lab status lists what it manages."), or `the step finishes without errors` when the step has no check.
 - `{goal}`, `{tool}`, `{source}`, `{docs}`: the `goal` of the step, and the `tool`, `source` and `docs` of its `help` (the stage defaults are already merged in).
 - `{request}`: the stage's `tip` after the same substitution of `{os}`, `{arch}`, `{runtime}` and `{virtualization}`.
 - A line of the template that holds a placeholder with no value is dropped. The exception is a line that holds `[paste your logs`: it is always kept, and a placeholder in it with no value becomes empty text.
@@ -155,7 +155,7 @@ Goal of this step: Run the first-time setup of kairos-lab and AuroraBoot.
 Tool: kairos-lab (https://github.com/kairos-io/kairos-lab). Docs: https://github.com/kairos-io/kairos-lab#readme.
 What I ran:
 $ kairos-lab setup
-What I expected: the step finishes without errors
+What I expected: Setup finished and kairos-lab status lists what it manages.
 What happened: [paste your logs or the error here]
 Give me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses.
 ```
@@ -236,9 +236,9 @@ Each block has a `type` and may have an `only`. When `only` does not match, hide
 
 `check` is `{ kind, prompt, verify?, fail }`.
 
-- `kind` says what the check is. It is one of `command-available`, `image-exists`, `iso-exists`, `vm-running`, or `manual`. `manual` means the step names no check and `prompt` is a default sentence ("You finished this step.", "You read this." or "You finished this stage."). A reader can treat every kind as a manual confirmation. `content.json` carries the sentence only, not the values a check would need to run.
+- `kind` says what the check is. It is one of `command-available`, `image-exists`, `iso-exists`, `vm-running`, or `manual`. `manual` is a check the learner confirms by hand. When the stage file writes the check (`kind: manual` with a `text`), `prompt` is its `text` capitalized, for example "Setup finished and kairos-lab status lists what it manages.". When the step names no check, `prompt` is a default sentence ("You finished this step.", "You read this." or "You finished this stage."). A reader can treat every kind as a manual confirmation. `content.json` carries the sentence only, not the values a check would need to run.
 - `prompt` is the sentence the learner confirms ("The auroraboot command is available in a new terminal.", or a default such as "You finished this step.").
-- `verify` is optional: `{ command, output? }`. It tells the learner how to check the step by hand. `command` is plain text on one line, the command the learner runs (no placeholder, no `$ ` prompt: the reader adds the prompt, and Copy copies the bare command). `output` is optional plain text, possibly on several lines, an example of what the learner sees. A reader shows it as an example and never compares it with anything. `verify` is there when the stage file sets it on the check of the step, so a `manual` check never has one. The reader never runs the command.
+- `verify` is optional: `{ command, output? }`. It tells the learner how to check the step by hand. `command` is plain text on one line, the command the learner runs (no placeholder, no `$ ` prompt: the reader adds the prompt, and Copy copies the bare command). `output` is optional plain text, possibly on several lines, an example of what the learner sees. A reader shows it as an example and never compares it with anything. `verify` is there when the stage file sets it on the check of the step. A default `manual` check (no named check) never has one, and a `manual` check that the stage wrote can. The reader never runs the command.
 - `fail` is a list of blocks to show when the learner says it did not work. It can be empty.
 
 ## What the reader reads
