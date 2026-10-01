@@ -8,7 +8,9 @@ import { evaluate } from "../tools/lib/when.mjs";
 import { VALUES, FACTS } from "../tools/lib/facts.mjs";
 import { loadWorkshop } from "../tools/lib/load.mjs";
 import { compileWorkshop } from "../tools/lib/kai.mjs";
-import { serialize } from "../tools/compile-kai.mjs";
+import { serialize, compileRootFiles } from "../tools/compile-kai.mjs";
+import { nextQuestion, applyAnswer } from "../tools/lib/loadout.mjs";
+import { buildStepPrompt, buildTipPrompt } from "../tools/lib/prompt.mjs";
 import { E, web } from "./helpers/kai-engine.mjs";
 
 const root = new URL("../", import.meta.url).pathname;
@@ -61,6 +63,11 @@ function shownByModel(facts) {
   assert.deepEqual(callouts.map((c) => c.kind), kinds);
   return { commands, callouts };
 }
+
+test("the committed kai/web/theme.json equals the compiler output", () => {
+  const files = compileRootFiles(root);
+  assert.equal(readFileSync(join(web, "theme.json"), "utf8"), files.theme);
+});
 
 test("the engine loads the generated content and sees seven stages", () => {
   assert.deepEqual(E.stageIds(), ["kairos-lab", "first-node", "build-image", "pipelines", "manual-upgrade", "multi-node", "operator-upgrade"]);
@@ -117,4 +124,190 @@ test("the cross-check is not vacuous: commands and callouts are found, and they 
 test("the macOS warning about building AuroraBoot shows on macOS with your own software, even though the build steps are hidden", () => {
   const { callouts } = shownByEngine({ virtualization: "own", os: "macos", arch: "arm64", runtime: "docker" });
   assert.ok(callouts.some((c) => c.kind === "warning" && JSON.stringify(c.blocks).includes("Do not build AuroraBoot on macOS")));
+});
+
+// ---- the loadout: the reader asks the same questions as tools/lib/loadout.mjs ----
+
+const workshop = loadWorkshop(root).workshop;
+const loadout = workshop.loadout;
+const factIds = (list) => list.filter((r) => r.type === "fact").map((r) => r.id);
+
+// Every complete path through the loadout, by our reference functions. At every state on the way,
+// `visit(answers, asked, next)` is called: the answers so far, the facts asked so far, and the next question.
+function walkLoadout(visit) {
+  const done = [];
+  const walk = (answers, asked) => {
+    const next = nextQuestion(loadout, answers);
+    visit(answers, asked, next);
+    if (!next) return void done.push({ answers, asked });
+    for (const o of next.options) walk(applyAnswer(loadout, answers, next.fact, o.value), [...asked, next.fact]);
+  };
+  walk({}, []);
+  return done;
+}
+
+test("loadout: the reader asks the same facts, in the same order, as nextQuestion on every answer path", () => {
+  let states = 0;
+  const paths = walkLoadout((answers, asked, next) => {
+    states++;
+    const reader = E.loadoutQuestions(engineFacts(answers));
+    // The reader lists the questions that the answers so far allow, so it may list ones that come later.
+    // The first ones are the facts asked so far and the next one.
+    assert.deepEqual(factIds(reader).slice(0, asked.length + (next ? 1 : 0)), [...asked, ...(next ? [next.fact] : [])], JSON.stringify(answers));
+  });
+  assert.equal(paths.length, 17, "16 paths for Linux and macOS, and one for Windows");
+  assert.ok(states > 17);
+  for (const { answers, asked } of paths) {
+    const reader = E.loadoutQuestions(engineFacts(answers));
+    assert.deepEqual(factIds(reader), asked, `at the end of ${JSON.stringify(answers)} the reader asks nothing more`);
+    // A notice follows the answer of an option that ends the flow, and only that one.
+    const notices = reader.filter((r) => r.type === "notice");
+    const ending = loadout.questions.flatMap((q) => q.options.filter((o) => o.ends && answers[q.fact] === o.value));
+    assert.deepEqual(notices.map((n) => n.id), ending.map((o) => o.value));
+  }
+});
+
+test("loadout: applying an answer sets the same facts in the reader as in applyAnswer, and Windows forces Master and ends the flow", () => {
+  walkLoadout((answers, _asked, next) => {
+    if (!next) return;
+    for (const o of next.options) {
+      assert.deepEqual(E.withFact(engineFacts(answers), next.fact, o.value), engineFacts(applyAnswer(loadout, answers, next.fact, o.value)), `${JSON.stringify(answers)} + ${next.fact}=${o.value}`);
+    }
+  });
+  const win = applyAnswer(loadout, {}, "os", "windows");
+  assert.deepEqual(win, { os: "windows", virtualization: "own" });
+  assert.equal(nextQuestion(loadout, win), null, "Windows ends the flow");
+  const fromReader = E.withFact(E.defaultFacts(), "os", "windows");
+  assert.equal(fromReader.virtualization, "own");
+  assert.equal(E.isMaster(fromReader), true);
+  assert.deepEqual(E.loadoutQuestions(fromReader), [{ type: "fact", id: "os" }, { type: "notice", id: "windows", fact: "os" }]);
+});
+
+test("loadout: the reader clears the answers that a changed answer makes impossible", () => {
+  const all = engineFacts({ os: "linux", virtualization: "kairos-lab", arch: "amd64", runtime: "docker" });
+  const win = E.withFact(all, "os", "windows");
+  assert.deepEqual(win, { os: "windows", virtualization: "own", arch: "unsure", runtime: "unsure" });
+  const back = E.withFact(win, "os", "macos");
+  assert.deepEqual(back.virtualization, "unsure", "the forced answer goes when Windows goes");
+});
+
+test("loadout: the reader finds the question texts of every fact in the theme we generate", () => {
+  const theme = E.W.loadout;
+  for (const f of E.C.facts) {
+    const q = theme.questions[f.id];
+    assert.ok(q, `theme.loadout.questions.${f.id}`);
+    assert.equal(q.title, f.question, "the title in the theme and the question in the content are the same text");
+    for (const o of f.options) assert.ok(o.id in q.options, `${f.id}/${o.id}`);
+    for (const o of f.options.filter((x) => x.notice)) assert.ok(theme.notices[o.notice], o.notice);
+  }
+  assert.equal(E.W.welcome.pages.length, workshop.welcome.pages.length);
+});
+
+// ---- skipping ----
+
+test("skipping: the reader gives the reason for Zen, and nothing for Master or when virtualization is not set", () => {
+  const reason = "You play Zen, so every later stage uses kairos-lab. Set it up first.";
+  const zen = { facts: engineFacts({ virtualization: "kairos-lab", os: "linux" }) };
+  assert.equal(E.skipBlock(zen, "kairos-lab"), reason);
+  assert.equal(E.skipBlock(zen, "kairos-lab"), E.stage("kairos-lab").noSkip.reason);
+  assert.equal(E.skipBlock({ facts: engineFacts({ virtualization: "own", os: "linux" }) }, "kairos-lab"), "");
+  assert.equal(E.skipBlock({ facts: engineFacts({}) }, "kairos-lab"), "", "unset is conditional, so skipping is the reader's choice");
+  assert.equal(E.skipBlock(zen, "first-node"), "", "a stage without a skip rule can always be skipped");
+  assert.equal(E.skipBlock({ facts: engineFacts({ virtualization: "kairos-lab" }) }, "kairos-lab"), reason);
+});
+
+// ---- help prompts: the reader's prompt for stage 1 against buildStepPrompt and buildTipPrompt ----
+
+const fullyAnswered = combos().slice(1);
+const progress = (facts) => ({ facts: engineFacts(facts), virtName: "" });
+
+// A prompt as sections: the lines before the commands, the commands, the expected line, and the rest.
+function sections(text) {
+  const lines = text.split("\n");
+  const ran = lines.indexOf("What I ran:");
+  const expected = lines.findIndex((l) => l.startsWith("What I expected: "));
+  assert.ok(ran > 0 && expected > ran, text);
+  return { head: lines.slice(0, ran + 1), commands: lines.slice(ran + 1, expected), expected: lines[expected], tail: lines.slice(expected + 1) };
+}
+const stripPrompt = (lines) => lines.map((l) => l.replace(/^\$ /, "")).filter((l) => l !== "");
+
+test("prompts: for every answered fact set the reader's step prompt says what ours says, apart from three known differences", () => {
+  const stage = stageDoc;
+  let compared = 0;
+  let ownTool = 0;
+  let manual = 0;
+  let withCommands = 0;
+  for (const facts of fullyAnswered) {
+    const shown = E.steps("kairos-lab", engineFacts(facts));
+    for (const step of shown.filter((s) => s.help)) {
+      const ours = buildStepPrompt(workshop, stage, step.id, facts);
+      assert.ok(ours, `${step.id} has a prompt for ${JSON.stringify(facts)}`);
+      const reader = E.prompt("fail", progress(facts), "kairos-lab", step);
+      const a = sections(reader);
+      const b = sections(ours);
+      compared++;
+
+      // The lines before the commands are the same except the tool line: the reader has one tool for the stage,
+      // and we have one for each step.
+      const toolAt = b.head.findIndex((l) => l.startsWith("Tool: "));
+      for (let i = 0; i < b.head.length; i++) if (i !== toolAt) assert.equal(a.head[i], b.head[i], `${step.id}, line ${i}`);
+      assert.equal(a.head.length, b.head.length);
+      const stageTool = "Tool: kairos-lab (https://github.com/kairos-io/kairos-lab). Docs: https://github.com/kairos-io/kairos-lab#readme.";
+      assert.equal(a.head[toolAt], stageTool);
+      if (b.head[toolAt] !== stageTool) ownTool++;
+      assert.equal(b.head[toolAt] !== stageTool, "tool" in stageDoc.sections.flatMap((x) => x.steps ?? []).find((x) => x.id === step.id).help, "the tool line differs when the step names its own tool");
+
+      // The commands are the same. We start each command line with "$ ", the reader does not, and it
+      // separates commands with a blank line.
+      assert.deepEqual(stripPrompt(a.commands), stripPrompt(b.commands), `${step.id} commands`);
+      if (b.commands[0] === "(this step has no commands)") assert.deepEqual(a.commands, b.commands);
+      else {
+        withCommands++;
+        assert.ok(b.commands[0].startsWith("$ "), "ours starts a command with $ ");
+        assert.ok(!a.commands[0].startsWith("$ "));
+      }
+
+      // The expected line: the same sentence when the step has a named check. For a step with no named check,
+      // the reader says the prompt of its default check and we say the default sentence.
+      if (step.check.kind !== "manual") {
+        assert.ok(a.expected.startsWith(b.expected), `${step.id}: the reader's line starts with ours`);
+        assert.equal(a.expected, b.expected);
+      } else {
+        manual++;
+        assert.equal(a.expected, "What I expected: You finished this step.");
+        assert.equal(b.expected, "What I expected: the step finishes without errors");
+      }
+      assert.deepEqual(a.tail, b.tail, `${step.id} tail`);
+    }
+    // A step that the facts hide has no prompt of ours, and the reader does not list it.
+    for (const doc of stageDoc.sections.flatMap((x) => x.steps ?? []).filter((x) => x.help)) {
+      if (!shown.some((x) => x.id === doc.id)) assert.equal(buildStepPrompt(workshop, stage, doc.id, facts), null, `${doc.id} is hidden for ${JSON.stringify(facts)}`);
+    }
+  }
+  assert.ok(compared >= 60, `compared ${compared} prompts`);
+  assert.ok(ownTool > 0 && manual > 0 && withCommands > 30, "the known differences were seen");
+});
+
+test("prompts: the reader writes the output of the step before the check sentence, in the expected line", () => {
+  const step = { id: "t", title: "T", goal: "g", blocks: [{ type: "command", code: "echo hi" }, { type: "output", text: "hi" }], check: { prompt: "It says hi.", fail: [] } };
+  const lines = E.prompt("fail", progress({ os: "linux", arch: "amd64", runtime: "docker", virtualization: "kairos-lab" }), "kairos-lab", step).split("\n");
+  const at = lines.indexOf("What I expected: hi");
+  assert.ok(at > 0 && lines[at + 1] === "(It says hi.)", lines.join("\n"));
+});
+
+test("prompts: for every answered fact set the tip prompt is the same text", () => {
+  for (const facts of fullyAnswered) {
+    assert.equal(E.prompt("tip", progress(facts), "kairos-lab"), buildTipPrompt(workshop, stageDoc, facts), JSON.stringify(facts));
+  }
+});
+
+test("prompts: with some facts unset the reader and our reference write different stand-ins, and the reader keeps a line with no value", () => {
+  const unset = progress({});
+  const reader = E.prompt("tip", unset, "kairos-lab");
+  const ours = buildTipPrompt(workshop, stageDoc, {});
+  assert.match(reader, /My setup: \[YOUR OS\], \[YOUR ARCHITECTURE\], container runtime \[YOUR CONTAINER RUNTIME\], VMs with \[NAME OF YOUR VIRTUALIZATION SOFTWARE, e\.g\. VirtualBox\]\./);
+  assert.match(ours, /My setup: \[YOUR OPERATING SYSTEM\], \[YOUR CPU ARCHITECTURE\], container runtime \[YOUR CONTAINER RUNTIME\], VMs with \[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE\]\./);
+  // A step of a stage with no tool: the reader fills an empty value, we drop the line.
+  const step = E.stage("first-node").steps[0];
+  assert.match(E.prompt("fail", progress({ os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" }), "first-node", step), /^Tool:  \(\)\. Docs: \.$/m);
 });

@@ -126,7 +126,7 @@ The templates are lists of lines. A placeholder is a name in braces. The reader 
 
 `{stage}`, `{step}`, `{os}`, `{arch}`, `{runtime}`, `{virtualization}`, `{goal}`, `{tool}`, `{source}`, `{docs}`, `{commands}`, `{expected}`, `{logs}`, `{ask}`.
 
-Our reference implementation is `tools/lib/prompt.mjs`, with the fixtures in `conformance/v0/prompt/`. It spells two names in another way: `{expect}` for `{expected}` and `{request}` for `{ask}`. In our YAML the templates use `{expect}` and `{request}`, and the compiler renames them. The rest of this section describes our reference rules. The reader's own rules are in `kai/web/kai-engine.js`.
+Our reference implementation is `tools/lib/prompt.mjs`, with the fixtures in `conformance/v0/prompt/`. It spells two names in another way: `{expect}` for `{expected}` and `{request}` for `{ask}`. In our YAML the templates use `{expect}` and `{request}`, and the compiler renames them. The rest of this section describes our reference rules. The reader's own rules are in `kai/web/kai-engine.js`, and `tests/kai-engine.test.mjs` pins where the two differ (see "For the designer").
 
 - `{stage}`, `{step}`: the stage title and the step title.
 - `{os}`: Linux, macOS or Windows. `{arch}`: amd64 or arm64. `{runtime}`: Docker or Podman. `{virtualization}`: `kairos-lab` when the fact is `kairos-lab`, and `[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]` when it is `own`.
@@ -244,3 +244,12 @@ The generated files hold fields that the reader of round 3 does not read yet. If
 - **`stage.tipOnly`**: the condition for offering the TIP. The reader offers it to Master only.
 - **`check.kind`**: what a check is (`command-available`, `image-exists`, `iso-exists`, `vm-running`, `manual`). A reader that can run a check needs the values, which `content.json` does not carry yet.
 - **Dropped stages**: the generated `theme.stages` leaves out `fleet` and `edgevpn` until those stages exist. The item `kairos-fleet`, the item `edgevpn` and part 2 of `auroraboot` are then granted by no stage.
+
+Where the reader and our reference implementation differ today for the same prompt (the tests pin these):
+
+- `{tool}`, `{source}`, `{docs}`: the reader uses the tool of the stage for every step. We use the tool of the step when it has its own (AuroraBoot inside the kairos-lab stage).
+- `{expected}`: the reader writes the output block of the step, then the sentence of the check in brackets. For a step with a named check and no output block both write the same sentence. For a step with no named check the reader writes "You finished this step." and we write `the step finishes without errors`.
+- `{commands}`: the reader writes the commands without `$ ` and separates them with a blank line. We write one `$ ` line per command line.
+- A line with a placeholder that has no value: the reader keeps it ("Tool:  ()."), we drop it.
+- An unset fact: the reader writes `[YOUR OS]` and `[YOUR ARCHITECTURE]` (from the label of the fact) and, for virtualization, the placeholder for the name of the software. We write `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
+- The reader reads `ends` from nothing: it stops the loadout only through `askIf` (the compiler checks that this holds).
