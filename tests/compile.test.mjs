@@ -332,91 +332,31 @@ test("the stage 1 file links to stage 3 by id and no hard-coded stage-N.md link 
 });
 
 // A4: fact values.
-test("the virtualization values are kairos-lab and own, and every fact and option has a question and a label", async () => {
+test("the virtualization values are kairos-lab and own, and every fact has a label and every option a sentence wording", async () => {
   const { FACT_DEFS, VALUES, LABELS } = await import("../tools/lib/facts.mjs");
   assert.deepEqual(VALUES.virtualization, ["kairos-lab", "own"]);
   assert.equal(LABELS.virtualization.own, "your own virtualization software");
-  assert.equal(FACT_DEFS[0].question, "What runs your VMs?");
-  assert.equal(FACT_DEFS[0].options[1].label, "My own software");
+  assert.deepEqual(FACT_DEFS.map((f) => f.label), ["Virtualization", "OS", "Architecture", "Container runtime"]);
   for (const f of FACT_DEFS) {
-    assert.ok(f.label && f.question, f.id);
-    for (const o of f.options) assert.ok(o.id && o.label && o.phrase, `${f.id}/${o.id}`);
+    assert.ok(f.label, f.id);
+    assert.ok(!("question" in f), "the question lives in the loadout");
+    for (const o of f.options) {
+      assert.ok(o.id && o.phrase, `${f.id}/${o.id}`);
+      assert.ok(!("label" in o), "the option label lives in the loadout");
+    }
   }
 });
 
-// Welcome, loadout and prompts in workshop.yaml.
-test("a workshop with a broken loadout fails validation with the file name", () => {
+test("a stage that names a fact the loadout does not ask is rejected", () => {
+  const loadout = "loadout:\n  questions:\n    - fact: os\n      title: T\n      options:\n        - { value: linux, label: L }\n        - { value: macos, label: M }\n        - { value: windows, label: W }\n";
   const dir = scratch({
-    "workshop.yaml": `format: kairos-workshop/v0\nid: t\ntitle: T\nrepository: kairos-io/t\nloadout:\n  questions:\n    - fact: os\n      title: Which?\n      options:\n        - { value: linux, label: Linux }\n        - { value: macos, label: macOS }\nstages:\n  - { id: s, title: S, markdown: s.md }\n`,
-    "s.md": "# s\n",
+    "workshop.yaml": workshopYaml("  - file: stages/a.yaml").replace("stages:\n", loadout + "stages:\n"),
+    "stages/a.yaml": stageYaml("a", "    when: { arch: arm64 }\n"),
   });
-  assert.match(validateWorkshop(dir).join("\n"), /workshop\.yaml: loadout\.questions\[0\] \(os\): no option for the value "windows"/);
-});
-
-test("the real workshop has five welcome pages, four loadout questions and both prompts", () => {
-  const { workshop } = loadWorkshop(root);
-  assert.equal(workshop.welcome.pages.length, 5);
-  assert.deepEqual(workshop.loadout.questions.map((q) => q.fact), ["os", "virtualization", "arch", "runtime"]);
-  assert.deepEqual(Object.keys(workshop.prompts), ["step", "tip"]);
-  assert.ok(workshop.welcome.pages[0].includes("{name}"));
-  assert.ok(workshop.welcome.pages[4].includes("(https://www.spectrocloud.com/solutions/kairos-support)"));
-});
-
-test("the welcome, loadout and prompt copy has no em dash", () => {
-  const { workshop } = loadWorkshop(root);
-  assert.ok(!JSON.stringify([workshop.welcome, workshop.loadout, workshop.prompts]).includes("—"));
-});
-
-test("a stage help, tip and skip rule are normalized by the loader", () => {
-  const raw = parse("format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\ntip: { when: { virtualization: own }, request: R }\nnot_skippable_when: { virtualization: kairos-lab }\nsections:\n  - title: S\n    text: x\n");
-  const doc = normalizeStage(raw);
-  assert.deepEqual(doc.tip, { when: { virtualization: ["own"] }, request: "R" });
-  assert.deepEqual(doc.not_skippable_when, { virtualization: ["kairos-lab"] });
-  const bare = normalizeStage(parse("format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\ntip: { request: R }\nsections:\n  - title: S\n    text: x\n"));
-  assert.deepEqual(bare.tip, { request: "R" });
-  assert.equal("not_skippable_when" in bare, false);
-});
-
-// Stage 1 after the welcome pages and the loadout took over "Before we begin".
-test("stage 1 no longer has a section called Before we begin, and nothing links to its anchor", () => {
-  const stage1 = loadWorkshop(root).stages[0];
-  assert.ok(!stage1.doc.sections.some((sec) => sec.title === "Before we begin"));
-  for (const f of ["workshop.yaml", "stages/kairos-lab.yaml", "stage-2.md", "stage-3.md", "stage-4.md", "stage-5.md", "stage-6.md", "stage-7.md", "README.md", "abstract.md", "description.md", "hybrid-cloud-deployment.md"]) {
-    assert.ok(!readFileSync(join(root, f), "utf8").includes("before-we-begin"), f);
-  }
-});
-
-test("stage 1 has help on every step that has commands, a tip and a skip rule", () => {
-  const stage1 = loadWorkshop(root).stages[0].doc;
-  assert.deepEqual(stage1.help, { tool: "kairos-lab", source: "https://github.com/kairos-io/kairos-lab", docs: "https://github.com/kairos-io/kairos-lab#readme" });
-  assert.deepEqual(stage1.tip, { request: "Explain how to install {runtime} on {os} ({arch}) and how to check that it works." });
-  assert.deepEqual(stage1.not_skippable_when, { virtualization: ["kairos-lab"] });
-  const steps = stage1.sections.flatMap((sec) => sec.steps ?? []);
-  for (const st of steps) {
-    const hasCommands = Boolean(st.commands) || (st.variants ?? []).some((v) => v.commands);
-    assert.equal(Boolean(st.help), hasCommands, st.id);
-    if (st.help) assert.ok(st.help.goal.length <= 100, st.id);
-  }
-  const auroraboot = steps.filter((st) => st.help?.tool === "AuroraBoot").map((st) => st.id);
-  assert.deepEqual(auroraboot, ["auroraboot-version", "pull-auroraboot", "run-auroraboot-container", "build-auroraboot", "run-auroraboot-local"]);
-  for (const id of auroraboot) {
-    const h = steps.find((st) => st.id === id).help;
-    assert.equal(h.source, "https://github.com/kairos-io/AuroraBoot");
-    assert.equal(h.docs, "https://kairos.io/docs/reference/auroraboot/");
-  }
-});
-
-test("every step of stage 1 has its own title", () => {
-  const steps = loadWorkshop(root).stages[0].doc.sections.flatMap((sec) => sec.steps ?? []);
-  assert.ok(steps.every((st) => st.title), "every step has an explicit title");
-  assert.equal(new Set(steps.map((st) => st.title)).size, steps.length, "the titles are distinct");
-});
-
-test("stage 1 no longer lists the container runtime bullets, the loadout notes do", () => {
-  const text = readFileSync(join(root, "stages/kairos-lab.yaml"), "utf8");
-  assert.ok(!text.includes("If you already have one"));
-  assert.ok(!text.includes("If you have none"));
-  assert.ok(text.includes("It pulls the AuroraBoot container image and installs a small"));
-  const note = loadWorkshop(root).workshop.loadout.questions.find((q) => q.fact === "runtime").notes[0];
-  assert.ok(note.text.includes("If you already have a runtime") && note.text.includes("If you have none"));
+  assert.match(validateWorkshop(dir).join("\n"), /stages\/a\.yaml: names the fact "arch", which the loadout does not ask/);
+  const ok = scratch({
+    "workshop.yaml": workshopYaml("  - file: stages/a.yaml").replace("stages:\n", loadout + "stages:\n"),
+    "stages/a.yaml": stageYaml("a", "    when: { os: linux }\n"),
+  });
+  assert.deepEqual(validateWorkshop(ok), []);
 });

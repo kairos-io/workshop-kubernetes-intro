@@ -1,0 +1,77 @@
+{
+  "id": "helpful",
+  "title": "Helpful",
+  "goal": "get help",
+  "notSkippableWhen": {
+    "virtualization": [
+      "kairos-lab"
+    ]
+  },
+  "tip": {
+    "only": {
+      "virtualization": [
+        "own"
+      ]
+    },
+    "request": "Install {runtime} on {os}."
+  },
+  "steps": [
+    {
+      "id": "a",
+      "title": "One",
+      "line": "One",
+      "help": {
+        "goal": "Do A",
+        "tool": "demo",
+        "source": "https://example.com/src",
+        "docs": "https://example.com/docs"
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo a"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "b",
+      "title": "One",
+      "line": "One",
+      "help": {
+        "goal": "Do B",
+        "tool": "other",
+        "source": "https://example.com/src",
+        "docs": "https://example.com/docs"
+      },
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo b"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    },
+    {
+      "id": "c",
+      "title": "One",
+      "line": "One",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo c"
+        }
+      ],
+      "check": {
+        "prompt": "You finished this step.",
+        "fail": []
+      }
+    }
+  ]
+}

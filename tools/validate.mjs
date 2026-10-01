@@ -207,7 +207,11 @@ export function validateWorkshop(root) {
   if (intro) errors.push(...checkMarkdown(intro, "workshop.yaml intro", ctx));
   errors.push(...checkWorkshop(loaded.workshop).map((e) => `workshop.yaml: ${e}`));
 
+  const asked = loaded.workshop.loadout ? new Set(loaded.workshop.loadout.questions.map((q) => q.fact)) : undefined;
   for (const s of loaded.stages) {
+    if (asked) {
+      for (const fact of s.facts) if (!asked.has(fact)) errors.push(`${s.file}: names the fact "${fact}", which the loadout does not ask`);
+    }
     if (s.kind === "markdown") {
       if (!existsSync(join(root, s.markdown))) errors.push(`workshop.yaml: ${s.markdown} does not exist (stage "${s.id}")`);
       continue;

@@ -2,6 +2,14 @@
   "id": "kairos-lab",
   "title": "Setting up kairos-lab",
   "goal": "set up kairos-lab",
+  "notSkippableWhen": {
+    "virtualization": [
+      "kairos-lab"
+    ]
+  },
+  "tip": {
+    "request": "Explain how to install {runtime} on {os} ({arch}) and how to check that it works."
+  },
   "steps": [
     {
       "id": "install-kairos-lab",
@@ -11,6 +19,12 @@
         "virtualization": [
           "kairos-lab"
         ]
+      },
+      "help": {
+        "goal": "Install the kairos-lab command",
+        "tool": "kairos-lab",
+        "source": "https://github.com/kairos-io/kairos-lab",
+        "docs": "https://github.com/kairos-io/kairos-lab#readme"
       },
       "blocks": [
         {
@@ -113,6 +127,12 @@
           "kairos-lab"
         ]
       },
+      "help": {
+        "goal": "Run the first-time setup of kairos-lab and AuroraBoot",
+        "tool": "kairos-lab",
+        "source": "https://github.com/kairos-io/kairos-lab",
+        "docs": "https://github.com/kairos-io/kairos-lab#readme"
+      },
       "blocks": [
         {
           "type": "callout",
@@ -173,6 +193,12 @@
           "kairos-lab"
         ]
       },
+      "help": {
+        "goal": "Check that the auroraboot command works",
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/"
+      },
       "blocks": [
         {
           "type": "text",
@@ -201,6 +227,12 @@
         "virtualization": [
           "own"
         ]
+      },
+      "help": {
+        "goal": "Get the AuroraBoot container image",
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/"
       },
       "blocks": [
         {
@@ -257,6 +289,12 @@
         "virtualization": [
           "own"
         ]
+      },
+      "help": {
+        "goal": "Run AuroraBoot in a container",
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/"
       },
       "blocks": [
         {
@@ -359,6 +397,12 @@
           "linux"
         ]
       },
+      "help": {
+        "goal": "Build AuroraBoot locally on Linux",
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/"
+      },
       "blocks": [
         {
           "type": "text",
@@ -390,6 +434,12 @@
         "os": [
           "linux"
         ]
+      },
+      "help": {
+        "goal": "Run your local AuroraBoot build",
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/"
       },
       "blocks": [
         {

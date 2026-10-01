@@ -40,8 +40,8 @@ KAI is based on the armadillo artwork in kairos-io/community (Apache-2.0). Keep 
 
 ## Our content
 
-The content in this repository is generated. `web/content.json` comes from `npm run compile:kai -- --out kai/web`, which reads `workshop.yaml`, `stages/*.yaml` and `kai/lines.yaml` (the dialogue line for each step). Do not edit `web/content.json` by hand. CI fails when it is stale.
+The content in this repository is generated. `web/content.json` comes from `npm run compile:kai -- --out kai/web`, which reads `workshop.yaml`, `stages/*.yaml` and `kai/lines.yaml` (the dialogue line for each step). Do not edit `web/content.json` by hand. CI fails when it is stale. [DATA.md](DATA.md) describes every field of it.
 
 `theme.json` stages lists the stages that exist. Add fleet and edgevpn when those stages are written.
 
-This folder is the designer's export. The only edits to it are `web/theme.json` (fleet and edgevpn removed from `stages`), this section, and the omitted built binary `tui/kai` (build it with `cd tui && go build -o kai .`).
+This folder is the designer's export. The only edits to it are `web/theme.json` (fleet and edgevpn removed from `stages`), this section, `DATA.md`, and the omitted built binary `tui/kai` (build it with `cd tui && go build -o kai .`).

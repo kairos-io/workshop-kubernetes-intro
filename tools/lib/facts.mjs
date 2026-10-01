@@ -1,44 +1,44 @@
-// The fixed set of facts in format v0. schema/v0/SPEC.md repeats this table for other readers.
-// Order is the order the readers ask the questions in.
+// The fixed set of facts in format v0: their ids, their values and their wording. schema/v0/SPEC.md
+// repeats the ids and values for other readers.
 //
-// `label` and `question` are what a game or site shows. `phrase` is the wording the markdown
+// The order is the fixed order of facts in the generated game content and in the `only` objects. It is
+// not the order of the questions. The loadout in workshop.yaml holds the questions and the option
+// labels that a learner sees.
+//
+// `label` is the name of the fact, for example in a settings screen. `phrase` is the wording the markdown
 // publisher uses inside a sentence, for example "Only if you use: your own virtualization software."
 export const FACT_DEFS = [
   {
     id: "virtualization",
     label: "Virtualization",
-    question: "What runs your VMs?",
     options: [
-      { id: "kairos-lab", label: "kairos-lab", phrase: "kairos-lab" },
-      { id: "own", label: "My own software", phrase: "your own virtualization software" },
+      { id: "kairos-lab", phrase: "kairos-lab" },
+      { id: "own", phrase: "your own virtualization software" },
     ],
   },
   {
     id: "os",
-    label: "Operating system",
-    question: "What is your computer running?",
+    label: "OS",
     options: [
-      { id: "linux", label: "Linux", phrase: "Linux" },
-      { id: "macos", label: "macOS", phrase: "macOS" },
-      { id: "windows", label: "Windows", phrase: "Windows" },
+      { id: "linux", phrase: "Linux" },
+      { id: "macos", phrase: "macOS" },
+      { id: "windows", phrase: "Windows" },
     ],
   },
   {
     id: "arch",
     label: "Architecture",
-    question: "Which CPU architecture?",
     options: [
-      { id: "amd64", label: "amd64", phrase: "amd64" },
-      { id: "arm64", label: "arm64", phrase: "arm64" },
+      { id: "amd64", phrase: "amd64" },
+      { id: "arm64", phrase: "arm64" },
     ],
   },
   {
     id: "runtime",
     label: "Container runtime",
-    question: "Which container runtime?",
     options: [
-      { id: "docker", label: "Docker", phrase: "Docker" },
-      { id: "podman", label: "Podman", phrase: "Podman" },
+      { id: "docker", phrase: "Docker" },
+      { id: "podman", phrase: "Podman" },
     ],
   },
 ];
@@ -49,5 +49,3 @@ export const VALUES = Object.fromEntries(FACT_DEFS.map((f) => [f.id, f.options.m
 
 // Wording used inside a sentence.
 export const LABELS = Object.fromEntries(FACT_DEFS.map((f) => [f.id, Object.fromEntries(f.options.map((o) => [o.id, o.phrase]))]));
-
-export const QUESTIONS = Object.fromEntries(FACT_DEFS.map((f) => [f.id, f.question]));

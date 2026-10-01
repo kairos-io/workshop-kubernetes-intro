@@ -3,21 +3,21 @@
     {
       "id": "virtualization",
       "label": "Virtualization",
-      "question": "What runs your VMs?",
+      "question": "How will you run the VMs?",
       "options": [
         {
           "id": "kairos-lab",
-          "label": "kairos-lab"
+          "label": "Zen"
         },
         {
           "id": "own",
-          "label": "My own software"
+          "label": "Master"
         }
       ]
     },
     {
       "id": "os",
-      "label": "Operating system",
+      "label": "OS",
       "question": "What is your computer running?",
       "options": [
         {
@@ -65,11 +65,138 @@
       ]
     }
   ],
+  "welcome": {
+    "pages": [
+      "Hi {name}! I'm Mauro, one of the maintainers of Kairos, and this is KAI, our armadillo mascot. In this workshop you build and run an immutable Kubernetes cluster, one stage at a time. You type every command yourself, because that is how it sticks. KAI helps when you get stuck.",
+      "An immutable system treats the operating system like an application image. You never patch it in place. You build a new image, boot into it, and go back to the previous one if it misbehaves.",
+      "Why? Upgrades are predictable, rollbacks are instant, and every machine is identical, so nothing drifts.",
+      "Kairos is a fully open source CNCF Sandbox project. It turns the Linux distribution of your choice into an immutable, image-based system with Kubernetes built in. Bare metal, VMs, edge and public cloud, we have you covered!",
+      "This workshop is brought to you by our generous patron, [Spectro Cloud](https://www.spectrocloud.com/solutions/kairos-support)."
+    ]
+  },
+  "loadout": {
+    "questions": [
+      {
+        "fact": "os",
+        "title": "What is your computer running?",
+        "options": [
+          {
+            "value": "linux",
+            "label": "Linux"
+          },
+          {
+            "value": "macos",
+            "label": "macOS"
+          },
+          {
+            "value": "windows",
+            "label": "Windows",
+            "text": "This is not game over. Zen is not available on Windows, so you play Master.",
+            "forces": {
+              "virtualization": "own"
+            },
+            "ends": true
+          }
+        ]
+      },
+      {
+        "fact": "virtualization",
+        "title": "How will you run the VMs?",
+        "when": {
+          "os": [
+            "linux",
+            "macos"
+          ]
+        },
+        "options": [
+          {
+            "value": "kairos-lab",
+            "label": "Zen",
+            "text": "kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos.",
+            "recommended": true
+          },
+          {
+            "value": "own",
+            "label": "Master",
+            "text": "You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant."
+          }
+        ]
+      },
+      {
+        "fact": "arch",
+        "title": "Which CPU architecture?",
+        "when": {
+          "os": [
+            "linux",
+            "macos"
+          ]
+        },
+        "options": [
+          {
+            "value": "amd64",
+            "label": "amd64"
+          },
+          {
+            "value": "arm64",
+            "label": "arm64"
+          }
+        ],
+        "help": {
+          "label": "Not sure?",
+          "command": "uname -m",
+          "text": "x86_64 means amd64. arm64 or aarch64 means arm64."
+        }
+      },
+      {
+        "fact": "runtime",
+        "title": "Which container runtime?",
+        "text": "It is your choice, but Docker is the more battle-tested one for this workshop.",
+        "when": {
+          "os": [
+            "linux",
+            "macos"
+          ]
+        },
+        "options": [
+          {
+            "value": "docker",
+            "label": "Docker"
+          },
+          {
+            "value": "podman",
+            "label": "Podman"
+          }
+        ],
+        "notes": [
+          {
+            "when": {
+              "virtualization": [
+                "kairos-lab"
+              ]
+            },
+            "text": "If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman."
+          }
+        ]
+      }
+    ]
+  },
+  "prompts": {
+    "step": "I'm following the Kairos workshop, stage \"{stage}\", step \"{step}\".\nMy setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.\nGoal of this step: {goal}.\nTool: {tool} ({source}). Docs: {docs}.\nWhat I ran:\n{commands}\nWhat I expected: {expect}\nWhat happened: [paste your logs or the error here]\nGive me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses.\n",
+    "tip": "I'm following the Kairos workshop, stage \"{stage}\".\nMy setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.\n{request}\nGive me short numbered steps for my setup. If something is unclear, say what you need from me.\n"
+  },
   "stages": [
     {
       "id": "kairos-lab",
       "title": "Setting up kairos-lab",
       "goal": "set up kairos-lab",
+      "notSkippableWhen": {
+        "virtualization": [
+          "kairos-lab"
+        ]
+      },
+      "tip": {
+        "request": "Explain how to install {runtime} on {os} ({arch}) and how to check that it works."
+      },
       "steps": [
         {
           "id": "install-kairos-lab",
@@ -79,6 +206,12 @@
             "virtualization": [
               "kairos-lab"
             ]
+          },
+          "help": {
+            "goal": "Install the kairos-lab command",
+            "tool": "kairos-lab",
+            "source": "https://github.com/kairos-io/kairos-lab",
+            "docs": "https://github.com/kairos-io/kairos-lab#readme"
           },
           "blocks": [
             {
@@ -181,6 +314,12 @@
               "kairos-lab"
             ]
           },
+          "help": {
+            "goal": "Run the first-time setup of kairos-lab and AuroraBoot",
+            "tool": "kairos-lab",
+            "source": "https://github.com/kairos-io/kairos-lab",
+            "docs": "https://github.com/kairos-io/kairos-lab#readme"
+          },
           "blocks": [
             {
               "type": "callout",
@@ -241,6 +380,12 @@
               "kairos-lab"
             ]
           },
+          "help": {
+            "goal": "Check that the auroraboot command works",
+            "tool": "AuroraBoot",
+            "source": "https://github.com/kairos-io/AuroraBoot",
+            "docs": "https://kairos.io/docs/reference/auroraboot/"
+          },
           "blocks": [
             {
               "type": "text",
@@ -269,6 +414,12 @@
             "virtualization": [
               "own"
             ]
+          },
+          "help": {
+            "goal": "Get the AuroraBoot container image",
+            "tool": "AuroraBoot",
+            "source": "https://github.com/kairos-io/AuroraBoot",
+            "docs": "https://kairos.io/docs/reference/auroraboot/"
           },
           "blocks": [
             {
@@ -325,6 +476,12 @@
             "virtualization": [
               "own"
             ]
+          },
+          "help": {
+            "goal": "Run AuroraBoot in a container",
+            "tool": "AuroraBoot",
+            "source": "https://github.com/kairos-io/AuroraBoot",
+            "docs": "https://kairos.io/docs/reference/auroraboot/"
           },
           "blocks": [
             {
@@ -427,6 +584,12 @@
               "linux"
             ]
           },
+          "help": {
+            "goal": "Build AuroraBoot locally on Linux",
+            "tool": "AuroraBoot",
+            "source": "https://github.com/kairos-io/AuroraBoot",
+            "docs": "https://kairos.io/docs/reference/auroraboot/"
+          },
           "blocks": [
             {
               "type": "text",
@@ -458,6 +621,12 @@
             "os": [
               "linux"
             ]
+          },
+          "help": {
+            "goal": "Run your local AuroraBoot build",
+            "tool": "AuroraBoot",
+            "source": "https://github.com/kairos-io/AuroraBoot",
+            "docs": "https://kairos.io/docs/reference/auroraboot/"
           },
           "blocks": [
             {

@@ -1,4 +1,5 @@
 import { FACT_DEFS, FACTS, VALUES } from "./facts.mjs";
+import { normalizeWhen } from "./load.mjs";
 import { checkPrompt } from "./labels.mjs";
 import { uniqueSlugs } from "./slug.mjs";
 
@@ -55,6 +56,15 @@ const withOnly = (only, block) => {
   const { type, kind, ...rest } = block;
   return { type, ...(kind !== undefined && { kind }), only, ...rest };
 };
+
+// The help of a step with the help of its stage as defaults: goal, tool, source, docs.
+function mergeHelp(stageHelp, stepHelp) {
+  if (!stepHelp) return undefined;
+  const all = { ...stageHelp, ...stepHelp };
+  const out = { goal: all.goal };
+  for (const k of ["tool", "source", "docs"]) if (all[k] !== undefined) out[k] = all[k];
+  return out;
+}
 
 const textBlock = (md) => ({ type: "text", md: trim(md) });
 const calloutBlocks = (warnings) =>
@@ -146,13 +156,23 @@ export function compileStage(doc, lines = {}) {
         line: lineFor(step.id, title),
         ...(step.optional && { optional: true }),
         ...(only && { only }),
+        ...(step.help && { help: mergeHelp(doc.help, step.help) }),
         blocks,
         check: checkOf(step, PROMPTS.step),
       });
     });
   });
 
-  return { id: doc.id, title: stripStageNumber(doc.title), goal: doc.goal, steps };
+  const skip = toOnly(doc.not_skippable_when);
+  const tipOnly = toOnly(doc.tip?.when);
+  return {
+    id: doc.id,
+    title: stripStageNumber(doc.title),
+    goal: doc.goal,
+    ...(skip && { notSkippableWhen: skip }),
+    ...(doc.tip && { tip: { ...(tipOnly && { only: tipOnly }), request: doc.tip.request } }),
+    steps,
+  };
 }
 
 // A stage that is still plain markdown: one step that points at the file on GitHub.
@@ -175,15 +195,57 @@ export function compileMarkdownStage(entry, repository, lines = {}) {
   };
 }
 
-export function compileFacts() {
-  return FACT_DEFS.map((f) => ({ id: f.id, label: f.label, question: f.question, options: f.options.map((o) => ({ id: o.id, label: o.label })) }));
+// The facts the loadout asks about, in the fixed fact order, with the question and the option labels
+// from the loadout.
+export function compileFacts(loadout) {
+  const out = [];
+  for (const def of FACT_DEFS) {
+    const q = loadout.questions.find((x) => x.fact === def.id);
+    if (!q) continue;
+    out.push({ id: def.id, label: def.label, question: q.title, options: q.options.map((o) => ({ id: o.value, label: o.label })) });
+  }
+  return out;
+}
+
+export const compileWelcome = (welcome) => ({ pages: [...welcome.pages] });
+
+// The loadout in the shape of the YAML, with every `when` as lists and a fixed order of keys.
+export function compileLoadout(loadout) {
+  const when = (w) => (w ? { when: normalizeWhen(w) } : {});
+  return {
+    questions: loadout.questions.map((q) => ({
+      fact: q.fact,
+      title: q.title,
+      ...(q.text !== undefined && { text: q.text }),
+      ...when(q.when),
+      options: q.options.map((o) => ({
+        value: o.value,
+        label: o.label,
+        ...(o.text !== undefined && { text: o.text }),
+        ...(o.recommended !== undefined && { recommended: o.recommended }),
+        ...(o.forces && { forces: { ...o.forces } }),
+        ...(o.ends !== undefined && { ends: o.ends }),
+      })),
+      ...(q.help && { help: { label: q.help.label, command: q.help.command, text: q.help.text } }),
+      ...(q.notes && { notes: q.notes.map((n) => ({ ...when(n.when), text: n.text })) }),
+    })),
+  };
 }
 
 // `loaded` is the result of loadWorkshop. `lines` is the parsed kai/lines.yaml.
 export function compileWorkshop(loaded, lines = {}) {
-  const repository = loaded.workshop.repository;
+  const { repository, welcome, loadout, prompts } = loaded.workshop;
+  for (const [key, value] of Object.entries({ welcome, loadout, prompts })) {
+    if (!value) throw new CompileError(`workshop.yaml needs ${key} for the game`);
+  }
   const stages = loaded.stages.map((s) => (s.kind === "converted" ? compileStage(s.doc, lines) : compileMarkdownStage(s, repository, lines)));
-  const content = { facts: compileFacts(), stages };
+  const content = {
+    facts: compileFacts(loadout),
+    welcome: compileWelcome(welcome),
+    loadout: compileLoadout(loadout),
+    prompts: { step: prompts.step, tip: prompts.tip },
+    stages,
+  };
   checkLines(content, lines);
   validateContent(content);
   return content;
@@ -263,14 +325,62 @@ function checkBlocks(blocks, where, errors) {
   });
 }
 
+function checkHelp(help, where, errors) {
+  checkShape(help, ["goal"], ["tool", "source", "docs"], `${where}, help`, errors);
+  for (const k of ["goal", "tool"]) if (help[k] !== undefined && (typeof help[k] !== "string" || help[k] === "")) errors.push(`${where}, help: "${k}" must be text`);
+  for (const k of ["source", "docs"]) if (help[k] !== undefined && !/^https:\/\/\S+$/.test(help[k])) errors.push(`${where}, help: "${k}" must be an https URL`);
+}
+
+// The welcome pages, the loadout and the prompts at the top of the content.
+function checkExtras(content, errors) {
+  if (content.welcome !== undefined) {
+    checkShape(content.welcome, ["pages"], [], "welcome", errors);
+    const pages = content.welcome.pages;
+    if (!Array.isArray(pages) || pages.length < 1 || pages.length > 10 || pages.some((p) => typeof p !== "string" || p === "")) errors.push("welcome.pages must be 1 to 10 texts");
+  }
+  if (content.prompts !== undefined) {
+    checkShape(content.prompts, ["step", "tip"], [], "prompts", errors);
+    for (const k of ["step", "tip"]) if (typeof content.prompts[k] !== "string" || content.prompts[k] === "") errors.push(`prompts.${k} must be text`);
+  }
+  if (content.loadout !== undefined) {
+    checkShape(content.loadout, ["questions"], [], "loadout", errors);
+    if (!Array.isArray(content.loadout.questions) || content.loadout.questions.length === 0) errors.push("loadout.questions must be a list");
+    (content.loadout.questions ?? []).forEach((q, i) => {
+      const w = `loadout.questions[${i}]`;
+      checkShape(q, ["fact", "title", "options"], ["text", "when", "help", "notes"], w, errors);
+      if (!VALUES[q.fact]) {
+        errors.push(`${w}: unknown fact "${q.fact}"`);
+        return;
+      }
+      checkOnly(q.when, `${w}.when`, errors);
+      if (!Array.isArray(q.options) || q.options.length < 2) errors.push(`${w}: needs at least two options`);
+      (q.options ?? []).forEach((o, j) => {
+        checkShape(o, ["value", "label"], ["text", "recommended", "forces", "ends"], `${w}.options[${j}]`, errors);
+        if (!VALUES[q.fact].includes(o.value)) errors.push(`${w}.options[${j}]: unknown value "${o.value}"`);
+      });
+      for (const n of q.notes ?? []) {
+        checkShape(n, ["text"], ["when"], `${w}.notes`, errors);
+        checkOnly(n.when, `${w}.notes.when`, errors);
+      }
+    });
+  }
+}
+
 // Throws a CompileError that lists every problem.
 export function validateContent(content) {
   const errors = [];
-  checkShape(content, ["facts", "stages"], [], "content", errors);
+  checkShape(content, ["facts", "stages"], ["welcome", "loadout", "prompts"], "content", errors);
+  checkExtras(content, errors);
   const stageIds = new Set();
   (content.stages ?? []).forEach((s, si) => {
     const sw = `stage "${s.id}"`;
-    checkShape(s, ["id", "title", "goal", "steps"], [], sw, errors);
+    checkShape(s, ["id", "title", "goal", "steps"], ["notSkippableWhen", "tip"], sw, errors);
+    checkOnly(s.notSkippableWhen, `${sw}, notSkippableWhen`, errors);
+    if (s.tip !== undefined) {
+      checkShape(s.tip, ["request"], ["only"], `${sw}, tip`, errors);
+      checkOnly(s.tip.only, `${sw}, tip.only`, errors);
+      if (typeof s.tip.request !== "string" || s.tip.request === "") errors.push(`${sw}, tip: "request" must be text`);
+    }
     if (stageIds.has(s.id)) errors.push(`${sw}: duplicate stage id`);
     stageIds.add(s.id);
     for (const k of ["title", "goal"]) if (typeof s[k] !== "string" || s[k] === "") errors.push(`${sw}: "${k}" must be text`);
@@ -278,7 +388,8 @@ export function validateContent(content) {
     const stepIds = new Set();
     (s.steps ?? []).forEach((st) => {
       const w = `${sw}, step "${st.id}"`;
-      checkShape(st, ["id", "title", "line", "blocks", "check"], ["optional", "only"], w, errors);
+      checkShape(st, ["id", "title", "line", "blocks", "check"], ["optional", "only", "help"], w, errors);
+      if (st.help !== undefined) checkHelp(st.help, w, errors);
       if (stepIds.has(st.id)) errors.push(`${w}: duplicate step id`);
       stepIds.add(st.id);
       for (const k of ["title", "line"]) if (typeof st[k] !== "string" || st[k] === "") errors.push(`${w}: "${k}" must be text`);

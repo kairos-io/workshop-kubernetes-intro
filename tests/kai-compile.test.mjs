@@ -10,10 +10,12 @@ import { validateStageSchema } from "../tools/lib/schema.mjs";
 import { checkStage, buildContext } from "../tools/validate.mjs";
 import { checkPrompt } from "../tools/lib/labels.mjs";
 import { FACT_DEFS } from "../tools/lib/facts.mjs";
+import { normalizeWhen } from "../tools/lib/load.mjs";
 import { compileStage, compileMarkdownStage, compileWorkshop, compileFacts, validateContent, CompileError, PROMPTS, MARKDOWN_STEP } from "../tools/lib/kai.mjs";
 import { serialize } from "../tools/compile-kai.mjs";
 
 const root = new URL("../", import.meta.url).pathname;
+const realLoadout = () => loadWorkshop(root).workshop.loadout;
 const dir = new URL("../conformance/v0/kai/", import.meta.url);
 const readYaml = (url) => parse(readFileSync(url, "utf8"));
 const stageOf = (yamlText) => normalizeStage(parse(yamlText));
@@ -22,7 +24,7 @@ const stageOf = (yamlText) => normalizeStage(parse(yamlText));
 const cases = readdirSync(dir).filter((f) => f.endsWith(".yaml") && !f.endsWith(".lines.yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
 
 test("there is a golden case for every rule group", () => {
-  assert.deepEqual(cases, ["lines", "sections-text-only", "step-shapes", "variants", "when-merge"]);
+  assert.deepEqual(cases, ["help-and-skip", "lines", "sections-text-only", "step-shapes", "variants", "when-merge"]);
 });
 
 for (const name of cases) {
@@ -40,7 +42,7 @@ for (const name of cases) {
     const want = JSON.parse(readFileSync(new URL(`${name}.json`, dir), "utf8"));
     assert.deepEqual(got, want);
     assert.equal(serialize(got), readFileSync(new URL(`${name}.json`, dir), "utf8"), "stable key order and formatting");
-    validateContent({ facts: compileFacts(), stages: [got] });
+    validateContent({ facts: compileFacts(realLoadout()), stages: [got] });
   });
 }
 
@@ -206,16 +208,83 @@ test("rule 11: the output is stable, two-space indented and ends with a newline"
   assert.ok(!/\d{4}-\d{2}-\d{2}T/.test(a), "no timestamps");
 });
 
-test("facts are emitted in the reader's shape from facts.mjs", () => {
-  const facts = compileFacts();
+test("facts are generated from the loadout, in the reader's shape and the fixed fact order", () => {
+  const facts = compileFacts(realLoadout());
   assert.deepEqual(facts[0], {
     id: "virtualization",
     label: "Virtualization",
-    question: "What runs your VMs?",
-    options: [{ id: "kairos-lab", label: "kairos-lab" }, { id: "own", label: "My own software" }],
+    question: "How will you run the VMs?",
+    options: [{ id: "kairos-lab", label: "Zen" }, { id: "own", label: "Master" }],
   });
   assert.deepEqual(facts.map((f) => f.id), FACT_DEFS.map((f) => f.id));
+  assert.deepEqual(facts.map((f) => f.label), ["Virtualization", "OS", "Architecture", "Container runtime"]);
+  assert.deepEqual(facts.map((f) => f.question), ["How will you run the VMs?", "What is your computer running?", "Which CPU architecture?", "Which container runtime?"]);
+  assert.deepEqual(facts[1].options.map((o) => o.label), ["Linux", "macOS", "Windows"]);
   for (const f of facts) assert.deepEqual(Object.keys(f), ["id", "label", "question", "options"]);
+});
+
+test("a fact the loadout does not ask is not in the facts", () => {
+  const loadout = { questions: realLoadout().questions.filter((q) => q.fact !== "arch") };
+  assert.deepEqual(compileFacts(loadout).map((f) => f.id), ["virtualization", "os", "runtime"]);
+});
+
+test("the content has the welcome pages, the loadout and the prompts, and the loadout when values are lists", () => {
+  const loaded = loadWorkshop(root);
+  const out = compileWorkshop(loaded, readYaml(join(root, "kai/lines.yaml")));
+  assert.deepEqual(Object.keys(out), ["facts", "welcome", "loadout", "prompts", "stages"]);
+  assert.deepEqual(out.welcome, { pages: loaded.workshop.welcome.pages });
+  assert.equal(out.welcome.pages.length, 5);
+  assert.deepEqual(out.prompts, { step: loaded.workshop.prompts.step, tip: loaded.workshop.prompts.tip });
+  const [os, virt, arch, runtime] = out.loadout.questions;
+  assert.deepEqual(os, {
+    fact: "os",
+    title: "What is your computer running?",
+    options: [
+      { value: "linux", label: "Linux" },
+      { value: "macos", label: "macOS" },
+      { value: "windows", label: "Windows", text: "This is not game over. Zen is not available on Windows, so you play Master.", forces: { virtualization: "own" }, ends: true },
+    ],
+  });
+  assert.deepEqual(virt.when, { os: ["linux", "macos"] });
+  assert.deepEqual(virt.options[0], { value: "kairos-lab", label: "Zen", text: virt.options[0].text, recommended: true });
+  assert.deepEqual(arch.help, { label: "Not sure?", command: "uname -m", text: "x86_64 means amd64. arm64 or aarch64 means arm64." });
+  assert.deepEqual(runtime.notes, [{ when: { virtualization: ["kairos-lab"] }, text: runtime.notes[0].text }]);
+  assert.deepEqual(Object.keys(runtime), ["fact", "title", "text", "when", "options", "notes"]);
+  // Every when in the loadout is a list.
+  for (const q of out.loadout.questions) for (const w of [q.when, ...(q.notes ?? []).map((n) => n.when)].filter(Boolean)) for (const v of Object.values(w)) assert.ok(Array.isArray(v));
+  assert.deepEqual(normalizeWhen(loaded.workshop.loadout.questions[1].when), virt.when);
+});
+
+test("stage 1 carries its skip rule and its tip, and every step with commands carries its merged help", () => {
+  const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
+  const [one, two] = out.stages;
+  assert.deepEqual(one.notSkippableWhen, { virtualization: ["kairos-lab"] });
+  assert.deepEqual(one.tip, { request: "Explain how to install {runtime} on {os} ({arch}) and how to check that it works." });
+  assert.deepEqual(Object.keys(one), ["id", "title", "goal", "notSkippableWhen", "tip", "steps"]);
+  const byId = Object.fromEntries(one.steps.map((s) => [s.id, s]));
+  assert.deepEqual(byId["install-kairos-lab"].help, { goal: "Install the kairos-lab command", tool: "kairos-lab", source: "https://github.com/kairos-io/kairos-lab", docs: "https://github.com/kairos-io/kairos-lab#readme" });
+  assert.deepEqual(byId["pull-auroraboot"].help, { goal: "Get the AuroraBoot container image", tool: "AuroraBoot", source: "https://github.com/kairos-io/AuroraBoot", docs: "https://kairos.io/docs/reference/auroraboot/" });
+  assert.equal(byId["build-it-locally-linux-only"].help, undefined, "a section-only step has no help");
+  assert.ok(!("notSkippableWhen" in two) && !("tip" in two));
+  for (const s of two.steps) assert.ok(!("help" in s));
+});
+
+test("steps only have the fields the old reader knows, plus help", () => {
+  const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
+  for (const stage of out.stages) {
+    for (const step of stage.steps) {
+      const keys = Object.keys(step).filter((k) => k !== "help");
+      assert.deepEqual(keys.filter((k) => ["id", "title", "line", "optional", "only", "blocks", "check"].includes(k)), keys);
+    }
+  }
+});
+
+test("a compile error names a workshop that lacks the welcome pages, the loadout or the prompts", () => {
+  const loaded = loadWorkshop(root);
+  for (const key of ["welcome", "loadout", "prompts"]) {
+    const { [key]: _gone, ...rest } = loaded.workshop;
+    assert.throws(() => compileWorkshop({ ...loaded, workshop: rest }, {}), new RegExp(`workshop.yaml needs ${key}`));
+  }
 });
 
 test("the stage 1 steps have distinct titles, so the game never shows the same name twice", () => {
@@ -253,7 +322,7 @@ test("a line key that matches no step is an error and so is a line that is too l
 });
 
 // Validation of the output.
-const good = () => ({ facts: compileFacts(), stages: [{ id: "s", title: "S", goal: "g", steps: [{ id: "a", title: "A", line: "L", blocks: [{ type: "text", md: "x" }], check: { prompt: "p", fail: [] } }] }] });
+const good = () => ({ facts: compileFacts(realLoadout()), stages: [{ id: "s", title: "S", goal: "g", steps: [{ id: "a", title: "A", line: "L", blocks: [{ type: "text", md: "x" }], check: { prompt: "p", fail: [] } }] }] });
 const bad = (mutate) => {
   const c = good();
   mutate(c.stages[0].steps[0], c);
@@ -268,6 +337,20 @@ test("the validator rejects a value that is not a known fact value", () => {
   assert.throws(() => validateContent(bad((s) => { s.only = { virtualization: ["other"] }; })), /unknown value "other"/);
   assert.throws(() => validateContent(bad((s) => { s.blocks[0].only = { colour: ["red"] }; })), /unknown fact "colour"/);
   assert.throws(() => validateContent(bad((s) => { s.blocks[0].only = { os: [] }; })), /non-empty list/);
+});
+
+test("the validator checks the new fields", () => {
+  const withStage = (mutate) => bad((_s, c) => mutate(c.stages[0], c));
+  validateContent(withStage((st) => { st.notSkippableWhen = { virtualization: ["kairos-lab"] }; st.tip = { only: { virtualization: ["own"] }, request: "R" }; }));
+  assert.throws(() => validateContent(withStage((st) => { st.notSkippableWhen = { virtualization: ["other"] }; })), /unknown value "other"/);
+  assert.throws(() => validateContent(withStage((st) => { st.tip = { only: { virtualization: ["own"] } }; })), /missing "request"/);
+  assert.throws(() => validateContent(withStage((st) => { st.tip = { request: "R", extra: 1 }; })), /unknown field "extra"/);
+  assert.throws(() => validateContent(bad((s) => { s.help = { tool: "t" }; })), /missing "goal"/);
+  validateContent(bad((s) => { s.help = { goal: "g", tool: "t", source: "https://x", docs: "https://y" }; }));
+  assert.throws(() => validateContent(bad((s) => { s.help = { goal: "g", source: "http://x" }; })), /https/);
+  assert.throws(() => validateContent(bad((s, c) => { c.welcome = { pages: [] }; })), /welcome.pages/);
+  assert.throws(() => validateContent(bad((s, c) => { c.prompts = { step: "s" }; })), /prompts/);
+  assert.throws(() => validateContent(bad((s, c) => { c.loadout = { questions: [{ fact: "colour", title: "T", options: [] }] }; })), /loadout/);
 });
 
 test("the validator rejects blocks that lack the fields their type needs", () => {
@@ -316,4 +399,26 @@ test("the tool refuses a workshop that does not validate", () => {
   const r = run("--out", outDir(), d);
   assert.equal(r.status, 1);
   assert.match(r.stderr, /error:/);
+});
+
+test("kai/DATA.md names every field of the generated content and has no em dash", () => {
+  const doc = readFileSync(join(root, "kai/DATA.md"), "utf8");
+  const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
+  // Every key of the structure. Keys of an `only` or a `when` are fact ids, which are data.
+  const used = new Set();
+  const collect = (v, inFacts) => {
+    if (Array.isArray(v)) return v.forEach((x) => collect(x, inFacts));
+    if (v && typeof v === "object") {
+      for (const [k, x] of Object.entries(v)) {
+        if (k !== "only" && k !== "when" && k !== "notSkippableWhen" && k !== "forces") used.add(k);
+        collect(k === "only" || k === "when" || k === "notSkippableWhen" || k === "forces" ? {} : x);
+      }
+    }
+  };
+  collect(out);
+  assert.ok(used.size > 30);
+  for (const k of used) assert.match(doc, new RegExp(`\\b${k}\\b`), `DATA.md does not mention ${k}`);
+  assert.ok(!doc.includes("\u2014"));
+  for (const p of ["stage", "step", "os", "arch", "runtime", "virtualization", "goal", "tool", "source", "docs", "commands", "expect", "request"]) assert.ok(doc.includes(`\`{${p}}\``), `placeholder ${p}`);
+  assert.ok(doc.includes("[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]"));
 });

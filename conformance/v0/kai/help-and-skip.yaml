@@ -1,0 +1,18 @@
+format: kairos-workshop/v0
+id: helpful
+title: Helpful
+goal: get help
+help: { tool: demo, source: "https://example.com/src", docs: "https://example.com/docs" }
+tip: { when: { virtualization: own }, request: "Install {runtime} on {os}." }
+not_skippable_when: { virtualization: kairos-lab }
+sections:
+  - title: One
+    steps:
+      - id: a
+        help: { goal: Do A }
+        commands: [echo a]
+      - id: b
+        help: { goal: Do B, tool: other }
+        commands: [echo b]
+      - id: c
+        commands: [echo c]
