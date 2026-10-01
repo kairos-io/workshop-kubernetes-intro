@@ -590,9 +590,11 @@ class Component extends DCLogic {
     this.onKey = e => this.key(e);
     window.addEventListener('keydown', this.onKey);
   }
-  componentDidUpdate(pp, ps) {
-    if (this.state.view === 'name' && ps.view !== 'name') this.focusName();
-    if (this.state.boss !== ps.boss && this.props.keys !== false) this.disguise(this.state.boss);
+  componentDidUpdate() {
+    // The runtime passes only the previous props, so keep the previous view and boss here.
+    const pv = this.prev || {}; this.prev = { view: this.state.view, boss: !!this.state.boss };
+    if (this.state.view === 'name' && pv.view !== 'name') this.focusName();
+    if (!!this.state.boss !== !!pv.boss && this.props.keys !== false) this.disguise(this.state.boss);
   }
   // Boss key: tab title + icon look like a spreadsheet; both are restored on the way back.
   disguise(on) {
@@ -626,7 +628,11 @@ class Component extends DCLogic {
     else if (E.stageState(this.state.p, id) !== 'locked') this.openStage(id);
     else this.go('map', { mapCursor: E.stageIds().indexOf(id) });
   }
-  focusName() { if (this.props.keys === false) return; setTimeout(() => { const el = this.nameEl; if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) {} } }, 40); }
+  focusName() {
+    if (this.props.keys === false) return;
+    const go = () => { const el = this.nameEl; if (!el || this.state.view !== 'name' || document.activeElement === el) return; el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) {} };
+    go(); requestAnimationFrame(go);
+  }
   componentWillUnmount() { if (this.state.boss) this.disguise(false); window.removeEventListener('keydown', this.onKey); Object.values(this.ct).forEach(clearTimeout); }
 
   persist() { return this.props.persist !== false && !this.props.seed; }
@@ -821,7 +827,7 @@ class Component extends DCLogic {
       else if (k === 'Enter' && !onCtl) this.characterDone();
     } else if (v === 'welcome') {
       if ((k === 'Enter' && !onCtl) || k === 'ArrowRight') { this.welcomeNext(); e.preventDefault(); }
-      else if (k === 'ArrowLeft') this.welcomeBack();
+      else if (k === 'ArrowLeft') { this.welcomeBack(); e.preventDefault(); }
     } else if (v === 'loadout') {
       if (arrows.includes(k)) { this.cycleFact(k === 'ArrowDown' || k === 'ArrowRight' ? 1 : -1); e.preventDefault(); }
       else if (k === 'Enter' && !onCtl) this.loadoutNext();
@@ -940,11 +946,11 @@ class Component extends DCLogic {
       newGame: () => this.newGame(), continueGame: () => this.continueGame(), loadoutDone: () => this.loadoutDone(),
       didIt: () => this.didIt(), didNot: () => this.didNot(), resetProgress: () => this.resetProgress(),
       nameDone: () => this.nameDone(), characterDone: () => this.characterDone(), mentorDone: () => this.go('stage'), goBadge: () => this.go('badge'), downloadBadge: () => this.downloadBadge(),
-      onName: e => this.setState({ nameDraft: e.target.value.slice(0, (E.W && E.W.player.nameMax) || 12) }), onNameKey: e => { if (e.key === 'Enter') this.nameDone(); },
+      onName: e => this.setState({ nameDraft: e.target.value.slice(0, (E.W && E.W.player.nameMax) || 12) }), onNameKey: e => { if (e.key === 'Enter') { e.stopPropagation(); this.nameDone(); } },
       settingsOpen: s.settingsOpen, show: {}, vp: {}, rows: [], pills: [], stages: [], facts: [], recap: [], ctaCmds: [], settingGroups: [], clear: {}, characters: [], inventory: [],
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
-      nameRef: el => { this.nameEl = el; }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
+      nameRef: el => { this.nameEl = el; if (el && !el.kaiFocused) { el.kaiFocused = true; this.focusName(); } }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
       boss: { on: false }, appDisplay: 'block', headTitle: 'Kairos workshop', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
       toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
