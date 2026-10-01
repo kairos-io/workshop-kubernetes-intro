@@ -423,7 +423,6 @@ button:disabled{cursor:not-allowed;}
             <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
               <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
                 <span style="font-weight:600;">✓ Cleared</span>
-                <button onClick="{{ nextStep }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ nextLabel }}</button>
               </div>
             </sc-if>
           </div>
@@ -1109,14 +1108,13 @@ class Component extends DCLogic {
       out.nextLabel = s.step < steps.length - 1 ? 'Next step ▶' : 'Route ▶';
       out.nextStep = () => s.step < steps.length - 1 ? this.goStep(s.step + 1) : this.goMap();
       out.prevStep = () => this.goStep(Math.max(0, s.step - 1)); out.skipNext = () => {
-        if (!isWs) return this.goStep(Math.min(steps.length - 1, s.step + 1));
-        if (isDone || s.status === 'failed') return out.nextStep();
+        if (!isWs || isDone || s.status === 'failed') return out.nextStep();
         this.didIt();
       };
       // In Quest the bottom Next shows only once the step is cleared. Presentation always shows it: it marks the step done.
       out.showSkipNext = isWs || isDone;
-      out.noPrev = s.step <= 0; out.noNext = !isWs && s.step >= steps.length - 1;
-      out.skipNextLabel = isWs && s.step >= steps.length - 1 ? out.nextLabel : 'Next step ▶';
+      out.noPrev = s.step <= 0; out.noNext = false;
+      out.skipNextLabel = out.nextLabel;
     }
     // transitions
     const c = s.clear || {};
