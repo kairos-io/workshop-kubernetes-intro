@@ -394,7 +394,7 @@ button:disabled{cursor:not-allowed;}
           </div>
 
           <div aria-label="Check" role="group" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;border:3px solid var(--ink);padding:16px;background:var(--surface2);">
-            <div style="display:flex;flex-direction:column;gap:4px;min-width:min(100%,260px);flex:1;">
+            <div style="display:flex;flex-direction:column;gap:4px;min-width:min(100%,260px);flex:{{ verify.basis }};">
               <div style="font-size:15px;font-weight:600;">Check · {{ checkKind }}</div>
               <div style="font-weight:600;text-wrap:pretty;">{{ checkPrompt }}</div>
               <sc-if value="{{ verify.has }}" hint-placeholder-val="{{ false }}">
@@ -960,7 +960,7 @@ class Component extends DCLogic {
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
       nameRef: el => { this.nameEl = el; if (el && !el.kaiFocused) { el.kaiFocused = true; this.focusName(); } }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
-      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', verify: { has: false }, showSkipNext: false, stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
+      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', verify: { has: false, basis: '1' }, showSkipNext: false, stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
       toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
     if (!s.ready || !E.ready() || !s.p) return base;
@@ -1082,7 +1082,7 @@ class Component extends DCLogic {
       out.checkPrompt = st.check.prompt;
       out.checkKind = E.checkKind(st).label;
       const vf = E.stepVerify(st);
-      out.verify = vf.has ? { ...this.cmdModel('verify/' + E.stepKey(sid, st.id), vf.command, E.cmdLines(vf.command), L.check_verify_title), has: true, hasOutput: vf.hasOutput, output: vf.output, outLabel: L.check_output_label } : { has: false };
+      out.verify = vf.has ? { ...this.cmdModel('verify/' + E.stepKey(sid, st.id), vf.command, E.cmdLines(vf.command), L.check_verify_title), has: true, hasOutput: vf.hasOutput, output: vf.output, outLabel: L.check_output_label, basis: '1 1 100%' } : { has: false, basis: '1' };
       if (isWs) out.crumb = v === 'loadout' ? 'Loadout' : 'Stage ' + no + ' of ' + ids.length + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length;
       out.wsIntro = isWs && sid === ids[0] && s.step === 0; out.bossHint = M.boss_hint;
       out.stageHead = isWs ? 'Stage ' + no + ' of ' + ids.length + ': ' + sc.title : 'Stage ' + no + ' · ' + th.location + ': ' + sc.title;
