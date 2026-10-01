@@ -1,0 +1,12 @@
+# expect-error: not_skippable_reason is longer than 160 characters
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+not_skippable_when: { virtualization: kairos-lab }
+not_skippable_reason: "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+sections:
+  - title: S
+    steps:
+      - id: a
+        commands: [echo hi]

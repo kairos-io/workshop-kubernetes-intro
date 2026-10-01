@@ -37,3 +37,19 @@ test("the schemas compile in strict mode", () => {
   assert.equal(validateStageSchema({}).ok, false);
   assert.equal(validateWorkshopSchema({}).ok, false);
 });
+
+test("a skip rule needs its reason, and a reason needs its rule", () => {
+  const errorsOf = (f) => validateStageSchema(parse(load("invalid", f))).errors.join("\n");
+  assert.match(errorsOf("not-skippable-reason-missing.yaml"), /must have property not_skippable_reason when property not_skippable_when is present/);
+  assert.match(errorsOf("not-skippable-reason-without-when.yaml"), /must have property not_skippable_when when property not_skippable_reason is present/);
+  assert.match(errorsOf("not-skippable-reason-too-long.yaml"), /not_skippable_reason must NOT have more than 160 characters/);
+  assert.match(errorsOf("not-skippable-reason-markup.yaml"), /not_skippable_reason must match pattern/);
+});
+
+test("a reason of 160 characters is valid", () => {
+  const doc = parse(load("valid", "full.yaml"));
+  doc.not_skippable_reason = "x".repeat(160);
+  assert.equal(validateStageSchema(doc).ok, true);
+  doc.not_skippable_reason = "x".repeat(161);
+  assert.equal(validateStageSchema(doc).ok, false);
+});

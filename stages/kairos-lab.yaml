@@ -15,6 +15,7 @@ help:
 tip:
   request: "Explain how to install {runtime} on {os} ({arch}) and how to check that it works."
 not_skippable_when: { virtualization: kairos-lab }
+not_skippable_reason: "You play Zen, so every later stage uses kairos-lab. Set it up first."
 
 sections:
   - title: Installing kairos-lab

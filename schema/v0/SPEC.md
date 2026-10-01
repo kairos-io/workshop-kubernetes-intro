@@ -209,6 +209,8 @@ A stage can have `tip`: `{ when?, request }`. It is the "ask for a TIP" request 
 
 A stage can have `not_skippable_when`, a `when` object. When it evaluates to `true` for the facts of the learner, a reader must not let the learner skip the stage. When it evaluates to `false` or `unknown`, skipping is the reader's own choice.
 
+`not_skippable_reason` is the sentence a reader shows to the learner when it does not let them skip. It is plain text on one line, at most 160 characters, with no `<`, `>` or backtick. It is required when `not_skippable_when` is present, and it is an error without `not_skippable_when`. For example: "You play Zen, so every later stage uses kairos-lab. Set it up first."
+
 ## Help prompts
 
 `prompts` in `workshop.yaml` has two templates, `step` and `tip`. They are plain text and can have several lines. A learner copies the result into an AI assistant. `tools/lib/prompt.mjs` is the reference implementation (`fillPrompt`, `buildStepPrompt`, `buildTipPrompt`), and `conformance/v0/prompt/` holds the expected texts.
@@ -242,7 +244,7 @@ Unreleased v0:
 - Stage ids are slugs without numbers, and titles do not hold "Stage N:". The number is the position in `workshop.yaml`. The generated file is `stage-<n>.md`. Stage 1 moved from `stage-1` to `kairos-lab`.
 - Links between stages use `stage:<id>[#anchor]`, resolved by each publisher.
 - `workshop.yaml` can carry `welcome` (pages), `loadout` (questions, options, forces, ends, notes) and `prompts` (a `step` and a `tip` template). The labels and the questions that a game shows moved from `tools/lib/facts.mjs` to the loadout. The fact ids and values stay fixed.
-- A step can carry `help` (`goal`, `tool`, `source`, `docs`). A stage can carry `help` (defaults for its steps), `tip` (`when`, `request`) and `not_skippable_when`.
+- A step can carry `help` (`goal`, `tool`, `source`, `docs`). A stage can carry `help` (defaults for its steps), `tip` (`when`, `request`), `not_skippable_when` and `not_skippable_reason`.
 - `tools/lib/loadout.mjs` (`nextQuestion`, `applyAnswer`) and `tools/lib/prompt.mjs` (`fillPrompt`, `buildStepPrompt`, `buildTipPrompt`) are reference implementations, with fixtures in `conformance/v0/loadout/` and `conformance/v0/prompt/`.
 - The `virtualization` value `other` is now `own`.
 

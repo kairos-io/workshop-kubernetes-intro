@@ -14,6 +14,7 @@ tip:
   when: { virtualization: [own] }
   request: "Explain how to install {runtime} on {os} ({arch}) with {virtualization}."
 not_skippable_when: { virtualization: kairos-lab }
+not_skippable_reason: "Set this up first, every later stage needs it."
 sections:
   - title: Section with a condition
     when: { virtualization: kairos-lab }

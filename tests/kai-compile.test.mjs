@@ -11,7 +11,7 @@ import { checkStage, buildContext } from "../tools/validate.mjs";
 import { checkPrompt } from "../tools/lib/labels.mjs";
 import { FACT_DEFS } from "../tools/lib/facts.mjs";
 import { normalizeWhen } from "../tools/lib/load.mjs";
-import { compileStage, compileMarkdownStage, compileWorkshop, compileFacts, validateContent, CompileError, PROMPTS, MARKDOWN_STEP } from "../tools/lib/kai.mjs";
+import { compileStage, compileMarkdownStage, compileWorkshop, compileFacts, validateContent, CompileError, PROMPTS, MARKDOWN_STEP, stepLines, endingOptions } from "../tools/lib/kai.mjs";
 import { serialize } from "../tools/compile-kai.mjs";
 
 const root = new URL("../", import.meta.url).pathname;
@@ -307,8 +307,9 @@ test("the whole workshop compiles to seven stages, stage 1 in full and six point
 test("kai/lines.yaml has a line for every stage 1 step, in at most 60 characters, and no key that matches nothing", () => {
   const lines = readYaml(join(root, "kai/lines.yaml"));
   const out = compileWorkshop(loadWorkshop(root), lines);
-  for (const step of out.stages[0].steps) assert.ok(lines[`kairos-lab/${step.id}`], step.id);
-  for (const [k, v] of Object.entries(lines)) {
+  const steps = stepLines(lines);
+  for (const step of out.stages[0].steps) assert.ok(steps[`kairos-lab/${step.id}`], step.id);
+  for (const [k, v] of Object.entries(steps)) {
     assert.ok(v.length <= 60, `${k}: ${v.length}`);
     assert.ok(!/[\n<>\u2014]/.test(v), k);
     assert.ok(!/wild|trainer|appeared|catch|capture/i.test(v), k);
@@ -319,6 +320,33 @@ test("a line key that matches no step is an error and so is a line that is too l
   const loaded = loadWorkshop(root);
   assert.throws(() => compileWorkshop(loaded, { "kairos-lab/no-such-step": "x" }), /matches no stage and step/);
   assert.throws(() => compileWorkshop(loaded, { "kairos-lab/install-kairos-lab": "x".repeat(61) }), /1 to 60 characters/);
+});
+
+test("kai/lines.yaml has a welcome line for every welcome page and a notice for every option that ends the loadout", () => {
+  const lines = readYaml(join(root, "kai/lines.yaml"));
+  const { workshop } = loadWorkshop(root);
+  assert.equal(lines.welcome.length, workshop.welcome.pages.length);
+  for (const l of lines.welcome) assert.ok(l.length <= 40 && !/[\n<>\u2014]/.test(l), l);
+  assert.deepEqual(Object.keys(lines.notices), endingOptions(workshop.loadout).map((o) => o.value));
+  assert.deepEqual(lines.notices.windows, { title: "Windows: you play Master", line: "Not game over! You play MASTER." });
+  for (const n of Object.values(lines.notices)) assert.ok(n.title.length <= 60 && n.line.length <= 60);
+  compileWorkshop(loadWorkshop(root), lines);
+});
+
+test("the welcome and notices sections of kai/lines.yaml are checked", () => {
+  const loaded = loadWorkshop(root);
+  const good = readYaml(join(root, "kai/lines.yaml"));
+  const bad = (patch) => compileWorkshop(loaded, { ...good, ...patch });
+  assert.throws(() => bad({ welcome: good.welcome.slice(1) }), /one line for each of the 5 welcome pages/);
+  assert.throws(() => bad({ welcome: [...good.welcome, "One too many."] }), /one line for each of the 5 welcome pages/);
+  assert.throws(() => bad({ welcome: "Hi" }), /one line for each of the 5 welcome pages/);
+  assert.throws(() => bad({ welcome: [...good.welcome.slice(0, 4), "x".repeat(41)] }), /welcome line 5 must be plain text of 1 to 40/);
+  assert.throws(() => bad({ welcome: [...good.welcome.slice(0, 4), "Two\nlines"] }), /welcome line 5/);
+  assert.throws(() => bad({ notices: { linux: { title: "T", line: "L" } } }), /the notice "linux" matches no option that has ends: true/);
+  assert.throws(() => bad({ notices: { windows: { title: "T" } } }), /must have a title and a line/);
+  assert.throws(() => bad({ notices: { windows: { title: "T", line: "L", md: "M" } } }), /must have a title and a line/);
+  assert.throws(() => bad({ notices: { windows: { title: "T", line: "x".repeat(61) } } }), /the line of the notice "windows"/);
+  assert.throws(() => bad({ notices: ["windows"] }), /notices must be a map|matches no option/);
 });
 
 // Validation of the output.

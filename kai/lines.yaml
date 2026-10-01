@@ -1,6 +1,25 @@
-# The line the game shows in the dialogue box for each step. It is theme, not workshop content.
-# Keys are <stage-id>/<step-id>. A missing key falls back to the step title.
-# A line is plain text on one line, at most 60 characters.
+# The lines the game shows in the dialogue box. They are theme, not workshop content.
+#
+# Three kinds of key:
+#   <stage-id>/<step-id>  the line for one step. A missing key falls back to the step title.
+#                         Plain text on one line, at most 60 characters.
+#   welcome               a list with one line per page of `welcome.pages` in workshop.yaml, in order.
+#                         Plain text on one line, at most 40 characters.
+#   notices               a map from an option value that has `ends: true` in the loadout to
+#                         { title, line }. The line is plain text of at most 60 characters.
+#                         The title is plain text of at most 60 characters.
+#
+# A key that matches nothing is an error.
+welcome:
+  - "Hi {name}! Welcome aboard."
+  - "Immutable means image-based."
+  - "Predictable. Instant. Identical."
+  - "Open source, CNCF Sandbox."
+  - "Thanks to our patron!"
+notices:
+  windows:
+    title: "Windows: you play Master"
+    line: "Not game over! You play MASTER."
 kairos-lab/install-kairos-lab: "Let's get kairos-lab onto your machine."
 kairos-lab/kairos-lab-setup: "One command gets your tools ready."
 kairos-lab/auroraboot-version: "Let's make sure the new tool answers."

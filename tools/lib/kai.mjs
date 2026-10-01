@@ -254,18 +254,57 @@ export function compileWorkshop(loaded, lines = {}) {
     prompts: { step: prompts.step, tip: prompts.tip },
     stages,
   };
-  checkLines(content, lines);
+  checkLines(content, lines, loaded.workshop);
   validateContent(content);
   return content;
 }
 
+// The two keys of kai/lines.yaml that are not <stage-id>/<step-id>.
+export const LINE_SECTIONS = ["welcome", "notices"];
+export const MAX_WELCOME_LINE = 40;
+const plainLine = (v, max) => typeof v === "string" && v.length > 0 && v.length <= max && !/[\n<>]/.test(v);
+
+// The step lines of kai/lines.yaml, without the `welcome` and `notices` sections.
+export const stepLines = (lines) => Object.fromEntries(Object.entries(lines).filter(([k]) => !LINE_SECTIONS.includes(k)));
+
 // A line key that matches no step is a typo. A line that is too long does not fit the dialogue box.
-function checkLines(content, lines) {
+function checkLines(content, lines, workshop) {
   const keys = new Set(content.stages.flatMap((s) => s.steps.map((st) => `${s.id}/${st.id}`)));
-  for (const [key, line] of Object.entries(lines)) {
+  for (const [key, line] of Object.entries(stepLines(lines))) {
     if (!keys.has(key)) throw new CompileError(`kai/lines.yaml: the key "${key}" matches no stage and step`);
-    if (typeof line !== "string" || line.length === 0 || line.length > MAX_LINE || /[\n<>]/.test(line)) {
+    if (!plainLine(line, MAX_LINE)) {
       throw new CompileError(`kai/lines.yaml: the line for "${key}" must be plain text of 1 to ${MAX_LINE} characters on one line`);
+    }
+  }
+  checkLineSections(lines, workshop);
+}
+
+// The options of the loadout that end the flow, by value.
+export const endingOptions = (loadout) => loadout.questions.flatMap((q) => q.options.filter((o) => o.ends === true));
+
+// The `welcome` and `notices` sections, when present: one line per welcome page, and a title and a line
+// for each option that ends the loadout. Whether they are present is checked where they are used.
+function checkLineSections(lines, workshop) {
+  if (lines.welcome !== undefined) {
+    const pages = workshop.welcome?.pages ?? [];
+    if (!Array.isArray(lines.welcome) || lines.welcome.length !== pages.length) {
+      throw new CompileError(`kai/lines.yaml: welcome must be a list with one line for each of the ${pages.length} welcome pages of workshop.yaml`);
+    }
+    lines.welcome.forEach((l, i) => {
+      if (!plainLine(l, MAX_WELCOME_LINE)) throw new CompileError(`kai/lines.yaml: welcome line ${i + 1} must be plain text of 1 to ${MAX_WELCOME_LINE} characters on one line`);
+    });
+  }
+  if (lines.notices !== undefined) {
+    const notices = lines.notices;
+    if (typeof notices !== "object" || notices === null || Array.isArray(notices)) throw new CompileError("kai/lines.yaml: notices must be a map from an option value to { title, line }");
+    const ends = new Set(endingOptions(workshop.loadout ?? { questions: [] }).map((o) => o.value));
+    for (const [value, n] of Object.entries(notices)) {
+      if (!ends.has(value)) throw new CompileError(`kai/lines.yaml: the notice "${value}" matches no option that has ends: true`);
+      const keys = Object.keys(n ?? {}).sort().join(",");
+      if (keys !== "line,title") throw new CompileError(`kai/lines.yaml: the notice "${value}" must have a title and a line, and nothing else`);
+      for (const k of ["title", "line"]) {
+        if (!plainLine(n[k], MAX_LINE)) throw new CompileError(`kai/lines.yaml: the ${k} of the notice "${value}" must be plain text of 1 to ${MAX_LINE} characters on one line`);
+      }
     }
   }
 }
