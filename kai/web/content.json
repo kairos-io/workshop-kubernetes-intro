@@ -569,6 +569,11 @@
       },
       "docs": "https://github.com/kairos-io/kairos-lab#readme",
       "tip": "Explain how to install {runtime} on {os} ({arch}) and how to check that it works.",
+      "tipOnly": {
+        "virtualization": [
+          "own"
+        ]
+      },
       "noSkip": {
         "when": {
           "virtualization": [

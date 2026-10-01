@@ -199,7 +199,9 @@ For stage 1 the value is `{ "when": { "virtualization": ["kairos-lab"] }, "reaso
 
 `tip` is plain text that says what to ask for in this stage. It can hold `{os}`, `{arch}`, `{runtime}` and `{virtualization}`. The reader uses it as `{ask}` in the `tip` template, after it fills those four.
 
-`tipOnly` says when to offer the TIP. It is present only when the stage sets its own condition. Without it, offer the TIP to a learner who runs their own virtualization software (Master) and to a learner whose `virtualization` is not set. Use the normal `only` check: offer it when the result is a match or conditional.
+`tipOnly` says when to offer the TIP. It is an `only` object, and every stage that has a `tip` has one: the `when` of the stage tip, or `{ "virtualization": ["own"] }` when the stage sets none (Master). The round 5 reader offers the TIP only for a stage that has `tipOnly`, so a stage with a `tip` and no `tipOnly` would never show it.
+
+Our rule (SPEC, "Stage tip") offers the TIP when the check gives a match or conditional, so a learner whose `virtualization` is not set also gets it. The round 5 reader checks that every fact in `tipOnly` is set and matches, so it does not offer the TIP while `virtualization` is not set. See "Where the reader and our reference differ".
 
 ### Steps
 
@@ -274,7 +276,6 @@ Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{so
 
 ### Not used yet
 
-- **`stage.tipOnly`**: the reader offers the TIP to a Master learner only (`virtualization` is `own`). It does not read our condition.
 - **`ends`**: the reader stops the loadout only through `askIf` (the compiler checks that this holds). It does not read `ends` from `workshop.yaml`.
 - **`check.kind` values**: a reader that can run a check needs the values (the command, the image, the ISO), which `content.json` does not carry. The round 4 reader only names the kind.
 - **`step.goal` for every step**: only a step with `help` has one. The spreadsheet shows an empty goal cell for the others. The YAML does not hold a goal for them, and we do not write one for the reader.

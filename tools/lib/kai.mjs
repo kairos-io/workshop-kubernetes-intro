@@ -20,6 +20,9 @@ export const MARKDOWN_STEP = { id: "on-github", title: "Continue on GitHub", lin
 
 export const MAX_LINE = 60;
 
+// The `when` of a stage tip that sets none (schema/v0/SPEC.md, "Stage tip"): your own virtualization software.
+export const DEFAULT_TIP_WHEN = { virtualization: ["own"] };
+
 // The check kinds of the format, and "manual" for a step with no named check.
 const CHECK_KINDS = ["command-available", "image-exists", "iso-exists", "vm-running"];
 
@@ -173,7 +176,7 @@ export function compileStage(doc, lines = {}) {
   });
 
   const skip = toOnly(doc.not_skippable_when);
-  const tipOnly = toOnly(doc.tip?.when);
+  const tipOnly = doc.tip && toOnly(doc.tip.when ?? DEFAULT_TIP_WHEN);
   const help = doc.help ?? {};
   return {
     id: doc.id,
@@ -182,7 +185,8 @@ export function compileStage(doc, lines = {}) {
     steps,
     ...(help.tool && { tool: { name: help.tool, ...(help.source && { url: help.source }) } }),
     ...(help.docs && { docs: help.docs }),
-    // The reader offers the tip to a learner of Master. A condition of our own is kept as `tipOnly`.
+    // The reader offers the tip only where `tipOnly` matches the facts, so every stage with a tip
+    // carries one: the `when` of the tip, or the default when the stage sets none.
     ...(doc.tip && { tip: doc.tip.request }),
     ...(tipOnly && { tipOnly }),
     ...(skip && { noSkip: { when: skip, reason: doc.not_skippable_reason } }),

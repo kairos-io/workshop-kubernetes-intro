@@ -203,7 +203,7 @@ A stage can have `help`: `{ tool?, source?, docs? }`. These are defaults for eve
 
 ### Stage `tip`
 
-A stage can have `tip`: `{ when?, request }`. It is the "ask for a TIP" request for the whole stage. `request` is plain text. It can hold the placeholders `{os}`, `{arch}`, `{runtime}` and `{virtualization}`, and no other. `when` says when a reader offers the tip. It defaults to `{ virtualization: own }`: the tip is offered for a reader who runs their own virtualization software and for a reader whose `virtualization` is unset.
+A stage can have `tip`: `{ when?, request }`. It is the "ask for a TIP" request for the whole stage. `request` is plain text. It can hold the placeholders `{os}`, `{arch}`, `{runtime}` and `{virtualization}`, and no other. `when` says when a reader offers the tip. It defaults to `{ virtualization: own }`: the tip is offered for a reader who runs their own virtualization software and for a reader whose `virtualization` is unset. In terms of the evaluation above, a reader offers the tip when the result is `true` or `unknown`, and hides it when the result is `false`. A generated game content always carries the condition as `tipOnly` (the default applied when the stage has no `when`), because the game reader offers a tip only for a stage that has one.
 
 ### Skipping a stage: `not_skippable_when`
 
@@ -247,6 +247,7 @@ Unreleased v0:
 - A step can carry `help` (`goal`, `tool`, `source`, `docs`). A stage can carry `help` (defaults for its steps), `tip` (`when`, `request`), `not_skippable_when` and `not_skippable_reason`.
 - `tools/lib/loadout.mjs` (`nextQuestion`, `applyAnswer`) and `tools/lib/prompt.mjs` (`fillPrompt`, `buildStepPrompt`, `buildTipPrompt`) are reference implementations, with fixtures in `conformance/v0/loadout/` and `conformance/v0/prompt/`.
 - The `virtualization` value `other` is now `own`.
+- The game content carries the condition of a stage tip as `tipOnly` for every stage that has a `tip`, with the default `{ virtualization: own }` applied when the stage sets no `when`.
 
 ## The visible outline
 

@@ -11,7 +11,7 @@ import { checkStage, buildContext } from "../tools/validate.mjs";
 import { checkPrompt } from "../tools/lib/labels.mjs";
 import { FACT_DEFS } from "../tools/lib/facts.mjs";
 import { normalizeWhen } from "../tools/lib/load.mjs";
-import { compileStage, compileMarkdownStage, compileWorkshop, compileFacts, validateContent, CompileError, PROMPTS, MARKDOWN_STEP, stepLines, endingOptions } from "../tools/lib/kai.mjs";
+import { compileStage, compileMarkdownStage, compileWorkshop, compileFacts, validateContent, CompileError, DEFAULT_TIP_WHEN, PROMPTS, MARKDOWN_STEP, stepLines, endingOptions } from "../tools/lib/kai.mjs";
 import { serialize } from "../tools/compile-kai.mjs";
 import { compileTheme, GENERATED_THEME_KEYS } from "../tools/lib/theme.mjs";
 
@@ -25,7 +25,7 @@ const stageOf = (yamlText) => normalizeStage(parse(yamlText));
 const cases = readdirSync(dir).filter((f) => f.endsWith(".yaml") && !f.endsWith(".lines.yaml")).map((f) => f.replace(/\.yaml$/, "")).sort();
 
 test("there is a golden case for every rule group", () => {
-  assert.deepEqual(cases, ["help-and-skip", "lines", "sections-text-only", "step-shapes", "variants", "when-merge"]);
+  assert.deepEqual(cases, ["help-and-skip", "lines", "sections-text-only", "step-shapes", "tip-default", "variants", "when-merge"]);
 });
 
 for (const name of cases) {
@@ -265,9 +265,10 @@ test("stage 1 carries the tool, the docs, the tip as text and the skip rule in t
   assert.equal(one.tip, "Explain how to install {runtime} on {os} ({arch}) and how to check that it works.");
   assert.deepEqual(one.tool, { name: "kairos-lab", url: "https://github.com/kairos-io/kairos-lab" });
   assert.equal(one.docs, "https://github.com/kairos-io/kairos-lab#readme");
-  assert.deepEqual(Object.keys(one), ["id", "title", "goal", "steps", "tool", "docs", "tip", "noSkip"]);
+  assert.deepEqual(one.tipOnly, { virtualization: ["own"] }, "the stage sets no when for its tip, so the default applies");
+  assert.deepEqual(Object.keys(one), ["id", "title", "goal", "steps", "tool", "docs", "tip", "tipOnly", "noSkip"]);
   assert.ok(!("notSkippableWhen" in one));
-  for (const k of ["tool", "docs", "tip", "noSkip"]) assert.ok(!(k in two), `a markdown stage has no ${k}`);
+  for (const k of ["tool", "docs", "tip", "tipOnly", "noSkip"]) assert.ok(!(k in two), `a markdown stage has no ${k}`);
 });
 
 test("a step carries its goal in the reader's shape and its help as ours", () => {
@@ -282,12 +283,17 @@ test("a step carries its goal in the reader's shape and its help as ours", () =>
   for (const s of out.stages.slice(1)) for (const st of s.steps) assert.ok(!("goal" in st) && !("help" in st));
 });
 
-test("the tip condition has no place in the reader's shape, so it is kept as tipOnly when the stage sets it", () => {
+test("a stage with a tip always carries tipOnly: its own when, or the default { virtualization: own }", () => {
   const withTip = (tip) => stageOf(`format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\ntip: ${tip}\nsections:\n  - title: S\n    text: x\n`);
-  assert.deepEqual(compileStage(withTip('{ request: "R" }')).tip, "R");
-  assert.ok(!("tipOnly" in compileStage(withTip('{ request: "R" }'))));
+  const plain = compileStage(withTip('{ request: "R" }'));
+  assert.deepEqual([plain.tip, plain.tipOnly], ["R", { virtualization: ["own"] }]);
+  assert.deepEqual(plain.tipOnly, DEFAULT_TIP_WHEN);
   const t = compileStage(withTip('{ when: { virtualization: kairos-lab }, request: "R {os}" }'));
   assert.deepEqual([t.tip, t.tipOnly], ["R {os}", { virtualization: ["kairos-lab"] }]);
+  const many = compileStage(withTip('{ when: { runtime: [podman, docker], os: linux }, request: "R" }'));
+  assert.deepEqual(many.tipOnly, { os: ["linux"], runtime: ["podman", "docker"] }, "the fixed fact order, the list kept");
+  const none = stageOf("format: kairos-workshop/v0\nid: t\ntitle: T\ngoal: try t\nsections:\n  - title: S\n    text: x\n");
+  assert.ok(!("tip" in compileStage(none)) && !("tipOnly" in compileStage(none)), "no tip, no tipOnly");
 });
 
 test("a stage with a tool but no source has a name and no url, and no tool has no tool", () => {
