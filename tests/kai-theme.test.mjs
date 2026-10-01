@@ -305,7 +305,7 @@ test("the boss sheet tells the learner how to leave it, from the theme", () => {
   assert.ok(page.includes("{{ exitHint }}"), "the sheet page shows exitHint");
 });
 
-test("the check labels are design copy that the page reads from theme.labels", () => {
+test("the check labels are design copy that the page reads from theme.labels, and the page hides the bottom Next in Quest until the step is cleared", () => {
   const generated = readJson(join(root, "kai/web/theme.json"));
   const page = readFileSync(join(root, "kai/web/KAI Workshop.dc.html"), "utf8");
   const want = { check_ok: "OK", check_verify_title: "How to check", check_output_label: "You should see something like" };
@@ -315,4 +315,6 @@ test("the check labels are design copy that the page reads from theme.labels", (
     assert.ok(page.includes(`L.${key}`), `the page reads labels.${key}`);
     assert.ok(!page.includes(text), `the page does not hold the text of labels.${key}`);
   }
+  assert.ok(page.includes("out.showSkipNext = isWs || isDone;"), "the bottom Next shows in Presentation, and in Quest once the step is cleared");
+  assert.match(page, /<sc-if value="\{\{ showSkipNext \}\}"[^>]*><button onClick="\{\{ skipNext \}\}"/, "the bottom Next sits inside the showSkipNext condition");
 });

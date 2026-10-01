@@ -72,6 +72,7 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 
 ### Check row and help
 - Buttons: "OK" (`labels.check_ok`, marks the step done and goes to the next step) and "It did not work"
+- Quest: the bottom "Next step" button is hidden while the step is not cleared, and shows once it is. Previous and Next then move between cleared steps. On the last step it stays disabled, as before. Presentation always shows it, and it marks the step done unless "It did not work" was pressed
 - How to check: when the step check has a `verify`, the check box shows a terminal block titled "How to check" (`labels.check_verify_title`) with `$ <command>` and a Copy button that copies the bare command. Under the command, an example of the output, dimmer, after "You should see something like" (`labels.check_output_label`) when `verify.output` is set. The learner runs the command by hand. The reader never runs it. The terminal shows the same under the check line
 - It did not work: the viewport shows KAI sad ("LET'S FIX IT"), the step's common fixes, then the AI prompt panel: intro, warning ("Remove tokens…", warning icon, thick border), the prompt in monospace with placeholders highlighted, and Copy (idle / copied / failed)
 - Zen: `{virtualization}` = kairos-lab. Options mapped to `@freeText` in `theme.factPrompt` keep the `prompts.virtPlaceholder` highlighted until you type the name in the field above the prompt (saved as `virtName`). Terminal: press v and type it

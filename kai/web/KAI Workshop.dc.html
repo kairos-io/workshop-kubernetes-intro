@@ -460,7 +460,7 @@ button:disabled{cursor:not-allowed;}
 
           <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;">
             <button onClick="{{ prevStep }}" disabled="{{ noPrev }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">◀ Previous step</button>
-            <button onClick="{{ skipNext }}" disabled="{{ noNext }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ skipNextLabel }}</button>
+            <sc-if value="{{ showSkipNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ skipNext }}" disabled="{{ noNext }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ skipNextLabel }}</button></sc-if>
           </div>
         </div>
       </sc-if>
@@ -961,7 +961,7 @@ class Component extends DCLogic {
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
       nameRef: el => { this.nameEl = el; if (el && !el.kaiFocused) { el.kaiFocused = true; this.focusName(); } }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
-      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', verify: { has: false }, stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
+      boss: { on: false }, appDisplay: 'block', headTitle: '', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', verify: { has: false }, showSkipNext: false, stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
       toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
     if (!s.ready || !E.ready() || !s.p) return base;
@@ -1113,6 +1113,8 @@ class Component extends DCLogic {
         if (isDone || s.status === 'failed') return out.nextStep();
         this.didIt();
       };
+      // In Quest the bottom Next shows only once the step is cleared. Presentation always shows it: it marks the step done.
+      out.showSkipNext = isWs || isDone;
       out.noPrev = s.step <= 0; out.noNext = !isWs && s.step >= steps.length - 1;
       out.skipNextLabel = isWs && s.step >= steps.length - 1 ? out.nextLabel : 'Next step ▶';
     }
