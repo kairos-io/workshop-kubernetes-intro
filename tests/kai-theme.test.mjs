@@ -240,3 +240,31 @@ test("round 4: checkKinds, modes, sheet and the new labels are the base copied u
   // The four generated keys are never taken from the new base keys.
   assert.deepEqual(GENERATED_THEME_KEYS, ["welcome", "loadout", "prompts", "stages"]);
 });
+
+// ---- the keys that round 5 added to the designer's base ----
+
+test("round 5: boss_hint, take_home, tip_banner, free_text_hint and factPrompt are design copy, copied from the base unchanged", () => {
+  const b = base();
+  const t = theme();
+  assert.equal(typeof b.messages.boss_hint, "string");
+  assert.equal(t.messages.boss_hint, b.messages.boss_hint);
+  for (const k of ["take_home", "tip_banner", "free_text_hint"]) assert.equal(t.labels[k], b.labels[k], `labels.${k}`);
+  assert.deepEqual(t.factPrompt, b.factPrompt);
+  assert.ok(!GENERATED_THEME_KEYS.includes("factPrompt"), "factPrompt is not generated");
+});
+
+test("round 5: every fact and value that factPrompt names exists in the content, and at most one value needs a free text", () => {
+  const content = readJson(join(root, "kai/web/content.json"));
+  const t = theme();
+  let freeText = 0;
+  for (const [fact, values] of Object.entries(t.factPrompt)) {
+    const f = content.facts.find((x) => x.id === fact);
+    assert.ok(f, `theme.factPrompt.${fact} is a fact of the content`);
+    for (const [value, text] of Object.entries(values)) {
+      assert.ok(f.options.some((o) => o.id === value), `theme.factPrompt.${fact}.${value} is a value of ${fact}`);
+      assert.equal(typeof text, "string");
+      if (text === "@freeText") freeText++;
+    }
+  }
+  assert.equal(freeText, 1);
+});

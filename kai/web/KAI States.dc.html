@@ -83,9 +83,11 @@ class Component extends DCLogic {
     if (!(this.state.ready && E.ready())) return { groups: [], terms: [], stateNotes: [] };
     // Everything below comes from the data: stage ids, counts and step ids are never hard-coded.
     const ids = E.stageIds(), N = ids.length, at = i => ids[Math.max(0, Math.min(N - 1, i))], last = ids[N - 1];
-    const zen = { os: 'macos', virtualization: 'kairos-lab', arch: 'arm64', runtime: 'docker' };
-    const master = { os: 'linux', virtualization: 'own', arch: 'amd64', runtime: 'podman' };
-    const win = { os: 'windows', virtualization: 'own' };
+    // Sample loadouts built from content.facts: the first option of every fact, the last option of every fact, and the option that carries a notice.
+    const pickAll = idx => E.C.facts.reduce((acc, fc) => E.withFact(acc, fc.id, fc.options[idx(fc)].id), Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure'])));
+    const zen = pickAll(() => 0), master = pickAll(fc => fc.options.length - 1);
+    const noticeFact = E.C.facts.find(fc => fc.options.some(o => o.notice));
+    const win = noticeFact ? E.withFact(Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure'])), noticeFact.id, noticeFact.options.find(o => o.notice).id) : zen;
     const unsetF = Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure']));
     const who = { name: 'Ana', character: 'cap' };
     const reqDone = (id, facts) => E.steps(id, facts).filter(s => !s.optional).map(s => E.stepKey(id, s.id));
@@ -118,7 +120,7 @@ class Component extends DCLogic {
         D('11e', 'Loadout: Windows notice', { view: 'loadout', lq: 1, seed: { facts: win } }),
         D('11g', 'Loadout: architecture, help open', { view: 'loadout', lq: 2, archHelp: true, seed: { facts: zen } }),
         D('11h', 'Loadout: runtime (Zen note)', { view: 'loadout', lq: 3, seed: { facts: zen } }),
-        D('11m', 'Master: Ask KAI for a TIP', { stage: ids[0], tipOpen: true, seed: { facts: master, virtName: 'VirtualBox' } }),
+        D('11m', 'Ask KAI for a TIP (stages with tipOnly)', { stage: ids[0], tipOpen: true, seed: { facts: master, virtName: 'VirtualBox' } }),
         D('11n', 'Route: first stop not skippable (Zen)', { view: 'map', stage: ids[0], seed: { facts: zen } }),
         D('11o', 'Route: cleared stops in their own color', { view: 'map', stage: at(half), seed: { cleared: half, facts: zen } })
       ] },

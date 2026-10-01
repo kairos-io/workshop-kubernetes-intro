@@ -44,7 +44,7 @@ button:disabled{cursor:not-allowed;}
         <button onClick="{{ goMap }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Route</button>
       </sc-if>
       <sc-if value="{{ hasMode }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLoadout }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Loadout</button></sc-if>
-      <button onClick="{{ toggleSettings }}" aria-expanded="{{ settingsOpen }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Settings</button>
+      <button onClick="{{ toggleSettings }}" aria-expanded="{{ settingsOpen }}" hidden="{{ noMode }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Settings</button>
     </nav>
   </header>
 
@@ -141,6 +141,7 @@ button:disabled{cursor:not-allowed;}
           <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
             <div style="font-size:15px;font-weight:600;" aria-live="polite">{{ welcome.counter }}</div>
             <dc-import name="KAI Md" md="{{ welcome.md }}" vars="{{ welcome.vars }}" hint-size="100%,96px"></dc-import>
+            <sc-if value="{{ welcome.hasBoss }}" hint-placeholder-val="{{ false }}"><div role="note" style="align-self:flex-start;border:2px dashed var(--ink);padding:6px 12px;font-size:16px;"><span aria-hidden="true">⌨ </span>{{ bossHint }}</div></sc-if>
             <div aria-hidden="true" style="display:flex;gap:6px;">
               <sc-for list="{{ welcome.dots }}" as="d" hint-placeholder-count="5"><span style="width:12px;height:12px;border:2px solid var(--ink);background:{{ d.bg }};box-sizing:border-box;"></span></sc-for>
             </div>
@@ -279,11 +280,12 @@ button:disabled{cursor:not-allowed;}
 
           <sc-if value="{{ isMaster }}" hint-placeholder-val="{{ false }}">
             <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;border:3px dashed var(--ink);padding:10px 14px;">
-              <span style="font-size:16px;flex:1;min-width:min(100%,240px);">You play Master: KAI can write a prompt for this stage for your AI assistant.</span>
+              <span style="font-size:16px;flex:1;min-width:min(100%,240px);">{{ tipBanner }}</span>
               <button onClick="{{ toggleTip }}" aria-expanded="{{ tipOpen }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ askTipLabel }}</button>
             </div>
           </sc-if>
 
+          <sc-if value="{{ wsIntro }}" hint-placeholder-val="{{ false }}"><div role="note" style="align-self:flex-start;border:2px dashed var(--ink);padding:6px 12px;font-size:16px;"><span aria-hidden="true">⌨ </span>{{ bossHint }}</div></sc-if>
           <div style="display:flex;flex-direction:column;gap:8px;">
             <sc-if value="{{ isOptional }}" hint-placeholder-val="{{ false }}">
               <div style="align-self:flex-start;border:2px dashed var(--ink);padding:4px 10px;font-size:15px;font-weight:600;">☆ {{ sideQuestLabel }}</div>
@@ -523,7 +525,7 @@ button:disabled{cursor:not-allowed;}
           </div>
           <div style="display:flex;flex-direction:column;gap:12px;background:var(--ink);color:var(--surface);padding:20px;">
             <h2 style="margin:0;font-size:22px;font-weight:600;line-height:1.25;">{{ ctaLabel }}</h2>
-            <p style="margin:0;">Take KAI home: kairos-lab runs the same stops from your terminal.</p>
+            <p style="margin:0;">{{ takeHome }}</p>
             <sc-for list="{{ ctaCmds }}" as="cc" hint-placeholder-count="1">
               <div style="display:flex;flex-direction:column;gap:6px;">
                 <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;">
@@ -550,11 +552,11 @@ button:disabled{cursor:not-allowed;}
     </div>
   </main>
 
-  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span><button onClick="{{ toggleMode }}" style="background:transparent;color:var(--onBg);border:0;padding:4px 0;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;">{{ footerModeLabel }}</button></footer>
+  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span><button onClick="{{ toggleMode }}" hidden="{{ noMode }}" style="background:transparent;color:var(--onBg);border:0;padding:4px 0;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;">{{ footerModeLabel }}</button></footer>
   </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chooser&quot;,&quot;title&quot;,&quot;name&quot;,&quot;welcome&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:&quot;title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;game&quot;,&quot;workshop&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;boss&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;wsSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;},&quot;wsDark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;welcomePage&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;lq&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;archHelp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;tipOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chooser&quot;,&quot;title&quot;,&quot;name&quot;,&quot;welcome&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;game&quot;,&quot;workshop&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;boss&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;wsSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;},&quot;wsDark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;welcomePage&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;lq&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;archHelp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;tipOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
   state = {
     ready: false, p: null,
@@ -574,7 +576,9 @@ class Component extends DCLogic {
       const mode = this.props.mode ?? E.getMode(), stored = this.props.seed ? null : E.getView();
       if (stored && this.props.wsSize == null) this.setState({ ws: { size: stored.size, dark: !!stored.dark } });
       let view0 = this.state.view;
-      if (!mode && this.props.view == null) view0 = 'chooser';
+      // Standalone page (not embedded with a seed / keys=false) and no saved mode → ask first, whatever the view default is
+      const embedded = !!this.props.seed || this.props.keys === false;
+      if (!mode && (!embedded || this.props.view === 'chooser')) view0 = 'chooser';
       else if (mode === 'workshop' && !['loadout', 'stage'].includes(view0)) view0 = this.needsLoadout(p) ? 'loadout' : 'stage';
       this.setState({ mode, view: view0 });
       let clear = this.state.clear;
@@ -892,7 +896,7 @@ class Component extends DCLogic {
     else if (v === 'name') Object.assign(vp, { screen: 'name', nameText: this.state.nameDraft || '', dialog: M.name_line, action: W.poses.name });
     else if (v === 'character') Object.assign(vp, { screen: 'character', cursor: this.state.charCursor, dialog: E.fill(M.character_line, { name }) });
     else if (v === 'welcome') { const pg = W.welcome.pages[this.state.welcomePage] || W.welcome.pages[0]; Object.assign(vp, { screen: 'mentor', mentor: W.mentors.find(m => m.id === W.welcome.mentor), dialog: E.fill(pg.line, { name }), action: 'wave' }); }
-    else if (v === 'loadout') Object.assign(vp, { screen: 'loadout', dialog: (() => { const q = this.curQ(); return q && q.type === 'notice' ? W.loadout.notices[q.id].line : E.fill(M.loadout, { name }); })(), cursor: (() => { const q = this.curQ(); return Math.max(0, E.C.facts.findIndex(f => f.id === (q && q.type === 'notice' ? 'virtualization' : q && q.id))); })(), loadout: E.C.facts.map(f => ({ fact: f.id, value: E.unset(p.facts, f.id) ? '---' : E.optLabel(f.id, p.facts[f.id]) })) });
+    else if (v === 'loadout') Object.assign(vp, { screen: 'loadout', dialog: (() => { const q = this.curQ(); return q && q.type === 'notice' ? W.loadout.notices[q.id].line : E.fill(M.loadout, { name }); })(), cursor: (() => { const q = this.curQ(); return Math.max(0, q && q.type === 'notice' ? Math.min(E.C.facts.length - 1, E.C.facts.findIndex(f => f.id === q.fact) + 1) : E.C.facts.findIndex(f => f.id === (q && q.id))); })(), loadout: E.C.facts.map(f => ({ fact: f.id, value: E.unset(p.facts, f.id) ? '---' : E.optLabel(f.id, p.facts[f.id]) })) });
     else if (v === 'map') {
       const ids = E.stageIds(), plan = E.mentorPlan(name);
       const map = ids.map(id => ({ id, state: E.stageState(p, id), mentor: plan[id], ...E.stageProgress(p, id) }));
@@ -940,7 +944,7 @@ class Component extends DCLogic {
       settingsOpen: s.settingsOpen, show: {}, vp: {}, rows: [], pills: [], stages: [], facts: [], recap: [], ctaCmds: [], settingGroups: [], clear: {}, characters: [], inventory: [],
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
-      nameRef: el => { this.nameEl = el; },
+      nameRef: el => { this.nameEl = el; }, bossHint: '', wsIntro: false, tipBanner: '', takeHome: '',
       boss: { on: false }, appDisplay: 'block', headTitle: 'Kairos workshop', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
       toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
@@ -962,7 +966,7 @@ class Component extends DCLogic {
     // ---------- modes ----------
     const MO = W.modes || {}, isWs = this.isWorkshop();
     Object.assign(out, {
-      isWorkshop: isWs, hasMode: !!s.mode, showViewport: !!s.mode && !isWs,
+      isWorkshop: isWs, hasMode: !!s.mode, noMode: !s.mode, showViewport: !!s.mode && !isWs,
       headTitle: isWs ? 'Kairos workshop · ' + E.stageIds().length + ' stages' : 'Kairos workshop',
       modeLabel: isWs ? MO.switchToGame : MO.switchToWorkshop, modeAria: (MO.toggleLabel || 'Mode') + ': ' + (isWs ? MO.workshop.label : MO.game.label) + '. ' + (isWs ? MO.switchToGame : MO.switchToWorkshop),
       modeHeading: MO.toggleLabel || 'Mode', footerModeLabel: isWs ? MO.switchToGame : MO.workshop.label,
@@ -970,7 +974,7 @@ class Component extends DCLogic {
       zoom: isWs ? [0.9, 1, 1.15, 1.3, 1.5, 1.75][s.ws.size - 1] : 1, maxW: isWs ? '1440px' : '960px',
       gridDisplay: isWs ? 'grid' : 'block', gridCols: isWs ? 'repeat(auto-fit,minmax(min(100%,260px),300px)) minmax(min(100%,420px),1fr)' : '1fr', sectionMax: isWs ? 'none' : '820px',
       navLabel: L.stages_nav, navMax: (typeof window !== 'undefined' && window.innerWidth / ([0.9, 1, 1.15, 1.3, 1.5, 1.75][s.ws.size - 1] || 1) < 760) ? '100%' : '300px',
-      chooser: { question: MO.question, intro: MO.intro, hint: 'Press Esc at any time for a quick change of scenery.', options: ['game', 'workshop'].map(m => ({ label: MO[m].label, desc: E.mdPlain(MO[m].md), bg: m === 'workshop' ? 'var(--ink)' : 'transparent', fg: m === 'workshop' ? 'var(--surface)' : 'var(--ink)', pick: () => this.chooseMode(m) })) }
+      chooser: { question: MO.question, intro: MO.intro, hint: M.boss_hint, options: ['game', 'workshop'].map(m => ({ label: MO[m].label, desc: E.mdPlain(MO[m].md), bg: m === 'workshop' ? 'var(--ink)' : 'transparent', fg: m === 'workshop' ? 'var(--surface)' : 'var(--ink)', pick: () => this.chooseMode(m) })) }
     });
     out.nav = E.stageIds().map((id, i) => { const gg = E.stageProgress(p, id), cur = id === sid, done = E.stageCleared(p, id);
       return { no: i + 1, title: E.stage(id).title, count: (done ? '✓ ' : '') + gg.done + '/' + gg.total, current: cur ? 'page' : 'false', weight: cur ? 600 : 400,
@@ -987,7 +991,7 @@ class Component extends DCLogic {
         stages: ids.map(id => ({ id, rows: E.steps(id, p.facts).map((st2, i) => {
           const rows2 = E.flatten(st2.blocks, { key: id + '/' + st2.id, facts: p.facts, sel: s.alt, showAll: {}, layout: 'stacked' });
           const cmds = rows2.filter(r => r.type === 'command').map(r => r.isFile ? '# ' + r.name + '\n' + r.code : r.code.split('\n').map((l, j, arr) => (j > 0 && /\\\s*$/.test(arr[j - 1]) ? '  ' : '$ ') + l).join('\n'));
-          return { n: i + 1, title: st2.title, goal: st2.goal || '', details: cmds.join('\n\n'), check: st2.check.prompt, status: p.done[E.stepKey(id, st2.id)] ? 'Done' : (st2.optional ? 'Optional' : 'To do') };
+          return { n: i + 1, title: st2.title, goal: st2.goal || (st2.help && st2.help.goal) || st2.title, details: cmds.join('\n\n'), check: st2.check.prompt, status: p.done[E.stepKey(id, st2.id)] ? 'Done' : (st2.optional ? 'Optional' : 'To do') };
         }) })),
         onExit: () => this.setState({ boss: false })
       } };
@@ -996,7 +1000,7 @@ class Component extends DCLogic {
     out.crumb = { title: 'Title screen', name: 'New game · your name', welcome: 'Welcome · page ' + (s.welcomePage + 1) + ' of ' + W.welcome.pages.length, character: 'New game · your look', loadout: 'Loadout', map: 'Route · ' + (tot.cleared + tot.skipped) + ' of ' + tot.stages + ' stops done',
       mentor: 'Stop ' + no + ' · ' + th.location + ' · your mentor', stage: 'Stop ' + no + ' · ' + th.location + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length,
       'clear-step': 'Stop ' + no + ' · step cleared', 'clear-stage': 'Stop ' + no + ' cleared', items: 'New items', complete: 'Workshop complete', badge: 'Your badge' }[v] || '';
-    out.showMapBtn = !this.isWorkshop() && !['title', 'name', 'welcome', 'character', 'map'].includes(v) && p.started && !!p.character;
+    out.showMapBtn = !this.isWorkshop() && !['chooser', 'title', 'name', 'welcome', 'character', 'map'].includes(v) && p.started && !!p.character;
 
     out.noSave = !p.started; out.continueLabel = p.started ? 'Continue as ' + name + ' · ' + tot.done + '/' + tot.total + ' steps' : 'Continue';
     // name + character
@@ -1007,7 +1011,7 @@ class Component extends DCLogic {
     const WL = W.welcome, wm = W.mentors.find(m => m.id === WL.mentor) || W.mentors[0], wp = Math.min(s.welcomePage, WL.pages.length - 1), last = wp === WL.pages.length - 1;
     out.welcome = { name: wm.name, country: wm.country, ref: el => E.drawPortrait(el, wm.id, mode), md: WL.pages[wp].md, vars: { name },
       counter: 'Page ' + (wp + 1) + ' of ' + WL.pages.length, dots: WL.pages.map((x, i) => ({ bg: i <= wp ? 'var(--ink)' : 'transparent' })),
-      hasBack: wp > 0, back: () => this.welcomeBack(), backLabel: WL.back, next: () => this.welcomeNext(), nextLabel: last ? WL.start : WL.next };
+      hasBoss: wp === 0, hasBack: wp > 0, back: () => this.welcomeBack(), backLabel: WL.back, next: () => this.welcomeNext(), nextLabel: last ? WL.start : WL.next };
     // loadout: one question per screen
     const LO = W.loadout, qs = E.loadoutQuestions(p.facts), qi = Math.min(s.lq, qs.length - 1), q = qs[qi] || qs[0];
     const lqm = { counter: E.fill(LO.progress, { n: qi + 1, total: qs.length }), isFact: q.type === 'fact', isNotice: q.type === 'notice', options: [], notes: [], hasHelp: false, help: { lines: [] },
@@ -1063,6 +1067,7 @@ class Component extends DCLogic {
       out.checkPrompt = st.check.prompt;
       out.checkKind = E.checkKind(st).label;
       if (isWs) out.crumb = v === 'loadout' ? 'Loadout' : 'Stage ' + no + ' of ' + ids.length + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length;
+      out.wsIntro = isWs && sid === ids[0] && s.step === 0; out.bossHint = M.boss_hint;
       out.stageHead = isWs ? 'Stage ' + no + ' of ' + ids.length + ': ' + sc.title : 'Stage ' + no + ' · ' + th.location + ': ' + sc.title;
       const hp = E.stepHelp(st);
       out.help = { has: hp.has, hasTool: !!hp.tool, hasDocs: !!hp.docs, tool: hp.tool, source: hp.source || hp.docs || '#', docs: hp.docs, docsText: hp.docs.replace(/^https?:\/\//, ''), toolLabel: L.tool || 'Tool', docsLabel: L.docs || 'Docs' };
@@ -1070,8 +1075,8 @@ class Component extends DCLogic {
       const isDone = !!p.done[E.stepKey(sid, st.id)];
       out.isDone = isDone; out.notDone = !isDone; out.isFailed = s.status === 'failed';
       out.didItLabel = L.next_step; out.didNotLabel = L.did_not_work;
-      const master = E.isMaster(p.facts);
-      out.isMaster = master; out.tipOpen = s.tipOpen; out.askTipLabel = (s.tipOpen ? '▾ ' : '') + L.ask_tip;
+      const master = !!E.freeTextFact(p.facts);
+      out.isMaster = E.tipFor(p, sid); out.tipBanner = L.tip_banner; out.takeHome = L.take_home; out.tipOpen = s.tipOpen; out.askTipLabel = (s.tipOpen ? '▾ ' : '') + L.ask_tip;
       const panel = (kind, text, title, intro) => {
         const key = 'ai/' + kind, cm = this.cmdModel(key, text, [], '');
         return { ...cm, title, intro, closeLabel: L.close, warnLabel: L.warning, warning: W.prompts.warning, segs: E.promptSegs(text).map(x => ({ ...x, plain: !x.ph })),
@@ -1081,7 +1086,7 @@ class Component extends DCLogic {
           close: () => kind === 'fail' ? this.setState({ status: 'todo' }) : this.setState({ tipOpen: false }) };
       };
       out.aiPanels = [];
-      if (s.tipOpen && master) out.aiPanels.push(panel('tip', E.prompt('tip', p, sid, null), L.tip_title, L.tip_intro));
+      if (s.tipOpen && out.isMaster) out.aiPanels.push(panel('tip', E.prompt('tip', p, sid, null), L.tip_title, L.tip_intro));
       if (s.status === 'failed') out.aiPanels.push(panel('fail', E.prompt('fail', p, sid, st, this.settings().layout === 'tabs' ? s.alt : null), L.ai_title, L.ai_intro));
       out.nextLabel = s.step < steps.length - 1 ? 'Next step ▶' : 'Route ▶';
       out.nextStep = () => s.step < steps.length - 1 ? this.goStep(s.step + 1) : this.goMap();

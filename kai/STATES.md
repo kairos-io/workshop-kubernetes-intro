@@ -2,6 +2,15 @@
 
 Every state is live in `web/KAI States.dc.html`, including the terminal frames at 80×24 and 120×40. Stage ids are slugs (`kairos-lab`, `first-node`, …). Numbers on screen ("Stop 3") come from the order in `content.json`, so you can insert a stage without renumbering anything.
 
+## Round 5: fixes
+
+- First visit: a standalone page (no seed, keys on) with no saved `kai.mode` always opens the mode chooser, whatever the `view` default is. Embedded pages (KAI States, keys=false + seed) keep using `view`. Header buttons and the footer mode link are hidden on the chooser. Screenshot: `assets/first-visit-chooser.png`
+- Fact ids and values come only from `content.facts`. Prompt placeholders are built for every fact id. A value can be rewritten through `theme.factPrompt` (design-owned), where `@freeText` means "what the learner typed", e.g. the name of their virtualization software
+- TIP: shown only where `content.stages[].tipOnly` matches the loadout (an "only" map). No `tipOnly` in the data means no TIP
+- Spreadsheet Goal column: `step.goal`, then `help.goal`, then the step title
+- Boss key line: `messages.boss_hint`. Shown once in the intro (welcome page 1 in the game, the first step in "Just the workshop") and as the small hint on the mode chooser. Not in the terminal: it has no boss key
+- "Take KAI home…" and the TIP banner are now `labels.take_home` and `labels.tip_banner`
+
 ## Round 4: new screens and states
 
 ### Data
@@ -64,7 +73,7 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 ### Check row and help
 - Buttons: "Next step" (marks the step done) and "It did not work"
 - It did not work: the viewport shows KAI sad ("LET'S FIX IT"), the step's common fixes, then the AI prompt panel: intro, warning ("Remove tokens…", warning icon, thick border), the prompt in monospace with placeholders highlighted, and Copy (idle / copied / failed)
-- Zen: `{virtualization}` = kairos-lab. Master: the placeholder `[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]` stays highlighted until you type the name in the field above the prompt (saved as `virtName`). Terminal: press v and type it
+- Zen: `{virtualization}` = kairos-lab. Options mapped to `@freeText` in `theme.factPrompt` keep the `prompts.virtPlaceholder` highlighted until you type the name in the field above the prompt (saved as `virtName`). Terminal: press v and type it
 - Unset facts (e.g. arch on Windows) become `[YOUR ARCHITECTURE]` placeholders
 - "What I ran" lists the commands shown for your setup (the selected tab on the web)
 - No "No penalty" line anywhere

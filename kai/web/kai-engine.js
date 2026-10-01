@@ -354,16 +354,24 @@
       E.C.facts.forEach(ff => { if (ff.askIf && !E.strict(ff.askIf, f) && !Object.values(E.C.facts).some(x => (x.options.find(o => o.id === f[x.id]) || {}).forces && (x.options.find(o => o.id === f[x.id]).forces[ff.id]))) f[ff.id] = 'unsure'; });
       return f;
     },
-    isMaster(facts) { return facts && facts.virtualization === 'own'; },
+    // Free text: a fact option mapped to "@freeText" in theme.factPrompt (e.g. your own virtualization software)
+    freeTextFact(facts) { const fp = E.W.factPrompt || {}; return E.C.facts.map(f => f.id).find(id => !E.unset(facts, id) && fp[id] && fp[id][facts[id]] === '@freeText') || null; },
+    // Who gets the stage TIP: content.stages[].tipOnly (an "only" map). No tipOnly in the data means no TIP.
+    tipFor(p, sid) { const s = E.stage(sid); return !!(s && s.tipOnly && E.strict(s.tipOnly, p.facts)); },
+    factValue(p, id) {
+      const P = E.W.prompts, f = p.facts, map = ((E.W.factPrompt || {})[id] || {})[f[id]];
+      if (E.unset(f, id)) return E.fill(P.unsetPlaceholder, { fact: E.fact(id).label.toUpperCase() });
+      if (map === '@freeText') return String(p.virtName || '').trim() || P.virtPlaceholder;
+      return map || E.optLabel(id, f[id]);
+    },
     skipBlock(p, id) { const s = E.stage(id); return s.noSkip && E.strict(s.noSkip.when, p.facts) ? s.noSkip.reason : ''; },
 
     // ---------- AI prompts (templates in theme.prompts; screens only fill placeholders) ----------
     promptVars(p, sid, st, sel) {
       const P = E.W.prompts, f = p.facts, sc = E.stage(sid);
-      const lab = id => E.unset(f, id) ? E.fill(P.unsetPlaceholder, { fact: E.fact(id).label.toUpperCase() }) : E.optLabel(id, f[id]);
-      const virt = E.unset(f, 'virtualization') ? lab('virtualization') : f.virtualization === 'kairos-lab' ? 'kairos-lab' : (String(p.virtName || '').trim() || P.virtPlaceholder);
-      const v = { stage: sc.title, os: lab('os'), arch: lab('arch'), runtime: lab('runtime'), virtualization: virt,
+      const v = { stage: sc.title,
         tool: (sc.tool && sc.tool.name) || '', source: (sc.tool && sc.tool.url) || '', docs: sc.docs || '', logs: P.logsPlaceholder, goal: sc.goal || sc.title };
+      E.C.facts.forEach(fc => { v[fc.id] = E.factValue(p, fc.id); });
       if (st) {
         const rows = E.flatten(st.blocks, { key: sid + '/' + st.id, facts: f, sel: sel || {}, showAll: {}, layout: sel ? 'tabs' : 'stacked' });
         const cmds = rows.filter(r => r.type === 'command' && !r.isFile).map(r => r.code);

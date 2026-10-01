@@ -145,6 +145,7 @@ type Theme struct {
 	} `json:"player"`
 	Mentors  []Mentor                   `json:"mentors"`
 	CheckKinds map[string]string        `json:"checkKinds"`
+	FactPrompt map[string]map[string]string `json:"factPrompt"`
 	Stages   []ThemeStage               `json:"stages"`
 	Items    map[string]ItemDef         `json:"items"`
 	Mega     map[string]Mega            `json:"mega"`
@@ -248,6 +249,7 @@ type Stage struct {
 		When   Only   `json:"when"`
 		Reason string `json:"reason"`
 	} `json:"noSkip"`
+	TipOnly Only `json:"tipOnly"`
 }
 
 type Content struct {
@@ -731,7 +733,39 @@ func withFact(facts map[string]string, fid, oid string) map[string]string {
 	return out
 }
 
-func isMaster(facts map[string]string) bool { return facts["virtualization"] == "own" }
+// freeTextFact: the fact whose selected option maps to "@freeText" in theme.factPrompt
+func freeTextFact(facts map[string]string) string {
+	for _, f := range C.Facts {
+		if !unset(facts, f.ID) && W.FactPrompt[f.ID][facts[f.ID]] == "@freeText" {
+			return f.ID
+		}
+	}
+	return ""
+}
+
+// tipFor: content.stages[].tipOnly decides who gets the stage TIP. No tipOnly means no TIP.
+func tipFor(p *Progress, sid string) bool {
+	s := stageC(sid)
+	return len(s.TipOnly) > 0 && strict(s.TipOnly, p.Facts)
+}
+
+func factValue(p *Progress, id string) string {
+	f := p.Facts
+	if unset(f, id) {
+		return fill(W.Prompts.UnsetPlaceholder, map[string]string{"fact": strings.ToUpper(fact(id).Label)})
+	}
+	switch m := W.FactPrompt[id][f[id]]; m {
+	case "@freeText":
+		if v := strings.TrimSpace(p.VirtName); v != "" {
+			return v
+		}
+		return W.Prompts.VirtPlaceholder
+	case "":
+		return optLabel(id, f[id])
+	default:
+		return m
+	}
+}
 
 func skipBlock(p *Progress, id string) string {
 	s := stageC(id)
@@ -766,24 +800,13 @@ func checkKind(st Step) string {
 // prompt builds an AI prompt from theme.prompts (same as kai-engine.js prompt()).
 func prompt(kind string, p *Progress, sid string, st *Step) string {
 	P, f, sc := W.Prompts, p.Facts, stageC(sid)
-	lab := func(id string) string {
-		if unset(f, id) {
-			return fill(P.UnsetPlaceholder, map[string]string{"fact": strings.ToUpper(fact(id).Label)})
-		}
-		return optLabel(id, f[id])
-	}
-	virt := strings.TrimSpace(p.VirtName)
-	if unset(f, "virtualization") {
-		virt = lab("virtualization")
-	} else if f["virtualization"] == "kairos-lab" {
-		virt = "kairos-lab"
-	} else if virt == "" {
-		virt = P.VirtPlaceholder
-	}
-	v := map[string]string{"stage": sc.Title, "os": lab("os"), "arch": lab("arch"), "runtime": lab("runtime"), "virtualization": virt,
+	v := map[string]string{"stage": sc.Title,
 		"tool": sc.Tool.Name, "source": sc.Tool.URL, "docs": sc.Docs, "logs": P.LogsPlaceholder, "goal": sc.Goal}
 	if v["goal"] == "" {
 		v["goal"] = sc.Title
+	}
+	for _, fc := range C.Facts {
+		v[fc.ID] = factValue(p, fc.ID)
 	}
 	if st != nil {
 		rows := flatten(st.Blocks, stepKey(sid, st.ID), f, map[string]bool{}, 0, nil)
@@ -1763,8 +1786,8 @@ func (a *App) instructions(st Step, sid string, width int, sel St) []Line {
 		code := prompt(kind, a.p, sid, sp2)
 		rows = append(rows, Row{Type: "heading", Text: title})
 		rows = append(rows, Row{Type: "callout", Kind: "warning", Blocks: md(W.Prompts.Warning)})
-		if isMaster(a.p.Facts) {
-			rows = append(rows, Row{Type: "text", Blocks: P("Press v to type the name of your virtualization software into the prompt.")})
+		if freeTextFact(a.p.Facts) != "" {
+			rows = append(rows, Row{Type: "text", Blocks: P(L["free_text_hint"])})
 		}
 		rows = append(rows, Row{Type: "command", IsFile: true, Name: "AI prompt", Code: code})
 	}
@@ -2295,17 +2318,17 @@ func (a *App) render(w, h int) *Grid {
 		g.put(cx, h-2, clip(chk, cw), St{B: true})
 		if done {
 			tipK := ""
-			if isMaster(p.Facts) {
+			if tipFor(p, sid) {
 				tipK = D + "t TIP"
 			}
 			keys("Enter next step" + D + "left/right steps" + D + "up/down scroll" + D + "Tab cmd" + D + "c copy" + tipK + D + "m route")
 		} else {
 			tipK := ""
-			if isMaster(p.Facts) {
+			if tipFor(p, sid) {
 				tipK = D + "t TIP"
 			}
 			if a.editVirt {
-				keys("Virtualization software: " + p.VirtName + "_" + D + "Enter done")
+				keys(fact(freeTextFact(p.Facts)).Label + ": " + p.VirtName + "_" + D + "Enter done")
 			} else {
 				keys("Enter " + strings.ToLower(L["next_step"]) + D + "n " + strings.ToLower(L["did_not_work"]) + D + "up/down" + D + "Tab" + D + "c copy" + tipK + D + "m route")
 			}
@@ -3011,7 +3034,7 @@ func (a *App) handle(k Key, w, h int) {
 			a.status, a.scroll = "failed", 1<<20
 			a.focusPrompt(w, h)
 		case "t":
-			if isMaster(a.p.Facts) {
+			if tipFor(a.p, a.stage) {
 				if a.status == "tip" {
 					a.status = "todo"
 				} else {
@@ -3020,7 +3043,7 @@ func (a *App) handle(k Key, w, h int) {
 				}
 			}
 		case "v":
-			if isMaster(a.p.Facts) && (a.status == "failed" || a.status == "tip") {
+			if freeTextFact(a.p.Facts) != "" && (a.status == "failed" || a.status == "tip") {
 				a.editVirt = true
 			}
 		case "enter":
@@ -3228,7 +3251,7 @@ func usage() {
       keys: arrows (or j/k to scroll), Enter, Tab next command, c copy (OSC 52),
       o print the command plain, y / n check, a show all options, s skip stop,
       l loadout, m route, q quit
-  kai render --screen map --stage fleet --size 120x40 --name Ana --character cap \
+  kai render --screen map --stage build-image --size 120x40 --name Ana --character cap \
              --cleared 3 --skipped build-image --facts os=macos,runtime=docker
       print one frame (docs, CI, piping)
   kai say TEXT      KAI says TEXT

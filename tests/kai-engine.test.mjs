@@ -179,7 +179,8 @@ test("loadout: applying an answer sets the same facts in the reader as in applyA
   assert.equal(nextQuestion(loadout, win), null, "Windows ends the flow");
   const fromReader = E.withFact(E.defaultFacts(), "os", "windows");
   assert.equal(fromReader.virtualization, "own");
-  assert.equal(E.isMaster(fromReader), true);
+  assert.equal(E.freeTextFact(fromReader), "virtualization", "the forced answer is the one that needs a free text");
+  assert.equal(E.tipFor({ facts: fromReader }, "kairos-lab"), true, "own virtualization is offered the TIP");
   assert.deepEqual(E.loadoutQuestions(fromReader), [{ type: "fact", id: "os" }, { type: "notice", id: "windows", fact: "os" }]);
 });
 
@@ -328,6 +329,98 @@ test("prompts: for every answered fact set the tip prompt is the same text", () 
   for (const facts of fullyAnswered) {
     assert.equal(E.prompt("tip", progress(facts), "kairos-lab"), buildTipPrompt(workshop, stageDoc, facts), JSON.stringify(facts));
   }
+});
+
+// ---- the TIP: who is offered it ----
+
+// Our rule (SPEC, "Stage tip"): the `when` of the tip, `{ virtualization: own }` by default, is offered when
+// it evaluates to true or unknown, and hidden when it evaluates to false.
+const tipRule = (doc, facts) => evaluate(doc.tip.when ?? { virtualization: "own" }, facts) !== "false";
+const virtualizations = ["kairos-lab", "own", undefined];
+const tipCases = () => {
+  const out = [];
+  for (const virtualization of virtualizations) for (const os of [undefined, ...VALUES.os]) for (const arch of [undefined, ...VALUES.arch]) for (const runtime of [undefined, ...VALUES.runtime]) {
+    out.push(Object.fromEntries(Object.entries({ virtualization, os, arch, runtime }).filter(([, v]) => v !== undefined)));
+  }
+  return out;
+};
+
+test("tip: the reader offers the stage TIP to kairos-lab never and to your own virtualization always, like our rule", () => {
+  let own = 0;
+  let zen = 0;
+  for (const facts of tipCases()) {
+    if (facts.virtualization === undefined) continue;
+    const reader = E.tipFor(progress(facts), "kairos-lab");
+    assert.equal(reader, tipRule(stageDoc, facts), JSON.stringify(facts));
+    if (facts.virtualization === "own") {
+      own++;
+      assert.equal(reader, true);
+    } else {
+      zen++;
+      assert.equal(reader, false);
+    }
+  }
+  assert.ok(own >= 20 && zen >= 20, `${own} own cases, ${zen} kairos-lab cases`);
+});
+
+test("tip: with virtualization unset our rule offers the TIP and the reader does not (a known difference)", () => {
+  for (const facts of tipCases().filter((f) => f.virtualization === undefined)) {
+    assert.equal(tipRule(stageDoc, facts), true, `ours, ${JSON.stringify(facts)}`);
+    assert.equal(E.tipFor(progress(facts), "kairos-lab"), false, `reader, ${JSON.stringify(facts)}`);
+  }
+  // The cause: E.strict wants every fact of tipOnly to be set and to match, and "unsure" counts as unset.
+  assert.equal(E.strict({ virtualization: ["own"] }, engineFacts({})), false);
+  assert.equal(E.strict({ virtualization: ["own"] }, { virtualization: "unsure" }), false);
+  assert.equal(E.strict({ virtualization: ["own"] }, { virtualization: "own" }), true);
+});
+
+test("tip: the reader reads the condition from content.stages[].tipOnly, and a stage with no tipOnly has no TIP", () => {
+  const stage = E.stage("kairos-lab");
+  assert.deepEqual(stage.tipOnly, { virtualization: ["own"] });
+  assert.equal(E.tipFor(progress({ virtualization: "own" }), "kairos-lab"), true);
+  // A stage that is still markdown has no tip and no tipOnly: no TIP for anybody.
+  for (const s of E.C.stages.filter((x) => x.id !== "kairos-lab")) {
+    assert.ok(!("tip" in s) && !("tipOnly" in s), s.id);
+    assert.equal(E.tipFor(progress({ virtualization: "own" }), s.id), false, s.id);
+  }
+  // The reader decides from tipOnly alone: with tipOnly removed, the same facts get no TIP.
+  const saved = stage.tipOnly;
+  delete stage.tipOnly;
+  try {
+    assert.equal(E.tipFor(progress({ virtualization: "own" }), "kairos-lab"), false);
+  } finally {
+    stage.tipOnly = saved;
+  }
+  // And a condition of our own is read as given.
+  stage.tipOnly = { virtualization: ["kairos-lab"], os: ["linux", "macos"] };
+  try {
+    assert.equal(E.tipFor(progress({ virtualization: "kairos-lab", os: "macos" }), "kairos-lab"), true);
+    assert.equal(E.tipFor(progress({ virtualization: "kairos-lab", os: "windows" }), "kairos-lab"), false);
+    assert.equal(E.tipFor(progress({ virtualization: "own", os: "macos" }), "kairos-lab"), false);
+    assert.equal(E.tipFor(progress({ virtualization: "kairos-lab" }), "kairos-lab"), false, "os is unset, so the reader does not offer it");
+  } finally {
+    stage.tipOnly = saved;
+  }
+});
+
+test("tip: for every case where the reader offers the TIP its prompt is buildTipPrompt, with the name the learner typed", () => {
+  let offered = 0;
+  for (const facts of fullyAnswered) {
+    const p = progress(facts);
+    if (!E.tipFor(p, "kairos-lab")) continue;
+    offered++;
+    const named = { ...p, virtName: "VirtualBox" };
+    // Not typed yet: the reader keeps our placeholder for the name of the software.
+    assert.equal(E.prompt("tip", p, "kairos-lab"), buildTipPrompt(workshop, stageDoc, facts), JSON.stringify(facts));
+    // Typed: the name stands where the placeholder stood.
+    const want = buildTipPrompt(workshop, stageDoc, facts).split("[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]").join("VirtualBox");
+    assert.equal(E.prompt("tip", named, "kairos-lab"), want, `${JSON.stringify(facts)} with a name`);
+  }
+  assert.equal(offered, fullyAnswered.filter((f) => f.virtualization === "own").length);
+  assert.ok(offered >= 12);
+  assert.equal(E.freeTextFact(engineFacts({ virtualization: "own" })), "virtualization");
+  assert.equal(E.freeTextFact(engineFacts({ virtualization: "kairos-lab" })), null);
+  assert.equal(E.freeTextFact(engineFacts({})), null);
 });
 
 test("prompts: with some facts unset the reader writes our unsetPlaceholder with the label of the fact, and ours writes other stand-ins", () => {

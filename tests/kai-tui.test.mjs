@@ -224,3 +224,25 @@ shows("the help prompt of a failed step names the tool of the step and its goal"
   assert.ok(out.includes(`Goal of this step: ${own.goal}.`));
   assert.ok(out.includes(`Tool: ${own.help.tool} (${own.help.source}).`));
 });
+
+shows("the stage screen offers the TIP key to Master only, as content.stages[].tipOnly says, and not to Zen or an unset virtualization", () => {
+  const base = { os: "linux", arch: "amd64", runtime: "docker" };
+  const keys = (virtualization) => {
+    const facts = virtualization ? { ...base, virtualization } : base;
+    return screen("--screen", "stage", "--stage", "kairos-lab", "--step", "0", "--facts", Object.entries(facts).map(([k, v]) => `${k}=${v}`).join(","));
+  };
+  assert.deepEqual(stage1.tipOnly, { virtualization: ["own"] });
+  assert.match(keys("own"), /c copy · t TIP · m route/, "Master is offered the TIP");
+  assert.doesNotMatch(keys("kairos-lab"), /t TIP/, "Zen is not");
+  // SPEC offers the tip while virtualization is unset. The reader's strict check does not: a known difference.
+  assert.doesNotMatch(keys(undefined), /t TIP/, "an unset virtualization is not offered the TIP by the reader");
+});
+
+shows("the TIP screen of Master writes the stage prompt with the placeholder for the name of the software", () => {
+  const out = screen("--screen", "stage", "--stage", "kairos-lab", "--step", "0", "--status", "tip", "--facts", "os=linux,arch=amd64,runtime=docker,virtualization=own");
+  assert.match(out, /A TIP from KAI/);
+  assert.ok(out.includes(`Press v to type the name of your virtualization software into the prompt.`));
+  assert.ok(out.includes(theme.labels.free_text_hint), "the hint is the design copy of the theme");
+  assert.match(out, /VMs with \[NAME OF YOUR VIRTUALIZATION SOFTWARE, e\.g\. VirtualBox\]\./);
+  assert.match(out, /Explain how to install Docker on Linux \(amd64\) and how to check that it works\./);
+});

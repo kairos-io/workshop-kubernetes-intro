@@ -99,7 +99,7 @@
     const opts = { key: sid + '/' + st.id, facts: p.facts, sel: {}, showAll: ui.showAll || {}, layout: 'stacked' };
     const rows = E.flatten(st.blocks, opts);
     if (ui.status === 'failed') { rows.push({ type: 'trouble', inset: 0 }); E.flatten(st.check.fail, { ...opts, key: opts.key + '/fail', inset: 1 }, rows); }
-    const aiRows = (kind, title) => { const code = E.prompt(kind, p, sid, kind === 'fail' ? st : null); rows.push({ type: 'heading', text: title, inset: 0 }); rows.push({ type: 'callout', kind: 'warning', blocks: E.md(E.W.prompts.warning), inset: 0 }); if (E.isMaster(p.facts) && !p.virtName) rows.push({ type: 'text', blocks: P('Press v to type the name of your virtualization software into the prompt.'), inset: 0 }); rows.push({ type: 'command', isFile: true, name: 'AI prompt', code, lines: E.cmdLines(code, true), inset: 0 }); };
+    const aiRows = (kind, title) => { const code = E.prompt(kind, p, sid, kind === 'fail' ? st : null); rows.push({ type: 'heading', text: title, inset: 0 }); rows.push({ type: 'callout', kind: 'warning', blocks: E.md(E.W.prompts.warning), inset: 0 }); if (E.freeTextFact(p.facts) && !p.virtName) rows.push({ type: 'text', blocks: P(L.free_text_hint), inset: 0 }); rows.push({ type: 'command', isFile: true, name: 'AI prompt', code, lines: E.cmdLines(code, true), inset: 0 }); };
     if (ui.status === 'failed') aiRows('fail', L.ai_title);
     if (ui.status === 'tip') { rows.length = 0; aiRows('tip', L.tip_title); }
     let ci = 0;
@@ -293,7 +293,7 @@
       if (scroll + ih < ins.lines.length) g.put(w - 1, iy + ih - 1, G.down, { b: true });
       const done = p.done[E.stepKey(sid, st.id)];
       g.put(wide ? 42 : 0, h - 2, T.clip(' Check (' + E.checkKind(st).label + '): ' + st.check.prompt + (done ? '  ' + G.ok + ' cleared' : ''), wide ? w - 42 : w), { b: true });
-      const tipK = E.isMaster(p.facts) ? ' ' + G.dot + ' t TIP' : '';
+      const tipK = E.tipFor(p, sid) ? ' ' + G.dot + ' t TIP' : '';
       keys(done ? 'Enter next step ' + G.dot + ' left/right steps ' + G.dot + ' up/down scroll ' + G.dot + ' Tab cmd ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route'
         : 'Enter ' + L.next_step.toLowerCase() + ' ' + G.dot + ' n ' + L.did_not_work.toLowerCase() + ' ' + G.dot + ' up/down ' + G.dot + ' Tab ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route');
     } else {

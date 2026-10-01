@@ -5,7 +5,7 @@ Go standard library only. It reads `kai-sprites.json`, `theme.json` and `content
 ```sh
 cd tui && go build -o kai .
 ./kai --assets ../web                        # play
-./kai render --assets ../web --screen map --stage fleet --size 120x40 \
+./kai render --assets ../web --screen map --stage build-image --size 120x40 \
       --name Ana --character cap --cleared 3 --skipped build-image --facts os=macos
 ```
 
