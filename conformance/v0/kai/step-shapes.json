@@ -122,6 +122,26 @@
       }
     },
     {
+      "id": "manual",
+      "title": "Steps",
+      "line": "Steps",
+      "blocks": [
+        {
+          "type": "command",
+          "code": "echo done"
+        }
+      ],
+      "check": {
+        "kind": "manual",
+        "prompt": "The command printed done.",
+        "verify": {
+          "command": "echo done",
+          "output": "done"
+        },
+        "fail": []
+      }
+    },
+    {
       "id": "no-check",
       "title": "No check",
       "line": "No check",

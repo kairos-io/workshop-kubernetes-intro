@@ -52,6 +52,13 @@ sections:
         commands:
           - echo vm
         check: { kind: vm-running }
+      - id: manual
+        commands:
+          - echo done
+        check:
+          kind: manual
+          text: the command printed done.
+          verify: { command: echo done, output: "done" }
       - id: no-check
         title: No check
         optional: true
