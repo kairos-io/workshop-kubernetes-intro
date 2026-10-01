@@ -219,6 +219,7 @@ test("labels", () => {
   assert.equal(checkSentence({ kind: "iso-exists" }), "the ISO file exists.");
   assert.equal(checkSentence({ kind: "vm-running" }), "the VM is running.");
   assert.equal(checkSentence({ kind: "vm-running", name: "demo" }), "the `demo` VM is running.");
+  assert.equal(checkSentence({ kind: "manual", text: "Setup finished." }), "Setup finished.");
 });
 
 test("a fence is longer than any backtick run inside the command", () => {

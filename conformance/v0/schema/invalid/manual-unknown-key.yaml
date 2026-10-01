@@ -1,0 +1,10 @@
+# expect-error: a manual check has only a kind, a text and a verify
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: manual, text: It is done., command: ls }

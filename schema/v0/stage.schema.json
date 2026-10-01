@@ -286,6 +286,26 @@
               "$ref": "#/$defs/verify"
             }
           }
+        },
+        {
+          "additionalProperties": false,
+          "required": [
+            "text"
+          ],
+          "properties": {
+            "kind": {
+              "const": "manual"
+            },
+            "text": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160,
+              "pattern": "^[^\\n`]+$"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
+            }
+          }
         }
       ]
     },

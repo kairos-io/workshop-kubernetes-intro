@@ -7,7 +7,8 @@ export function conditionLabel(when) {
     .join(", ");
 }
 
-// The sentence for a check. Readers own this wording. It continues after "Check: ".
+// The sentence for a check. Readers own this wording, except for a manual check, whose `text` is
+// the sentence. It continues after "Check: ".
 export function checkSentence(check) {
   switch (check.kind) {
     case "command-available":
@@ -18,6 +19,9 @@ export function checkSentence(check) {
       return "the ISO file exists.";
     case "vm-running":
       return check.name ? `the \`${check.name}\` VM is running.` : "the VM is running.";
+    case "manual":
+      // A manual check has no parameters to build a sentence from. Its `text` is the sentence.
+      return check.text;
     default:
       throw new Error(`unknown check kind: ${check.kind}`);
   }

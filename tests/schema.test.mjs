@@ -65,3 +65,14 @@ test("verify is optional, belongs to a check, and needs one line of command", ()
   const checks = doc.sections.flatMap((s) => s.steps ?? []).map((st) => st.check).filter(Boolean);
   assert.ok(checks.some((c) => c.verify?.output) && checks.some((c) => c.verify && c.verify.output === undefined), "full.yaml has a verify with and without output");
 });
+
+test("a manual check needs its text: one plain line of at most 160 characters", () => {
+  const errorsOf = (f) => validateStageSchema(parse(load("invalid", f))).errors.join("\n");
+  assert.match(errorsOf("manual-without-text.yaml"), /must have required property 'text'/);
+  assert.match(errorsOf("manual-text-too-long.yaml"), /text must NOT have more than 160 characters/);
+  assert.match(errorsOf("manual-unknown-key.yaml"), /must NOT have additional properties/);
+  assert.match(errorsOf("manual-text-markdown.yaml"), /text must match pattern/);
+  const doc = parse(load("valid", "full.yaml"));
+  const manual = doc.sections.flatMap((s) => s.steps ?? []).map((st) => st.check).filter((c) => c?.kind === "manual");
+  assert.ok(manual.some((c) => c.verify) && manual.some((c) => !c.verify), "full.yaml has a manual check with and without verify");
+});

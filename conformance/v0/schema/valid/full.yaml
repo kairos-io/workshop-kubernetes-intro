@@ -94,6 +94,10 @@ sections:
       - id: vm-any
         check: { kind: vm-running }
         onFail: Start the VM.
+      - id: manual
+        check: { kind: manual, text: Setup finished and the status command lists what it manages. }
+      - id: manual-verify
+        check: { kind: manual, text: The setup finished., verify: { command: kairos-lab status, output: "platform: linux/amd64\nvms: none" } }
       - id: prose-only
         text: A step that is only text.
   - title: Section with no steps

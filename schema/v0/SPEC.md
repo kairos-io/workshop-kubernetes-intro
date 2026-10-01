@@ -122,8 +122,11 @@ Kinds in v0:
 | `image-exists` | `image` | The container image is present in the runtime named by the `runtime` fact. |
 | `iso-exists` | none | The ISO file that the workshop builds exists. |
 | `vm-running` | `name` (optional) | A VM is running. |
+| `manual` | `text` | Something no other kind names. The learner confirms it by hand. |
 
 Parameters are restricted by pattern in the schema, so they cannot hold shell metacharacters.
+
+A `manual` check has no parameters to build a sentence from, so it carries its own sentence: `check: { kind: manual, text: "<one sentence>" }`. `text` is required. It is plain text on one line, with no backtick and at most 160 characters, and it is written as a sentence that ends with a period. A reader shows `text` as the check sentence, unchanged in the lines that continue after "Check: ", and capitalized in the places that show a check on its own line. A reader never runs a manual check. `verify` is allowed on it like on every kind, and it is how a manual check says what the learner should run.
 
 A check can have `verify`: `{ command, output? }`. It tells the learner how to check by hand. It is allowed on every kind and it lives inside the check, so a step cannot have `verify` without a `check`.
 
@@ -134,7 +137,7 @@ A check can have `verify`: `{ command, output? }`. It tells the learner how to c
 Reader duties:
 
 - A reader that runs a check passes each parameter as one argument to a program. It never builds a shell line from a parameter.
-- A reader that does not know a kind treats the step as a manual check.
+- A reader that does not know a kind treats the step as a manual check. If the check has `text`, the reader shows `text` as the sentence.
 - A reader that does not run checks shows the wording and lets the reader confirm by hand.
 - A failed check or "it did not work" shows `onFail`. `onFail` is valid without a `check`.
 
@@ -254,6 +257,7 @@ Unreleased v0:
 - `tools/lib/loadout.mjs` (`nextQuestion`, `applyAnswer`) and `tools/lib/prompt.mjs` (`fillPrompt`, `buildStepPrompt`, `buildTipPrompt`) are reference implementations, with fixtures in `conformance/v0/loadout/` and `conformance/v0/prompt/`.
 - The `virtualization` value `other` is now `own`.
 - A check can carry `verify` (`command`, `output`), the command a learner runs to check the step and an example of the output. It is allowed on every check kind. The markdown publisher writes it under the check sentence.
+- A check can have the kind `manual` with a required `text` (one plain sentence, at most 160 characters). A reader shows `text` as the check sentence, in the publisher, in the game and in the `{expect}` slot of a help prompt. The outline reports `checkKind: "manual"`.
 - The game content carries the condition of a stage tip as `tipOnly` for every stage that has a `tip`, with the default `{ virtualization: own }` applied when the stage sets no `when`.
 
 ## The visible outline

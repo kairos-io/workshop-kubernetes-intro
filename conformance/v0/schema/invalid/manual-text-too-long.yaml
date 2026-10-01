@@ -1,0 +1,10 @@
+# expect-error: the text of a manual check is one sentence of at most 160 characters
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: manual, text: "This sentence is much too long for a check because it keeps going on and on without any real need, and it is here only to cross the limit of one hundred and sixty characters." }

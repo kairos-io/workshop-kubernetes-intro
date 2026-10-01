@@ -155,6 +155,8 @@ test("rule 7: every step has a prompt, from the publisher's wording when there i
   assert.equal(checkPrompt({ kind: "command-available", command: "x" }), "The x command is available in a new terminal.");
   assert.equal(checkPrompt({ kind: "image-exists", image: "a/b:c" }), "The a/b:c image is present in your container runtime.");
   assert.equal(checkPrompt({ kind: "iso-exists" }), "The ISO file exists.");
+  assert.equal(checkPrompt({ kind: "manual", text: "Setup finished." }), "Setup finished.");
+  assert.equal(checkPrompt({ kind: "manual", text: "setup finished." }), "Setup finished.");
   assert.equal(checkPrompt({ kind: "vm-running" }), "The VM is running.");
   assert.equal(checkPrompt({ kind: "vm-running", name: "demo" }), "The demo VM is running.");
   assert.deepEqual(PROMPTS, { step: "You finished this step.", read: "You read this.", stage: "You finished this stage." });
