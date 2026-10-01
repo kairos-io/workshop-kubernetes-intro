@@ -297,3 +297,10 @@ test("the page title, the badge file name and aria text, and the free text place
   }
   assert.ok(!/Kairos workshop/.test(page), "no workshop title left in the page");
 });
+
+test("the boss sheet tells the learner how to leave it, from the theme", () => {
+  assert.equal(typeof base().sheet.exit_hint, "string");
+  assert.equal(theme().sheet.exit_hint, base().sheet.exit_hint);
+  const page = readFileSync(join(root, "kai/web/KAI Sheet.dc.html"), "utf8");
+  assert.ok(page.includes("{{ exitHint }}"), "the sheet page shows exitHint");
+});

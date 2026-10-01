@@ -15,7 +15,7 @@
       <span aria-hidden="true" style="display:flex;gap:14px;color:#3C3C3C;"><sc-for list="{{ menu }}" as="m" hint-placeholder-count="7"><span>{{ m }}</span></sc-for></span>
     </div>
     <span style="flex:1;"></span>
-    <span style="color:#555;font-size:12px;">{{ appName }} · All changes saved</span>
+    <span style="color:#555;font-size:12px;">{{ appName }} · All changes saved · {{ exitHint }}</span>
   </div>
   <div aria-hidden="true" style="display:flex;align-items:center;gap:14px;padding:6px 14px;margin:4px 10px;background:#F1F3F4;color:#444;">
     <span>↶</span><span>↷</span><span>100%</span><span>|</span><span>Arial</span><span>10</span><span>|</span><span style="font-weight:700;">B</span><span style="font-style:italic;">I</span><span style="text-decoration:line-through;">S</span><span>|</span><span>≡</span><span>Σ</span>
@@ -74,7 +74,7 @@ class Component extends DCLogic {
     const ol = (r, c) => sel.r === r && sel.c === c ? '2px solid #1A73E8' : 'none';
     return {
       pos: this.props.contained ? 'relative' : 'fixed', h: this.props.contained ? '800px' : 'auto',
-      docTitle: sh.docTitle, appName: sh.appName, menu: sh.menu || [],
+      docTitle: sh.docTitle, appName: sh.appName, exitHint: sh.exitHint || '', menu: sh.menu || [],
       selAddr: L[sel.c] + sel.r, selValue: cellVal(sel.r, sel.c),
       activeLabel: (sh.tabs.find(t => t.id === active) || {}).label || '',
       letters: L.split('').map((t, c) => ({ t, bg: sel.c === c ? '#D3E3FD' : '#F8F9FA' })),

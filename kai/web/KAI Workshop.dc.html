@@ -802,6 +802,7 @@ class Component extends DCLogic {
     const a = document.activeElement, onCtl = a && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName);
     const k = e.key, v = this.state.view, E = window.KAIE;
     if (k === 'Escape') {
+      if (this.state.boss) { e.preventDefault(); this.setState({ boss: false }); return; }
       if (this.state.settingsOpen || this.state.skipAsk || v === 'chooser' || v === 'loadout') return;
       e.preventDefault(); this.setState({ boss: !this.state.boss }); return;
     }
@@ -985,7 +986,7 @@ class Component extends DCLogic {
     if (s.boss) {
       const sh = W.sheet || {}, bs = s.stage || ids[0];
       out.boss = { on: true, contained: this.props.keys === false, sheet: {
-        docTitle: sh.docTitle, appName: sh.appName, menu: sh.menu || [], columns: sh.columns || [],
+        docTitle: sh.docTitle, appName: sh.appName, exitHint: sh.exit_hint, menu: sh.menu || [], columns: sh.columns || [],
         tabs: ids.map(id => ({ id, label: E.stageNo(id) + ' ' + E.stage(id).title })), active: bs, step: s.step,
         stages: ids.map(id => ({ id, rows: E.steps(id, p.facts).map((st2, i) => {
           const rows2 = E.flatten(st2.blocks, { key: id + '/' + st2.id, facts: p.facts, sel: s.alt, showAll: {}, layout: 'stacked' });

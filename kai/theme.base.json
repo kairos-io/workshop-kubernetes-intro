@@ -495,6 +495,7 @@
  "sheet": {
   "docTitle": "Q4 budget",
   "appName": "Spreadsheet",
+  "exit_hint": "Press Esc to go back",
   "menu": [
    "File",
    "Edit",
