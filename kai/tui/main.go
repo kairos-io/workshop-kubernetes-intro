@@ -36,6 +36,7 @@ type Pal struct {
 	Hadron   []string `json:"hadron"`
 	Player   []string `json:"player"`
 	Portrait []string `json:"portrait"`
+	Page     map[string]string `json:"page"`
 }
 
 type Europe struct {
@@ -105,7 +106,34 @@ type Theme struct {
 	Links struct {
 		PlainView string `json:"plainView"`
 	} `json:"links"`
-	Attribution string `json:"attribution"`
+	Footer  string `json:"footer"`
+	Welcome struct {
+		Mentor string `json:"mentor"`
+		Pages  []struct {
+			Line string `json:"line"`
+			Md   string `json:"md"`
+		} `json:"pages"`
+		Next  string `json:"next"`
+		Back  string `json:"back"`
+		Start string `json:"start"`
+	} `json:"welcome"`
+	Loadout struct {
+		Progress  string                   `json:"progress"`
+		Next      string                   `json:"next"`
+		Back      string                   `json:"back"`
+		Done      string                   `json:"done"`
+		Questions map[string]LoadoutQ      `json:"questions"`
+		Notices   map[string]LoadoutNotice `json:"notices"`
+	} `json:"loadout"`
+	Prompts struct {
+		VirtPlaceholder  string   `json:"virtPlaceholder"`
+		LogsPlaceholder  string   `json:"logsPlaceholder"`
+		UnsetPlaceholder string   `json:"unsetPlaceholder"`
+		NoCommands       string   `json:"noCommands"`
+		Warning          string   `json:"warning"`
+		Fail             []string `json:"fail"`
+		Tip              []string `json:"tip"`
+	} `json:"prompts"`
 	XP          struct {
 		Step      int `json:"step"`
 		SideQuest int `json:"sideQuest"`
@@ -116,6 +144,7 @@ type Theme struct {
 		Characters  []Character `json:"characters"`
 	} `json:"player"`
 	Mentors  []Mentor                   `json:"mentors"`
+	CheckKinds map[string]string        `json:"checkKinds"`
 	Stages   []ThemeStage               `json:"stages"`
 	Items    map[string]ItemDef         `json:"items"`
 	Mega     map[string]Mega            `json:"mega"`
@@ -124,8 +153,35 @@ type Theme struct {
 }
 
 type Opt struct {
-	ID    string `json:"id"`
-	Label string `json:"label"`
+	ID     string            `json:"id"`
+	Label  string            `json:"label"`
+	Forces map[string]string `json:"forces"`
+	Notice string            `json:"notice"`
+}
+
+type LoadoutQ struct {
+	Title   string `json:"title"`
+	Md      string `json:"md"`
+	Options map[string]struct {
+		Badge string `json:"badge"`
+		Md    string `json:"md"`
+	} `json:"options"`
+	When []struct {
+		Only Only   `json:"only"`
+		Md   string `json:"md"`
+	} `json:"when"`
+	Help *struct {
+		Label string `json:"label"`
+		Md    string `json:"md"`
+		Code  string `json:"code"`
+		After string `json:"after"`
+	} `json:"help"`
+}
+
+type LoadoutNotice struct {
+	Title string `json:"title"`
+	Line  string `json:"line"`
+	Md    string `json:"md"`
 }
 
 type Fact struct {
@@ -133,6 +189,7 @@ type Fact struct {
 	Label    string `json:"label"`
 	Question string `json:"question"`
 	Options  []Opt  `json:"options"`
+	AskIf    Only   `json:"askIf"`
 }
 
 type Only map[string][]string
@@ -158,11 +215,19 @@ type Block struct {
 type Step struct {
 	ID       string  `json:"id"`
 	Title    string  `json:"title"`
+	Goal     string  `json:"goal"`
 	Line     string  `json:"line"`
 	Optional bool    `json:"optional"`
 	Only     Only    `json:"only"`
 	Blocks   []Block `json:"blocks"`
-	Check    struct {
+	Help     struct {
+		Tool   string `json:"tool"`
+		Source string `json:"source"`
+		Docs   string `json:"docs"`
+		Expect string `json:"expect"`
+	} `json:"help"`
+	Check struct {
+		Kind   string  `json:"kind"`
 		Prompt string  `json:"prompt"`
 		Fail   []Block `json:"fail"`
 	} `json:"check"`
@@ -173,6 +238,16 @@ type Stage struct {
 	Title string `json:"title"`
 	Goal  string `json:"goal"`
 	Steps []Step `json:"steps"`
+	Tool  struct {
+		Name string `json:"name"`
+		URL  string `json:"url"`
+	} `json:"tool"`
+	Docs   string `json:"docs"`
+	Tip    string `json:"tip"`
+	NoSkip *struct {
+		When   Only   `json:"when"`
+		Reason string `json:"reason"`
+	} `json:"noSkip"`
 }
 
 type Content struct {
@@ -198,6 +273,7 @@ type Progress struct {
 	XP          int               `json:"xp"`
 	CompletedAt string            `json:"completedAt"`
 	Settings    Settings          `json:"settings"`
+	VirtName    string            `json:"virtName"`
 }
 
 var S Sprites
@@ -321,33 +397,116 @@ var mdRe = regexp.MustCompile("(\\*\\*[^*]+\\*\\*|`[^`]+`|\\[[^\\]]+\\]\\([^)]+\
 var parRe = regexp.MustCompile(`\n\s*\n`)
 var linkRe = regexp.MustCompile(`\[([^\]]+)\]\(([^)]+)\)`)
 
-func md(s string) [][]Seg {
-	var out [][]Seg
+type MdBlock struct {
+	K     string // "p", "ul", "ol"
+	Segs  []Seg
+	Items [][]Seg
+	Start int
+}
+
+var liRe = regexp.MustCompile(`^\s*(?:([-*])|(\d+)[.)])\s+(.*)$`)
+
+func inline(par string) []Seg {
+	var segs []Seg
+	last := 0
+	for _, m := range mdRe.FindAllStringIndex(par, -1) {
+		if m[0] > last {
+			segs = append(segs, Seg{T: "text", V: par[last:m[0]]})
+		}
+		tok := par[m[0]:m[1]]
+		switch tok[0] {
+		case '*':
+			segs = append(segs, Seg{T: "b", V: tok[2 : len(tok)-2]})
+		case '`':
+			segs = append(segs, Seg{T: "code", V: tok[1 : len(tok)-1]})
+		default:
+			mm := linkRe.FindStringSubmatch(tok)
+			segs = append(segs, Seg{T: "a", V: strings.ReplaceAll(mm[1], "`", ""), Href: mm[2]})
+		}
+		last = m[1]
+	}
+	if last < len(par) {
+		segs = append(segs, Seg{T: "text", V: par[last:]})
+	}
+	return segs
+}
+
+// md: paragraphs (blank line), "- " unordered and "1. " ordered lists. Same as kai-engine.js md().
+func md(s string) []MdBlock {
+	var out []MdBlock
 	for _, par := range parRe.Split(s, -1) {
-		var segs []Seg
-		last := 0
-		for _, m := range mdRe.FindAllStringIndex(par, -1) {
-			if m[0] > last {
-				segs = append(segs, Seg{T: "text", V: par[last:m[0]]})
+		var buf []string
+		open := -1
+		flush := func() {
+			if len(buf) > 0 {
+				out = append(out, MdBlock{K: "p", Segs: inline(strings.Join(buf, " "))})
+				buf = nil
 			}
-			tok := par[m[0]:m[1]]
-			switch tok[0] {
-			case '*':
-				segs = append(segs, Seg{T: "b", V: tok[2 : len(tok)-2]})
-			case '`':
-				segs = append(segs, Seg{T: "code", V: tok[1 : len(tok)-1]})
-			default:
-				mm := linkRe.FindStringSubmatch(tok)
-				segs = append(segs, Seg{T: "a", V: mm[1], Href: mm[2]})
+		}
+		for _, l := range strings.Split(par, "\n") {
+			m := liRe.FindStringSubmatch(l)
+			if m == nil {
+				if len(buf) == 0 && open >= 0 && strings.HasPrefix(l, " ") && strings.TrimSpace(l) != "" {
+					it := &out[open].Items[len(out[open].Items)-1]
+					*it = append(append(*it, Seg{T: "text", V: " "}), inline(strings.TrimSpace(l))...)
+					continue
+				}
+				if strings.TrimSpace(l) != "" {
+					buf = append(buf, strings.TrimSpace(l))
+				}
+				open = -1
+				continue
 			}
-			last = m[1]
+			flush()
+			k := "ol"
+			if m[1] != "" {
+				k = "ul"
+			}
+			if open >= 0 && out[open].K == k {
+				out[open].Items = append(out[open].Items, inline(m[3]))
+			} else {
+				st, _ := strconv.Atoi(m[2])
+				if st == 0 {
+					st = 1
+				}
+				out = append(out, MdBlock{K: k, Items: [][]Seg{inline(m[3])}, Start: st})
+				open = len(out) - 1
+			}
 		}
-		if last < len(par) {
-			segs = append(segs, Seg{T: "text", V: par[last:]})
-		}
-		out = append(out, segs)
+		flush()
 	}
 	return out
+}
+
+func segText(segs []Seg) string {
+	var sb strings.Builder
+	for _, s := range segs {
+		sb.WriteString(s.V)
+		if s.T == "a" {
+			sb.WriteString(" <" + s.Href + ">")
+		}
+	}
+	return sb.String()
+}
+
+func mdPlain(s string) string {
+	var parts []string
+	for _, b := range md(s) {
+		if b.K == "p" {
+			parts = append(parts, segText(b.Segs))
+			continue
+		}
+		var ls []string
+		for i, it := range b.Items {
+			mk := "-"
+			if b.K == "ol" {
+				mk = strconv.Itoa(b.Start+i) + "."
+			}
+			ls = append(ls, mk+" "+segText(it))
+		}
+		parts = append(parts, strings.Join(ls, "\n"))
+	}
+	return strings.Join(parts, "\n\n")
 }
 
 // ---------------------------------------------------------------- facts + flatten (mirror kai-engine.js)
@@ -429,7 +588,7 @@ func loadoutText(facts map[string]string) string {
 type Row struct {
 	Type, Key, Only, Code, Name, Kind, Text, Label string
 	Inset, Total                                   int
-	Paras                                          [][]Seg
+	Blocks                                         []MdBlock
 	IsFile                                         bool
 	Lines                                          []string
 }
@@ -441,16 +600,16 @@ func flatten(blocks []Block, key string, facts map[string]string, showAll map[st
 		if b.Type != "alternatives" && !matches(b.Only, facts) {
 			continue
 		}
-		only := onlyText(b.Only)
+		only := onlyLabel(b.Only, facts)
 		switch b.Type {
 		case "text":
-			out = append(out, Row{Type: "text", Key: k, Inset: inset, Paras: md(b.Md), Only: only})
+			out = append(out, Row{Type: "text", Key: k, Inset: inset, Blocks: md(b.Md), Only: only})
 		case "command", "file":
 			out = append(out, Row{Type: "command", Key: k, Inset: inset, IsFile: b.Type == "file", Name: b.Name, Code: b.Code, Only: only})
 		case "output":
 			out = append(out, Row{Type: "output", Key: k, Inset: inset, Lines: strings.Split(b.Text, "\n"), Only: only})
 		case "callout":
-			out = append(out, Row{Type: "callout", Key: k, Inset: inset, Kind: b.Kind, Paras: md(b.Md), Only: only})
+			out = append(out, Row{Type: "callout", Key: k, Inset: inset, Kind: b.Kind, Blocks: md(b.Md), Only: only})
 		case "alternatives":
 			all := showAll[k]
 			sub := facts
@@ -473,12 +632,205 @@ func flatten(blocks []Block, key string, facts map[string]string, showAll map[st
 			}
 			for _, i := range vis {
 				it := b.Items[i]
-				out = append(out, Row{Type: "altHeader", Key: k + "/" + strconv.Itoa(i) + "/h", Inset: inset + 1, Label: it.Label, Only: onlyText(it.Only)})
+				out = append(out, Row{Type: "altHeader", Key: k + "/" + strconv.Itoa(i) + "/h", Inset: inset + 1, Label: it.Label, Only: onlyLabel(it.Only, sub)})
 				out = flatten(it.Blocks, k+"/"+strconv.Itoa(i), sub, showAll, inset+1, out)
 			}
 		}
 	}
 	return out
+}
+
+func unset(facts map[string]string, k string) bool { v := facts[k]; return v == "" || v == "unsure" }
+
+// onlyLabel shows "Only if" only for facts the loadout has not answered (same as kai-engine.js).
+func onlyLabel(only Only, facts map[string]string) string {
+	o := Only{}
+	for k, v := range only {
+		if unset(facts, k) {
+			o[k] = v
+		}
+	}
+	return onlyText(o)
+}
+
+func strict(when Only, facts map[string]string) bool {
+	for k, vals := range when {
+		if unset(facts, k) {
+			return false
+		}
+		ok := false
+		for _, v := range vals {
+			if v == facts[k] {
+				ok = true
+			}
+		}
+		if !ok {
+			return false
+		}
+	}
+	return true
+}
+
+type Question struct{ Type, ID string }
+
+func loadoutQuestions(facts map[string]string) []Question {
+	var out []Question
+	for _, f := range C.Facts {
+		if len(f.AskIf) > 0 && !strict(f.AskIf, facts) {
+			continue
+		}
+		out = append(out, Question{"fact", f.ID})
+		for _, o := range f.Options {
+			if o.ID == facts[f.ID] && o.Notice != "" {
+				out = append(out, Question{"notice", o.Notice})
+			}
+		}
+	}
+	return out
+}
+
+func optOf(fid, oid string) *Opt {
+	if f := fact(fid); f != nil {
+		for i := range f.Options {
+			if f.Options[i].ID == oid {
+				return &f.Options[i]
+			}
+		}
+	}
+	return nil
+}
+
+func withFact(facts map[string]string, fid, oid string) map[string]string {
+	out := map[string]string{}
+	for k, v := range facts {
+		out[k] = v
+	}
+	prev := optOf(fid, facts[fid])
+	out[fid] = oid
+	forced := map[string]bool{}
+	for _, ff := range C.Facts {
+		if o := optOf(ff.ID, out[ff.ID]); o != nil {
+			for k, v := range o.Forces {
+				out[k] = v
+				forced[k] = true
+			}
+		}
+	}
+	if prev != nil {
+		for k := range prev.Forces {
+			if !forced[k] {
+				out[k] = "unsure"
+			}
+		}
+	}
+	for _, ff := range C.Facts {
+		if len(ff.AskIf) > 0 && !strict(ff.AskIf, out) && !forced[ff.ID] {
+			out[ff.ID] = "unsure"
+		}
+	}
+	return out
+}
+
+func isMaster(facts map[string]string) bool { return facts["virtualization"] == "own" }
+
+func skipBlock(p *Progress, id string) string {
+	s := stageC(id)
+	if s.NoSkip != nil && strict(s.NoSkip.When, p.Facts) {
+		return s.NoSkip.Reason
+	}
+	return ""
+}
+
+var phRe = regexp.MustCompile(`\{(\w+)\}`)
+
+func stageLink(href string) string {
+	if strings.HasPrefix(href, "stage:") {
+		id := strings.SplitN(strings.TrimPrefix(href, "stage:"), "#", 2)[0]
+		if stageNo(id) > 0 {
+			return id
+		}
+	}
+	return ""
+}
+
+func checkKind(st Step) string {
+	if l, ok := W.CheckKinds[st.Check.Kind]; ok {
+		return l
+	}
+	if st.Check.Kind != "" {
+		return st.Check.Kind
+	}
+	return "manual"
+}
+
+// prompt builds an AI prompt from theme.prompts (same as kai-engine.js prompt()).
+func prompt(kind string, p *Progress, sid string, st *Step) string {
+	P, f, sc := W.Prompts, p.Facts, stageC(sid)
+	lab := func(id string) string {
+		if unset(f, id) {
+			return fill(P.UnsetPlaceholder, map[string]string{"fact": strings.ToUpper(fact(id).Label)})
+		}
+		return optLabel(id, f[id])
+	}
+	virt := strings.TrimSpace(p.VirtName)
+	if unset(f, "virtualization") {
+		virt = lab("virtualization")
+	} else if f["virtualization"] == "kairos-lab" {
+		virt = "kairos-lab"
+	} else if virt == "" {
+		virt = P.VirtPlaceholder
+	}
+	v := map[string]string{"stage": sc.Title, "os": lab("os"), "arch": lab("arch"), "runtime": lab("runtime"), "virtualization": virt,
+		"tool": sc.Tool.Name, "source": sc.Tool.URL, "docs": sc.Docs, "logs": P.LogsPlaceholder, "goal": sc.Goal}
+	if v["goal"] == "" {
+		v["goal"] = sc.Title
+	}
+	if st != nil {
+		rows := flatten(st.Blocks, stepKey(sid, st.ID), f, map[string]bool{}, 0, nil)
+		var cmds, outs []string
+		for _, r := range rows {
+			if r.Type == "command" && !r.IsFile {
+				cmds = append(cmds, r.Code)
+			}
+			if r.Type == "output" {
+				outs = append(outs, strings.Join(r.Lines, "\n"))
+			}
+		}
+		v["step"] = st.Title
+		v["tool"], v["source"], v["docs"] = st.Help.Tool, st.Help.Source, st.Help.Docs
+		v["goal"] = st.Goal
+		if v["goal"] == "" {
+			v["goal"] = st.Title
+		}
+		v["commands"] = strings.Join(cmds, "\n\n")
+		if v["commands"] == "" {
+			v["commands"] = P.NoCommands
+		}
+		v["expected"] = st.Check.Prompt
+		if st.Help.Expect != "" {
+			v["expected"] = st.Help.Expect
+		}
+		_ = outs
+	}
+	v["ask"] = fill(sc.Tip, v)
+	tpl := P.Fail
+	if kind == "tip" {
+		tpl = P.Tip
+	}
+	var ls []string
+	// a line whose placeholders resolve to nothing is dropped, never filled with made-up text
+	for _, l := range tpl {
+		keep := true
+		for _, m := range phRe.FindAllStringSubmatch(l, -1) {
+			if val, ok := v[m[1]]; ok && strings.TrimSpace(val) == "" {
+				keep = false
+			}
+		}
+		if keep {
+			ls = append(ls, fill(l, v))
+		}
+	}
+	return strings.Join(ls, "\n")
 }
 
 // ---------------------------------------------------------------- stages + progress (slug ids, order from content.json)
@@ -653,6 +1005,7 @@ func loadProgress() *Progress {
 		p.Skipped = q.Skipped
 	}
 	p.XP, p.Started, p.Name, p.Character, p.CompletedAt = q.XP, q.Started, q.Name, q.Character, q.CompletedAt
+	p.VirtName = q.VirtName
 	if q.Settings.Palette != "" {
 		p.Settings = q.Settings
 	}
@@ -1266,6 +1619,8 @@ func (g *Grid) lines() []string {
 // ---------------------------------------------------------------- app
 
 type App struct {
+	welcomePage, lq, optCursor int
+	editVirt                   bool
 	p                                                    *Progress
 	view, status, toast, stage, palette, nameDraft       string
 	step, cursor, factCursor, mapCursor, charCursor      int
@@ -1297,56 +1652,128 @@ func (a *App) instructions(st Step, sid string, width int, sel St) []Line {
 			push()
 		}
 	}
-	para := func(paras [][]Seg, ind int, lead string) {
-		for pi, pa := range paras {
-			type word struct {
-				s string
-				b bool
+	words := func(segs []Seg) []SegSt {
+		var out []SegSt
+		for _, sg := range segs {
+			st := St{}
+			if sg.T == "b" || sg.T == "code" {
+				st = bold
 			}
-			var words []word
-			for _, sg := range pa {
-				for _, w := range strings.Fields(sg.V) {
-					words = append(words, word{w, sg.T == "b" || sg.T == "code"})
-				}
-			}
-			for _, sg := range pa {
-				if sg.T == "a" {
-					words = append(words, word{"<" + sg.Href + ">", false})
-				}
-			}
-			var cur []SegSt
-			n, max := 0, width-ind
-			if pi == 0 && lead != "" {
-				cur = append(cur, SegSt{S: lead, St: bold})
-				n = rlen(lead)
-			}
-			for _, w := range words {
-				wl := rlen(w.s)
-				if n > 0 && n+1+wl > max {
-					lines = append(lines, Line{Segs: append([]SegSt{sp(ind)}, cur...), Cmd: -1})
-					cur, n = nil, 0
-				}
-				if n > 0 {
-					cur = append(cur, SegSt{S: " "})
-					n++
-				}
-				s2 := St{}
-				if w.b {
-					s2 = bold
-				}
-				cur = append(cur, SegSt{S: w.s, St: s2})
-				n += wl
-			}
-			if len(cur) > 0 {
-				lines = append(lines, Line{Segs: append([]SegSt{sp(ind)}, cur...), Cmd: -1})
+			for _, w := range strings.Fields(sg.V) {
+				out = append(out, SegSt{S: w, St: st})
 			}
 		}
+		for _, sg := range segs {
+			if sg.T == "a" {
+				if sl := stageLink(sg.Href); sl != "" {
+					out = append(out, SegSt{S: fmt.Sprintf("(stage %d)", stageNo(sl))})
+				} else {
+					out = append(out, SegSt{S: "<" + sg.Href + ">"})
+				}
+			}
+		}
+		return out
+	}
+	flow := func(ws []SegSt, ind int, lead string, hang int) {
+		var cur []SegSt
+		n, firstLine := 0, true
+		max := width - ind
+		if lead != "" {
+			cur = append(cur, SegSt{S: lead, St: bold})
+			n = rlen(lead)
+		}
+		emit := func() {
+			in := ind
+			if !firstLine {
+				in += hang
+			}
+			lines = append(lines, Line{Segs: append([]SegSt{sp(in)}, cur...), Cmd: -1})
+		}
+		for _, w := range ws {
+			lim := max
+			if !firstLine {
+				lim = max - hang
+			}
+			wl := rlen(w.S)
+			if n > 0 && n+1+wl > lim {
+				emit()
+				cur, n, firstLine = nil, 0, false
+			}
+			if n > 0 {
+				cur = append(cur, SegSt{S: " "})
+				n++
+			}
+			cur = append(cur, w)
+			n += wl
+		}
+		if len(cur) > 0 {
+			emit()
+		}
+	}
+	para := func(blocks []MdBlock, ind int, lead string) {
+		for bi, b := range blocks {
+			l := ""
+			if bi == 0 {
+				l = lead
+			}
+			if b.K == "p" {
+				flow(words(b.Segs), ind, l, 0)
+				continue
+			}
+			if l != "" {
+				push(sp(ind), SegSt{S: l, St: bold})
+			}
+			for i, it := range b.Items {
+				mk := "•"
+				if !unicode {
+					mk = "-"
+				}
+				if b.K == "ol" {
+					mk = strconv.Itoa(b.Start+i) + "."
+				}
+				flow(words(it), ind, mk, rlen(mk)+1)
+			}
+		}
+	}
+	P := func(s string) []MdBlock { return []MdBlock{{K: "p", Segs: []Seg{{T: "text", V: s}}}} }
+	if so := onlyLabel(st.Only, a.p.Facts); so != "" {
+		push(sp(2), SegSt{S: "[" + so + "]"})
+	}
+	if (st.Help.Tool != "" || st.Help.Docs != "") && a.status != "tip" {
+		s := " " + st.Help.Tool
+		if st.Help.Source != "" {
+			s += " <" + st.Help.Source + ">"
+		}
+		if st.Help.Docs != "" {
+			s += "  " + L["docs"] + ": <" + st.Help.Docs + ">"
+		}
+		flow(append([]SegSt{{S: L["tool"] + ":", St: bold}}, words([]Seg{{T: "text", V: s}})...), 2, "", 2)
 	}
 	key := stepKey(sid, st.ID)
 	rows := flatten(st.Blocks, key, a.p.Facts, a.showAll, 0, nil)
 	if a.status == "failed" {
 		rows = append(rows, Row{Type: "trouble"})
 		rows = flatten(st.Check.Fail, key+"/fail", a.p.Facts, a.showAll, 1, rows)
+	}
+	aiRows := func(kind, title string) {
+		var sp2 *Step
+		if kind == "fail" {
+			sp2 = &st
+		}
+		code := prompt(kind, a.p, sid, sp2)
+		rows = append(rows, Row{Type: "heading", Text: title})
+		rows = append(rows, Row{Type: "callout", Kind: "warning", Blocks: md(W.Prompts.Warning)})
+		if isMaster(a.p.Facts) {
+			rows = append(rows, Row{Type: "text", Blocks: P("Press v to type the name of your virtualization software into the prompt.")})
+		}
+		rows = append(rows, Row{Type: "command", IsFile: true, Name: "AI prompt", Code: code})
+	}
+	if a.status == "failed" {
+		aiRows("fail", L["ai_title"])
+	}
+	if a.status == "tip" {
+		rows = nil
+		aiRows("tip", L["tip_title"])
 	}
 	a.cmds = nil
 	ci := 0
@@ -1360,7 +1787,7 @@ func (a *App) instructions(st Step, sid string, width int, sel St) []Line {
 		}
 		switch r.Type {
 		case "text":
-			para(r.Paras, ind, "")
+			para(r.Blocks, ind, "")
 		case "heading":
 			if r.Text != "" {
 				push(sp(ind), SegSt{S: r.Text, St: bold})
@@ -1385,7 +1812,16 @@ func (a *App) instructions(st Step, sid string, width int, sel St) []Line {
 			}
 			lines = append(lines, Line{Segs: []SegSt{sp(ind), {S: pre + label, St: s2}}, Cmd: ci, Label: true})
 			ci2 := ind + 2
-			for _, l := range strings.Split(r.Code, "\n") {
+			cl := strings.Split(r.Code, "\n")
+			for li, l0 := range cl {
+				l := l0
+				if !r.IsFile {
+					if li > 0 && strings.HasSuffix(strings.TrimRight(cl[li-1], " "), "\\") {
+						l = "  " + l0
+					} else {
+						l = "$ " + l0
+					}
+				}
 				rs := []rune(l)
 				firstW := width - ci2
 				if len(rs) <= firstW {
@@ -1412,14 +1848,15 @@ func (a *App) instructions(st Step, sid string, width int, sel St) []Line {
 			if ic == "" {
 				ic = "[i]"
 			}
-			para(r.Paras, ind, ic+" "+L[r.Kind]+":")
+			para(r.Blocks, ind, ic+" "+L[r.Kind]+":")
 		case "empty":
 			push(sp(ind), SegSt{S: "? " + L["empty"], St: bold})
-			para([][]Seg{{{T: "text", V: "Your loadout: " + loadoutText(a.p.Facts) + ". Press a to show all " + strconv.Itoa(r.Total) + " options, l to change your loadout."}}}, ind+2, "")
+			para(P("Your loadout: " + loadoutText(a.p.Facts) + ". Press a to show all " + strconv.Itoa(r.Total) + " options, l to change your loadout."), ind+2, "")
 		case "notice":
 			push(sp(ind), SegSt{S: L["showing_all"] + " (a: match my loadout)"})
 		case "trouble":
-			push(sp(ind), SegSt{S: " " + G.Fail + " " + L["troubleshooting"] + " " + G.Dot + " " + L["no_penalty"] + " ", St: sel})
+			push(sp(ind), SegSt{S: " " + G.Fail + " " + L["troubleshooting"] + " ", St: sel})
+			flow(words([]Seg{{T: "text", V: L["common_fixes"] + ", or copy the AI prompt below (Tab to it, then c)."}}), ind, "", 0)
 		}
 	}
 	return lines
@@ -1490,7 +1927,7 @@ func (a *App) render(w, h int) *Grid {
 			}
 			g.put((w-48)/2, y+i*2, pad(pre+fmt.Sprintf("%-12s", it[0])+it[1], 48), st)
 		}
-		g.put(2, h-3, clip(W.Attribution, w-4), St{})
+		g.put(2, h-3, clip(W.Footer, w-4), St{})
 		keys("up/down move" + D + "Enter select" + D + "q quit")
 
 	case "name":
@@ -1512,6 +1949,30 @@ func (a *App) render(w, h int) *Grid {
 		}
 		keys("type your name" + D + "Enter confirm" + D + "Esc back")
 
+	case "welcome":
+		wm := mentorByID(W.Welcome.Mentor)
+		pi := mini(a.welcomePage, len(W.Welcome.Pages)-1)
+		g.bar(0, " WELCOME"+D+NAME, fmt.Sprintf("Page %d of %d ", pi+1, len(W.Welcome.Pages)), barSt)
+		g.box(1, 1, 28, 14, St{}, G)
+		g.sprite(3, 2, S.Portraits[wm.Portrait], PO, false, -1)
+		g.put(31, 2, wm.Name, St{B: true})
+		g.put(31, 3, wm.Country, St{})
+		n := g.para(31, 5, mdPlain(fill(W.Welcome.Pages[pi].Md, map[string]string{"name": name})), w-33, St{})
+		var dots []string
+		for i := range W.Welcome.Pages {
+			if i <= pi {
+				dots = append(dots, G.Full)
+			} else {
+				dots = append(dots, G.Empty)
+			}
+		}
+		g.put(31, mini(h-3, 6+n), strings.Join(dots, " "), St{})
+		next := "next"
+		if pi == len(W.Welcome.Pages)-1 {
+			next = strings.ToLower(W.Welcome.Start)
+		}
+		keys("Enter " + next + D + "left back" + D + "q quit")
+
 	case "character":
 		g.bar(0, " NEW GAME"+D+NAME, "kai ", barSt)
 		g.put(2, 2, "Pick your look", St{B: true})
@@ -1532,35 +1993,90 @@ func (a *App) render(w, h int) *Grid {
 		keys("left/right choose" + D + "Enter confirm" + D + "Esc back")
 
 	case "loadout":
-		g.bar(0, " LOADOUT"+D+NAME, "kai ", barSt)
-		g.put(2, 2, "Choose your loadout", St{B: true})
+		LO := W.Loadout
+		qs := loadoutQuestions(p.Facts)
+		qi := mini(a.lq, len(qs)-1)
+		q := qs[qi]
+		g.bar(0, " LOADOUT"+D+NAME, fill(LO.Progress, map[string]string{"n": strconv.Itoa(qi + 1), "total": strconv.Itoa(len(qs))})+" ", barSt)
 		cw := w - 4
 		if wide {
 			cw = w - 26
 			g.sprite(w-20, 2, S.Frames["front"], K, false, -1)
 		}
-		g.para(2, 3, "Your answers hide the steps that don't apply to you. Not sure yet shows every option, each with a label.", cw, St{})
-		for i, f := range C.Facts {
-			y := 7 + i*3
-			mark := " "
-			if i == a.factCursor {
-				mark = G.Cur
+		y := 2
+		mdp := func(s string, x int) { y += g.para(x, y, mdPlain(s), cw-(x-2), St{}) }
+		if q.Type == "notice" {
+			nt := LO.Notices[q.ID]
+			g.put(2, y, nt.Title, St{B: true})
+			y += 2
+			mdp(nt.Md, 2)
+		} else {
+			fd, qd := fact(q.ID), LO.Questions[q.ID]
+			title := qd.Title
+			if title == "" {
+				title = fd.Question
 			}
-			g.put(1, y, mark+" "+f.Label, St{B: true})
-			g.put(4+rlen(f.Label), y, D+f.Question, St{})
-			x := 4
-			for _, o := range append(append([]Opt{}, f.Options...), Opt{"unsure", "Not sure yet"}) {
-				t, st := " "+o.Label+" ", St{}
-				if p.Facts[f.ID] == o.ID {
-					t, st = "["+o.Label+"]", sel
+			g.put(2, y, title, St{B: true})
+			y += 2
+			for i, op := range fd.Options {
+				od := qd.Options[op.ID]
+				mark, st := " ", St{B: true}
+				if i == a.optCursor {
+					mark, st = G.Cur, sel
 				}
-				g.put(x, y+1, t, st)
-				x += rlen(t) + 2
+				radio := "○ "
+				if !unicode {
+					radio = "( ) "
+				}
+				if p.Facts[q.ID] == op.ID {
+					radio = "● "
+					if !unicode {
+						radio = "(*) "
+					}
+				}
+				line := mark + " " + radio + op.Label
+				if od.Badge != "" {
+					line += "  [" + od.Badge + "]"
+				}
+				g.put(2, y, pad(line, mini(cw, 40)), st)
+				y++
+				if od.Md != "" {
+					if h >= 30 {
+						mdp(od.Md, 8)
+					} else {
+						g.put(8, y, clip(mdPlain(od.Md), cw-6), St{})
+						y++
+					}
+				}
+			}
+			y++
+			if qd.Md != "" {
+				mdp(qd.Md, 2)
+			}
+			for _, x := range qd.When {
+				if strict(x.Only, p.Facts) {
+					mdp(x.Md, 2)
+				}
+			}
+			if qd.Help != nil {
+				y++
+				g.put(2, y, qd.Help.Label+" "+mdPlain(qd.Help.Md), St{B: true})
+				g.put(6, y+1, qd.Help.Code, St{B: true})
+				y += 2
+				mdp(qd.Help.After, 2)
 			}
 		}
-		keys("up/down choose" + D + "left/right change" + D + "Enter start" + D + "q quit")
+		last := "next"
+		if qi == len(qs)-1 {
+			last = "start"
+		}
+		keys("up/down choose" + D + "Enter " + last + D + "Esc back" + D + "q quit")
 
 	case "map":
+		pg := S.Palettes[mode].Page
+		if pg == nil {
+			pg = S.Palettes["dmg"].Page
+		}
 		g.bar(0, " "+msg("map_title")+D+NAME, xp, barSt)
 		cur := a.mapCursor
 		y0 := 2
@@ -1627,8 +2143,17 @@ func (a *App) render(w, h int) *Grid {
 				mark, st = G.Cur, sel
 			}
 			head := mark + " " + stGlyph(state) + " " + fmt.Sprintf("%-17s", strconv.Itoa(i+1)+" "+themeStage(id).Location)
+			if state == "cleared" && i != cur {
+				st = St{B: true}
+				if !g.Plain {
+					st = St{Fg: pg["onCleared"], Bg: pg["cleared"], B: true}
+				}
+			}
 			g.put(1, y, pad(clip(head+stageC(id).Title, w-2), w-2), st)
 			tail := state
+			if r := skipBlock(p, id); state == "current" && r != "" {
+				tail += D + strings.ToLower(L["no_skip"]) + ": " + r
+			}
 			if state == "locked" {
 				tail = "locked" + D + "finish or skip stop " + strconv.Itoa(i) + " first"
 			} else if q.Side > 0 {
@@ -1679,6 +2204,8 @@ func (a *App) render(w, h int) *Grid {
 		dlg := []string{st.Title, st.Line}
 		if failed {
 			dlg = []string{msg("fail_head") + D + msg("fail_sub"), msg("fail_line")}
+		} else if a.status == "tip" {
+			dlg = []string{st.Title, msg("tip_line")}
 		}
 		sub := fmt.Sprintf(" Step %d of %d", si+1, len(sts)) + D + st.Title
 		if st.Optional {
@@ -1761,15 +2288,27 @@ func (a *App) render(w, h int) *Grid {
 		if wide {
 			cx, cw = 42, w-42
 		}
-		chk := " Check: " + st.Check.Prompt
+		chk := " Check (" + checkKind(st) + "): " + st.Check.Prompt
 		if done {
 			chk += "  " + G.Ok + " cleared"
 		}
 		g.put(cx, h-2, clip(chk, cw), St{B: true})
 		if done {
-			keys("Enter next step" + D + "left/right steps" + D + "up/down scroll" + D + "Tab cmd" + D + "c copy" + D + "m route")
+			tipK := ""
+			if isMaster(p.Facts) {
+				tipK = D + "t TIP"
+			}
+			keys("Enter next step" + D + "left/right steps" + D + "up/down scroll" + D + "Tab cmd" + D + "c copy" + tipK + D + "m route")
 		} else {
-			keys("y " + L["did_it"] + D + "n " + strings.ToLower(L["did_not_work"]) + D + "up/down scroll" + D + "Tab cmd" + D + "c copy" + D + "m route")
+			tipK := ""
+			if isMaster(p.Facts) {
+				tipK = D + "t TIP"
+			}
+			if a.editVirt {
+				keys("Virtualization software: " + p.VirtName + "_" + D + "Enter done")
+			} else {
+				keys("Enter " + strings.ToLower(L["next_step"]) + D + "n " + strings.ToLower(L["did_not_work"]) + D + "up/down" + D + "Tab" + D + "c copy" + tipK + D + "m route")
+			}
 		}
 
 	case "clear-step", "clear-stage", "items", "complete", "badge":
@@ -2042,17 +2581,29 @@ func (a *App) afterItems() {
 	a.goMap()
 }
 
-func (a *App) cycleFact(dir int) {
-	f := C.Facts[a.factCursor]
-	var opts []string
-	for _, o := range f.Options {
-		opts = append(opts, o.ID)
+func (a *App) optIndex(lq int) int {
+	qs := loadoutQuestions(a.p.Facts)
+	q := qs[mini(lq, len(qs)-1)]
+	if q.Type != "fact" {
+		return 0
 	}
-	opts = append(opts, "unsure")
-	i := indexOf(opts, a.p.Facts[f.ID])
-	a.p.Facts[f.ID] = opts[(i+dir+len(opts))%len(opts)]
-	a.p.Started = true
-	a.save()
+	for i, o := range fact(q.ID).Options {
+		if o.ID == a.p.Facts[q.ID] {
+			return i
+		}
+	}
+	return 0
+}
+
+// focusPrompt moves the Tab focus to the AI prompt (the last command block).
+func (a *App) focusPrompt(w, h int) {
+	iw := w - 2
+	if w >= 100 {
+		iw = w - 44
+	}
+	a.instructions(a.curStep(), a.stage, iw, St{})
+	a.focus = maxi(0, len(a.cmds)-1)
+	a.revealFocus(w, h)
 }
 
 func (a *App) continueGame() {
@@ -2228,14 +2779,14 @@ func play(a *App, fixedW, fixedH int) {
 		draw(a, w, h)
 		k := readKey(raw, in)
 		a.toast = ""
-		if k == "quit" || (k == "q" && a.view != "name") {
+		if k == "quit" || (k == "q" && a.view != "name" && !a.editVirt) {
 			if a.view == "stage" || a.view == "loadout" || a.view == "mentor" {
 				a.goMap()
 				continue
 			}
 			break
 		}
-		if a.view == "stage" && len(a.cmds) > 0 && (k == "o" || k == "c") {
+		if a.view == "stage" && !a.editVirt && len(a.cmds) > 0 && (k == "o" || k == "c") {
 			cmd := a.cmds[mini(a.focus, len(a.cmds)-1)]
 			if k == "c" {
 				fmt.Print(osc52(cmd))
@@ -2256,8 +2807,36 @@ func play(a *App, fixedW, fixedH int) {
 	fmt.Println(plain(fill(msg("goodbye"), map[string]string{"name": playerName(a.p)})))
 }
 
+func typed(cur string, k Key, max int) string {
+	s := string(k)
+	switch {
+	case k == "bs":
+		if r := []rune(cur); len(r) > 0 {
+			return string(r[:len(r)-1])
+		}
+		return cur
+	case rlen(s) == 1 && (s >= " " || []rune(s)[0] >= 0x80) && s != "\x7f":
+		if rlen(cur) < max {
+			return cur + s
+		}
+	case rlen(s) > 1 && !strings.ContainsAny(s, "\x1b") && len([]rune(s)) <= 8 && s != "enter" && s != "tab" && s != "up" && s != "down" && s != "left" && s != "right" && s != "esc" && s != "quit":
+		r := []rune(cur + s)
+		return string(r[:mini(max, len(r))])
+	}
+	return cur
+}
+
 func (a *App) handle(k Key, w, h int) {
 	ids := stageIDs()
+	if a.editVirt {
+		if k == "enter" || k == "esc" {
+			a.editVirt = false
+			a.save()
+		} else {
+			a.p.VirtName = typed(a.p.VirtName, k, 40)
+		}
+		return
+	}
 	switch a.view {
 	case "title":
 		switch k {
@@ -2295,19 +2874,25 @@ func (a *App) handle(k Key, w, h int) {
 			}
 			a.p.Name, a.p.Started = n, true
 			a.save()
-			a.view = "character"
-		case "bs":
-			if r := []rune(a.nameDraft); len(r) > 0 {
-				a.nameDraft = string(r[:len(r)-1])
-			}
+			a.view, a.welcomePage = "welcome", 0
 		case "esc":
 			a.view = "title"
 		default:
-			s := string(k)
-			if rlen(s) == 1 && rlen(a.nameDraft) < W.Player.NameMax && (s >= " " || []rune(s)[0] >= 0x80) && s != "\x7f" {
-				a.nameDraft += s
-			} else if rlen(s) > 1 && !strings.ContainsAny(s, "\x1b") {
-				a.nameDraft = string([]rune(a.nameDraft + s)[:mini(W.Player.NameMax, rlen(a.nameDraft+s))])
+			a.nameDraft = typed(a.nameDraft, k, W.Player.NameMax)
+		}
+	case "welcome":
+		switch k {
+		case "enter", "right":
+			if a.welcomePage+1 < len(W.Welcome.Pages) {
+				a.welcomePage++
+			} else {
+				a.view = "character"
+			}
+		case "left", "esc":
+			if a.welcomePage > 0 {
+				a.welcomePage--
+			} else {
+				a.view, a.nameDraft = "name", a.p.Name
 			}
 		}
 	case "character":
@@ -2320,22 +2905,46 @@ func (a *App) handle(k Key, w, h int) {
 		case "enter":
 			a.p.Character = W.Player.Characters[a.charCursor].ID
 			a.save()
-			a.view, a.factCursor = "loadout", 0
+			a.view, a.lq, a.optCursor = "loadout", 0, a.optIndex(0)
 		case "esc":
-			a.view = "name"
+			a.view, a.welcomePage = "welcome", len(W.Welcome.Pages)-1
 		}
 	case "loadout":
+		qs := loadoutQuestions(a.p.Facts)
+		qi := mini(a.lq, len(qs)-1)
+		q := qs[qi]
 		switch k {
-		case "up":
-			a.factCursor = (a.factCursor + len(C.Facts) - 1) % len(C.Facts)
-		case "down":
-			a.factCursor = (a.factCursor + 1) % len(C.Facts)
-		case "left":
-			a.cycleFact(-1)
-		case "right":
-			a.cycleFact(1)
-		case "enter", "esc":
-			a.goMap()
+		case "up", "down", "left", "right":
+			if q.Type == "fact" {
+				n := len(fact(q.ID).Options)
+				if k == "up" || k == "left" {
+					a.optCursor = (a.optCursor + n - 1) % n
+				} else {
+					a.optCursor = (a.optCursor + 1) % n
+				}
+				a.p.Facts = withFact(a.p.Facts, q.ID, fact(q.ID).Options[a.optCursor].ID)
+				a.p.Started = true
+				a.save()
+			}
+		case "enter":
+			if q.Type == "fact" && unset(a.p.Facts, q.ID) {
+				a.p.Facts = withFact(a.p.Facts, q.ID, fact(q.ID).Options[a.optCursor].ID)
+				a.save()
+			}
+			qs = loadoutQuestions(a.p.Facts)
+			if qi+1 < len(qs) {
+				a.lq = qi + 1
+				a.optCursor = a.optIndex(a.lq)
+			} else {
+				a.goMap()
+			}
+		case "esc", "bs":
+			if qi > 0 {
+				a.lq = qi - 1
+				a.optCursor = a.optIndex(a.lq)
+			} else {
+				a.view = "character"
+			}
 		}
 	case "map":
 		if a.skipAsk {
@@ -2354,13 +2963,15 @@ func (a *App) handle(k Key, w, h int) {
 		case "enter":
 			a.openStage(ids[a.mapCursor])
 		case "s":
-			if stageState(a.p, ids[a.mapCursor]) == "current" {
+			if r := skipBlock(a.p, ids[a.mapCursor]); r != "" {
+				a.toast = plain(W.Labels["no_skip"] + ": " + r)
+			} else if stageState(a.p, ids[a.mapCursor]) == "current" {
 				a.skipAsk = true
 			} else {
 				a.toast = "Only the current stop can be skipped."
 			}
 		case "l":
-			a.view = "loadout"
+			a.view, a.lq, a.optCursor = "loadout", 0, a.optIndex(0)
 		}
 	case "mentor":
 		switch k {
@@ -2397,11 +3008,25 @@ func (a *App) handle(k Key, w, h int) {
 				a.didIt()
 			}
 		case "n":
-			if !done {
-				a.status, a.scroll = "failed", 1<<20
+			a.status, a.scroll = "failed", 1<<20
+			a.focusPrompt(w, h)
+		case "t":
+			if isMaster(a.p.Facts) {
+				if a.status == "tip" {
+					a.status = "todo"
+				} else {
+					a.status, a.scroll = "tip", 0
+					a.focusPrompt(w, h)
+				}
+			}
+		case "v":
+			if isMaster(a.p.Facts) && (a.status == "failed" || a.status == "tip") {
+				a.editVirt = true
 			}
 		case "enter":
-			if done {
+			if !done {
+				a.didIt()
+			} else {
 				if a.step < len(sts)-1 {
 					a.step, a.status, a.scroll, a.focus = a.step+1, "todo", 0, 0
 				} else {
@@ -2418,7 +3043,13 @@ func (a *App) handle(k Key, w, h int) {
 			}
 		case "l":
 			a.view = "loadout"
-		case "m", "esc":
+		case "esc":
+			if a.status != "todo" {
+				a.status = "todo"
+			} else {
+				a.goMap()
+			}
+		case "m":
 			a.goMap()
 		}
 	case "clear-step", "clear-stage", "items":
@@ -2473,7 +3104,10 @@ func main() {
 	screen := fs.String("screen", "title", "render: title | name | character | loadout | map | mentor | stage | clear-step | clear-stage | items | complete | badge")
 	stage := fs.String("stage", "", "stage id (slug), e.g. build-image")
 	step := fs.Int("step", 0, "step index within the stage (0-based)")
-	status := fs.String("status", "todo", "render: todo | failed")
+	status := fs.String("status", "todo", "render: todo | failed | tip")
+	wpage := fs.Int("welcome-page", 0, "render: welcome page (0-based)")
+	lq := fs.Int("lq", 0, "render: loadout question index (0-based)")
+	virt := fs.String("virt", "", "render: your virtualization software (Master)")
 	cleared := fs.Int("cleared", 0, "render: pretend the first N stages are cleared")
 	skipped := fs.String("skipped", "", "render: comma-separated stage ids to mark skipped")
 	facts := fs.String("facts", "", "render: os=macos,arch=arm64,runtime=docker,virtualization=kairos-lab")
@@ -2554,6 +3188,8 @@ func main() {
 			a.stage = stageIDs()[0]
 		}
 		a.view, a.step, a.status, a.clearXP = *screen, *step, *status, W.XP.Step
+		a.welcomePage, a.lq, a.p.VirtName = *wpage, *lq, *virt
+		a.optCursor = a.optIndex(a.lq)
 		a.mapCursor = indexOf(stageIDs(), a.stage)
 		if fw == 0 {
 			fw, fh = 80, 24

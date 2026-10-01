@@ -2,6 +2,40 @@
 
 Every state is live in `web/KAI States.dc.html`, including the terminal frames at 80×24 and 120×40. Stage ids are slugs (`kairos-lab`, `first-node`, …). Numbers on screen ("Stop 3") come from the order in `content.json`, so you can insert a stage without renumbering anything.
 
+## Round 4: new screens and states
+
+### Data
+- The reader reads `content.json` and `theme.json` as your compiler writes them. Copy for `welcome`, `loadout`, `prompts` and `stages` is never hard-coded. Stage count, stage list and step ids always come from the data
+- `theme.base.json` holds the design-owned keys. Round 4 adds `checkKinds`, `modes`, `sheet` and a few `labels` (tool, docs, text_bigger, text_smaller, theme_light, theme_dark, stages_nav)
+
+### Mode chooser (first screen)
+- "Play the game" / "Just the workshop". Saved in localStorage `kai.mode` (try/catch). Shown when nothing is saved
+- Toggle: header button in both modes, plus a Mode group in Settings. The title menu's 3rd item and the footer link open "Just the workshop"
+- The website panel under the title screen is gone. The section under the game only shows when it has content
+
+### Just the workshop
+- No welcome, mentors, XP, route or game screen. Stage list on the left (✓ and done/total), the current stage in the middle, with the same steps, commands, notes, help and AI prompts
+- Loadout: same one-question flow on the first visit, then from the header
+- "Next step" marks the step done and goes straight to the next open step, then the next stage
+- Projector: light (default) or dark; A− / A+ in the header scale the whole page 90%–175%. Saved in `kai.workshop.view`
+
+### Boss key (web, both modes)
+- Esc → spreadsheet: title bar "Q4 budget", menu row, toolbar, formula bar (address + selected cell), columns A–F, numbered rows, one sheet tab per stage. Each step is a row: #, title, goal, commands (with $), check, status
+- Commands stay selectable. Clicking a cell shows its content in the formula bar
+- The tab title and icon change, and are restored on Esc again (or on unmount). The reader returns to the same mode, stage and step
+- Esc does nothing while Settings, the skip confirm, the mode chooser or the loadout flow is open. The loadout uses Backspace / Back to go back
+
+### Steps
+- `help {tool, source, docs, expect}` per step: a Tool (links to source) + Docs line under the step title, in both modes and in the terminal
+- "I'm stuck" prompt: {tool} {source} {docs} {expected} come from the step's help. If a line's placeholders are all empty (a step with no help), that line is dropped
+- Step-level `only`: shown with its "Only if" label while the fact is unset
+- Check row shows the check kind (command-available, image-exists, iso-exists, vm-running, manual). The reader never runs anything
+- Commands show a `$ ` prompt (not selectable on the web). Continuation lines after `\\` get two spaces. Copy copies the raw command
+- `[label](stage:id)` links open that stage (anchors after # are ignored)
+
+### Unset facts
+- Items keep their "Only if" label. Prompt placeholders use `prompts.unsetPlaceholder` with the fact label, e.g. "[YOUR CONTAINER RUNTIME]". An unset virtualization uses it too
+
 ## Round 3: new screens and states
 
 ### Name entry

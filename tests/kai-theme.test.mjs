@@ -222,3 +222,21 @@ test("the tool writes both files, and --check names the stale one", () => {
   assert.match(missing.stderr, /theme\.json is generated/);
   assert.doesNotMatch(missing.stderr, /content\.json is generated/);
 });
+
+// ---- the keys that round 4 added to the designer's base ----
+
+test("round 4: checkKinds, modes, sheet and the new labels are the base copied unchanged, and checkKinds names every check kind we emit", () => {
+  const b = base();
+  const t = theme();
+  for (const k of ["checkKinds", "modes", "sheet"]) {
+    assert.ok(b[k], `the base has ${k}`);
+    assert.deepEqual(t[k], b[k], k);
+  }
+  for (const k of ["tool", "docs", "step_only", "text_bigger", "text_smaller", "theme_light", "theme_dark", "stages_nav"]) assert.equal(t.labels[k], b.labels[k], `labels.${k}`);
+  const content = JSON.parse(readFileSync(join(root, "kai/web/content.json"), "utf8"));
+  const kinds = new Set(content.stages.flatMap((s) => s.steps.map((st) => st.check.kind)));
+  assert.ok(kinds.has("manual") && kinds.size >= 3, [...kinds].join(", "));
+  for (const kind of kinds) assert.equal(typeof t.checkKinds[kind], "string", `theme.checkKinds.${kind}: the reader names the kind in the check row`);
+  // The four generated keys are never taken from the new base keys.
+  assert.deepEqual(GENERATED_THEME_KEYS, ["welcome", "loadout", "prompts", "stages"]);
+});

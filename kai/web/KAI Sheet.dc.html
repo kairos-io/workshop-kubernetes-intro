@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="position:{{ pos }};inset:0;height:{{ h }};z-index:1000;display:flex;flex-direction:column;background:#FFFFFF;color:#1F1F1F;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.35;">
+  <div style="display:flex;align-items:center;gap:12px;padding:8px 14px 2px;">
+    <span aria-hidden="true" style="width:22px;height:22px;background:#2F6F4F;display:grid;place-items:center;color:#fff;font-weight:700;font-size:12px;">▦</span>
+    <div style="display:flex;flex-direction:column;">
+      <span style="font-size:17px;">{{ docTitle }}</span>
+      <span aria-hidden="true" style="display:flex;gap:14px;color:#3C3C3C;"><sc-for list="{{ menu }}" as="m" hint-placeholder-count="7"><span>{{ m }}</span></sc-for></span>
+    </div>
+    <span style="flex:1;"></span>
+    <span style="color:#555;font-size:12px;">{{ appName }} · All changes saved</span>
+  </div>
+  <div aria-hidden="true" style="display:flex;align-items:center;gap:14px;padding:6px 14px;margin:4px 10px;background:#F1F3F4;color:#444;">
+    <span>↶</span><span>↷</span><span>100%</span><span>|</span><span>Arial</span><span>10</span><span>|</span><span style="font-weight:700;">B</span><span style="font-style:italic;">I</span><span style="text-decoration:line-through;">S</span><span>|</span><span>≡</span><span>Σ</span>
+  </div>
+  <div style="display:flex;align-items:stretch;border-top:1px solid #DADCE0;border-bottom:1px solid #DADCE0;">
+    <div style="width:64px;padding:5px 8px;border-right:1px solid #DADCE0;color:#333;">{{ selAddr }}</div>
+    <div aria-hidden="true" style="padding:5px 8px;border-right:1px solid #DADCE0;color:#777;font-style:italic;">fx</div>
+    <div aria-label="Formula bar" style="flex:1;padding:5px 8px;white-space:pre-wrap;overflow:auto;max-height:84px;font-family:'IBM Plex Mono',ui-monospace,monospace;user-select:text;">{{ selValue }}</div>
+  </div>
+  <div style="flex:1;overflow:auto;">
+    <table role="grid" aria-label="{{ activeLabel }}" style="border-collapse:collapse;table-layout:fixed;min-width:1100px;width:100%;">
+      <colgroup><col style="width:46px;"><col style="width:52px;"><col style="width:220px;"><col style="width:220px;"><col style="width:420px;"><col style="width:220px;"><col style="width:90px;"></colgroup>
+      <thead>
+        <tr>
+          <th style="background:#F8F9FA;border:1px solid #DADCE0;"></th>
+          <sc-for list="{{ letters }}" as="l" hint-placeholder-count="6"><th scope="col" style="background:{{ l.bg }};border:1px solid #DADCE0;font-weight:400;color:#444;padding:3px;">{{ l.t }}</th></sc-for>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row" style="background:#F8F9FA;border:1px solid #DADCE0;font-weight:400;color:#444;">1</th>
+          <sc-for list="{{ header }}" as="h" hint-placeholder-count="6"><td onClick="{{ h.pick }}" style="border:1px solid #E2E3E3;padding:4px 6px;font-weight:700;background:#F3F3F3;outline:{{ h.outline }};outline-offset:-2px;">{{ h.v }}</td></sc-for>
+        </tr>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+          <tr>
+            <th scope="row" style="background:{{ r.numBg }};border:1px solid #DADCE0;font-weight:400;color:#444;vertical-align:top;padding-top:4px;">{{ r.num }}</th>
+            <sc-for list="{{ r.cells }}" as="c" hint-placeholder-count="6"><td onClick="{{ c.pick }}" style="border:1px solid #E2E3E3;padding:4px 6px;vertical-align:top;white-space:pre-wrap;overflow-wrap:anywhere;font-family:{{ c.font }};user-select:text;outline:{{ c.outline }};outline-offset:-2px;background:{{ c.bg }};">{{ c.v }}</td></sc-for>
+          </tr>
+        </sc-for>
+        <sc-for list="{{ blanks }}" as="b" hint-placeholder-count="8">
+          <tr><th scope="row" style="background:#F8F9FA;border:1px solid #DADCE0;font-weight:400;color:#444;height:22px;">{{ b.n }}</th><td style="border:1px solid #E2E3E3;"></td><td style="border:1px solid #E2E3E3;"></td><td style="border:1px solid #E2E3E3;"></td><td style="border:1px solid #E2E3E3;"></td><td style="border:1px solid #E2E3E3;"></td><td style="border:1px solid #E2E3E3;"></td></tr>
+        </sc-for>
+      </tbody>
+    </table>
+  </div>
+  <div role="tablist" aria-label="Sheets" style="display:flex;align-items:stretch;gap:2px;padding:0 8px;background:#F1F3F4;border-top:1px solid #DADCE0;overflow-x:auto;">
+    <span aria-hidden="true" style="padding:8px 10px;color:#555;">＋ ☰</span>
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="7">
+      <button role="tab" aria-selected="{{ t.sel }}" onClick="{{ t.pick }}" style="border:0;border-top:3px solid {{ t.bar }};background:{{ t.bg }};color:#1F1F1F;font:inherit;font-weight:{{ t.weight }};padding:6px 14px;white-space:nowrap;cursor:pointer;">{{ t.label }}</button>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1200,&quot;height&quot;:700},&quot;sheet&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+class Component extends DCLogic {
+  state = { active: null, sel: null };
+  renderVals() {
+    const sh = this.props.sheet || { tabs: [], stages: [], columns: [], menu: [] };
+    const active = this.state.active || sh.active || (sh.tabs[0] && sh.tabs[0].id);
+    const st = (sh.stages || []).find(s => s.id === active) || { rows: [] };
+    const cols = sh.columns || [], L = 'ABCDEF', keys = ['n', 'title', 'goal', 'details', 'check', 'status'];
+    const defRow = active === sh.active ? (sh.step || 0) + 2 : 2;
+    const sel = this.state.sel && this.state.sel.sheet === active ? this.state.sel : { r: defRow, c: 1, sheet: active };
+    const cellVal = (r, c) => r === 1 ? (cols[c] || '') : (st.rows[r - 2] ? String(st.rows[r - 2][keys[c]] ?? '') : '');
+    const pick = (r, c) => () => this.setState({ sel: { r, c, sheet: active } });
+    const ol = (r, c) => sel.r === r && sel.c === c ? '2px solid #1A73E8' : 'none';
+    return {
+      pos: this.props.contained ? 'relative' : 'fixed', h: this.props.contained ? '800px' : 'auto',
+      docTitle: sh.docTitle, appName: sh.appName, menu: sh.menu || [],
+      selAddr: L[sel.c] + sel.r, selValue: cellVal(sel.r, sel.c),
+      activeLabel: (sh.tabs.find(t => t.id === active) || {}).label || '',
+      letters: L.split('').map((t, c) => ({ t, bg: sel.c === c ? '#D3E3FD' : '#F8F9FA' })),
+      header: cols.slice(0, 6).map((v, c) => ({ v, pick: pick(1, c), outline: ol(1, c) })),
+      rows: st.rows.map((row, i) => ({ num: i + 2, numBg: sel.r === i + 2 ? '#D3E3FD' : '#F8F9FA',
+        cells: keys.map((k, c) => ({ v: String(row[k] ?? ''), pick: pick(i + 2, c), outline: ol(i + 2, c), font: k === 'details' ? "'IBM Plex Mono',ui-monospace,monospace" : 'inherit', bg: k === 'status' && row.status === 'Done' ? '#E6F4EA' : '#FFFFFF' })) })),
+      blanks: Array.from({ length: Math.max(6, 20 - st.rows.length) }, (_, i) => ({ n: st.rows.length + 2 + i })),
+      tabs: (sh.tabs || []).map(t => ({ label: t.label.length > 28 ? t.label.slice(0, 27) + '…' : t.label, sel: t.id === active, bg: t.id === active ? '#FFFFFF' : 'transparent', bar: t.id === active ? '#2F6F4F' : 'transparent', weight: t.id === active ? 700 : 400, pick: () => this.setState({ active: t.id, sel: null }) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

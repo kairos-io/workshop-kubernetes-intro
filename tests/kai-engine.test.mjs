@@ -231,8 +231,9 @@ function sections(text) {
 }
 const stripPrompt = (lines) => lines.map((l) => l.replace(/^\$ /, "")).filter((l) => l !== "");
 
-test("prompts: for every answered fact set the reader's step prompt says what ours says, apart from three known differences", () => {
+test("prompts: for every answered fact set the reader's step prompt, built from the step help, says what ours says, apart from the command prompt", () => {
   const stage = stageDoc;
+  const docs = stageDoc.sections.flatMap((x) => x.steps ?? []);
   let compared = 0;
   let ownTool = 0;
   let manual = 0;
@@ -247,15 +248,17 @@ test("prompts: for every answered fact set the reader's step prompt says what ou
       const b = sections(ours);
       compared++;
 
-      // The lines before the commands are the same except the tool line: the reader has one tool for the stage,
-      // and we have one for each step.
-      const toolAt = b.head.findIndex((l) => l.startsWith("Tool: "));
-      for (let i = 0; i < b.head.length; i++) if (i !== toolAt) assert.equal(a.head[i], b.head[i], `${step.id}, line ${i}`);
-      assert.equal(a.head.length, b.head.length);
-      const stageTool = "Tool: kairos-lab (https://github.com/kairos-io/kairos-lab). Docs: https://github.com/kairos-io/kairos-lab#readme.";
-      assert.equal(a.head[toolAt], stageTool);
-      if (b.head[toolAt] !== stageTool) ownTool++;
-      assert.equal(b.head[toolAt] !== stageTool, "tool" in stageDoc.sections.flatMap((x) => x.steps ?? []).find((x) => x.id === step.id).help, "the tool line differs when the step names its own tool");
+      // The step help in content.json holds the tool, source and docs with the stage defaults merged in, and the
+      // reader reads them from the step. The lines before the commands are the same, including the tool line.
+      assert.deepEqual(a.head, b.head, `${step.id}: lines before the commands`);
+      const doc = docs.find((x) => x.id === step.id);
+      const toolLine = b.head.find((l) => l.startsWith("Tool: "));
+      assert.equal(toolLine, `Tool: ${step.help.tool} (${step.help.source}). Docs: ${step.help.docs}.`, "the tool line is the step help");
+      if (doc.help.tool) {
+        ownTool++;
+        assert.match(toolLine, /^Tool: AuroraBoot /, "a step that names its own tool");
+      }
+      assert.ok(b.head.some((l) => l === `Goal of this step: ${step.goal}.`), "the goal is the goal of the step");
 
       // The commands are the same. We start each command line with "$ ", the reader does not, and it
       // separates commands with a blank line.
@@ -267,32 +270,58 @@ test("prompts: for every answered fact set the reader's step prompt says what ou
         assert.ok(!a.commands[0].startsWith("$ "));
       }
 
-      // The expected line: the same sentence when the step has a named check. For a step with no named check,
-      // the reader says the prompt of its default check and we say the default sentence.
-      if (step.check.kind !== "manual") {
-        assert.ok(a.expected.startsWith(b.expected), `${step.id}: the reader's line starts with ours`);
-        assert.equal(a.expected, b.expected);
-      } else {
+      // The expected line is help.expect, so it is the same text. A step with no named check says
+      // "the step finishes without errors", where the reader used to say "You finished this step.".
+      assert.equal(a.expected, `What I expected: ${step.help.expect}`);
+      assert.equal(a.expected, b.expected);
+      if (step.check.kind === "manual") {
         manual++;
-        assert.equal(a.expected, "What I expected: You finished this step.");
-        assert.equal(b.expected, "What I expected: the step finishes without errors");
+        assert.equal(a.expected, "What I expected: the step finishes without errors");
+        assert.notEqual(step.check.prompt, step.help.expect);
       }
       assert.deepEqual(a.tail, b.tail, `${step.id} tail`);
     }
     // A step that the facts hide has no prompt of ours, and the reader does not list it.
-    for (const doc of stageDoc.sections.flatMap((x) => x.steps ?? []).filter((x) => x.help)) {
+    for (const doc of docs.filter((x) => x.help)) {
       if (!shown.some((x) => x.id === doc.id)) assert.equal(buildStepPrompt(workshop, stage, doc.id, facts), null, `${doc.id} is hidden for ${JSON.stringify(facts)}`);
     }
   }
   assert.ok(compared >= 60, `compared ${compared} prompts`);
-  assert.ok(ownTool > 0 && manual > 0 && withCommands > 30, "the known differences were seen");
+  assert.ok(ownTool > 0 && manual > 0 && withCommands > 30, "the cases were seen");
 });
 
-test("prompts: the reader writes the output of the step before the check sentence, in the expected line", () => {
+test("prompts: every stage 1 step that has help is read by the reader from the step, and the step help is complete", () => {
+  const withHelp = E.stage("kairos-lab").steps.filter((s) => s.help);
+  const docs = stageDoc.sections.flatMap((x) => x.steps ?? []).filter((x) => x.help);
+  assert.equal(withHelp.length, docs.length);
+  assert.ok(withHelp.length >= 7);
+  for (const s of withHelp) {
+    assert.deepEqual(Object.keys(s.help), ["tool", "source", "docs", "expect"]);
+    const h = E.stepHelp(s);
+    assert.equal(h.has, true);
+    assert.deepEqual({ tool: h.tool, source: h.source, docs: h.docs, expect: h.expect }, s.help);
+  }
+});
+
+test("prompts: a step with no help has no prompt of ours, and the reader drops the lines that need a tool and docs", () => {
+  const bare = E.stage("kairos-lab").steps.find((s) => !s.help);
+  assert.ok(bare, "stage 1 has a step without help");
+  assert.equal(E.stepHelp(bare).has, false);
+  const facts = { os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" };
+  const text = E.prompt("fail", progress(facts), "kairos-lab", bare);
+  assert.doesNotMatch(text, /^Tool: /m);
+  assert.doesNotMatch(text, /\(\)\./);
+  assert.ok(text.split("\n").includes(`Goal of this step: ${bare.title}.`), "the title of the step stands in for the goal");
+  assert.match(text, /^What I expected: .+$/m);
+});
+
+test("prompts: the reader writes the output of the step before the check sentence only when the step has no help", () => {
   const step = { id: "t", title: "T", goal: "g", blocks: [{ type: "command", code: "echo hi" }, { type: "output", text: "hi" }], check: { prompt: "It says hi.", fail: [] } };
   const lines = E.prompt("fail", progress({ os: "linux", arch: "amd64", runtime: "docker", virtualization: "kairos-lab" }), "kairos-lab", step).split("\n");
-  const at = lines.indexOf("What I expected: hi");
-  assert.ok(at > 0 && lines[at + 1] === "(It says hi.)", lines.join("\n"));
+  assert.ok(lines.includes("What I expected: It says hi."), lines.join("\n"));
+  assert.ok(!lines.some((l) => l.startsWith("(")), "the output block is not written any more");
+  const helped = { ...step, help: { tool: "t", source: "https://example.com", docs: "https://example.com/d", expect: "it says hi" } };
+  assert.ok(E.prompt("fail", progress({ os: "linux", arch: "amd64", runtime: "docker", virtualization: "kairos-lab" }), "kairos-lab", helped).split("\n").includes("What I expected: it says hi"));
 });
 
 test("prompts: for every answered fact set the tip prompt is the same text", () => {
@@ -301,13 +330,49 @@ test("prompts: for every answered fact set the tip prompt is the same text", () 
   }
 });
 
-test("prompts: with some facts unset the reader and our reference write different stand-ins, and the reader keeps a line with no value", () => {
+test("prompts: with some facts unset the reader writes our unsetPlaceholder with the label of the fact, and ours writes other stand-ins", () => {
   const unset = progress({});
   const reader = E.prompt("tip", unset, "kairos-lab");
   const ours = buildTipPrompt(workshop, stageDoc, {});
-  assert.match(reader, /My setup: \[YOUR OS\], \[YOUR ARCHITECTURE\], container runtime \[YOUR CONTAINER RUNTIME\], VMs with \[NAME OF YOUR VIRTUALIZATION SOFTWARE, e\.g\. VirtualBox\]\./);
+  const { unsetPlaceholder } = E.W.prompts;
+  assert.equal(unsetPlaceholder, "[YOUR {fact}]", "the placeholder is the designer's base text, copied to theme.json");
+  const stand = (id) => unsetPlaceholder.replace("{fact}", E.fact(id).label.toUpperCase());
+  assert.deepEqual(["os", "arch", "runtime", "virtualization"].map(stand), ["[YOUR OS]", "[YOUR ARCHITECTURE]", "[YOUR CONTAINER RUNTIME]", "[YOUR VIRTUALIZATION]"]);
+  assert.match(reader, /My setup: \[YOUR OS\], \[YOUR ARCHITECTURE\], container runtime \[YOUR CONTAINER RUNTIME\], VMs with \[YOUR VIRTUALIZATION\]\./);
+  assert.match(reader, /Explain how to install \[YOUR CONTAINER RUNTIME\] on \[YOUR OS\] \(\[YOUR ARCHITECTURE\]\)/);
   assert.match(ours, /My setup: \[YOUR OPERATING SYSTEM\], \[YOUR CPU ARCHITECTURE\], container runtime \[YOUR CONTAINER RUNTIME\], VMs with \[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE\]\./);
-  // A step of a stage with no tool: the reader fills an empty value, we drop the line.
+  // Each fact on its own: an unset fact is the stand-in and a set one is its label.
+  const part = E.prompt("tip", progress({ os: "linux", virtualization: "own" }), "kairos-lab");
+  assert.match(part, /My setup: Linux, \[YOUR ARCHITECTURE\], container runtime \[YOUR CONTAINER RUNTIME\], VMs with \[NAME OF YOUR VIRTUALIZATION SOFTWARE, e\.g\. VirtualBox\]\./);
+  // A step of a stage with no tool: the reader now drops the line, like ours.
   const step = E.stage("first-node").steps[0];
-  assert.match(E.prompt("fail", progress({ os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" }), "first-node", step), /^Tool:  \(\)\. Docs: \.$/m);
+  const text = E.prompt("fail", progress({ os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" }), "first-node", step);
+  assert.doesNotMatch(text, /^Tool:/m);
+});
+
+// ---- commands carry no "$ " in the data, and the reader shows one ----
+
+test("commands: the data holds no $ prompt, and the reader shows a $ on the first line of each command", () => {
+  const rowsOf = (step, facts) => E.flatten(step.blocks, { key: `kairos-lab/${step.id}`, facts: engineFacts(facts), sel: {}, showAll: {}, layout: "stacked" });
+  let seen = 0;
+  for (const stage of E.C.stages) {
+    for (const step of stage.steps) {
+      const walk = (blocks) => {
+        for (const b of blocks) {
+          if (b.type === "command") assert.ok(!/^\s*\$ /.test(b.code), `${stage.id}/${step.id}: the data starts a command with $`);
+          if (b.type === "alternatives") b.items.forEach((i) => walk(i.blocks));
+        }
+      };
+      walk(step.blocks);
+    }
+  }
+  for (const step of E.steps("kairos-lab", engineFacts({}))) {
+    for (const r of rowsOf(step, {}).filter((x) => x.type === "command" && !x.isFile)) {
+      seen++;
+      assert.ok(!r.code.startsWith("$"), "the row holds the raw command, which is what Copy copies");
+    }
+  }
+  assert.ok(seen >= 8);
+  const html = readFileSync(join(web, "KAI Workshop.dc.html"), "utf8") + readFileSync(join(web, "kai-term.js"), "utf8");
+  assert.match(html, /'\$ '/, "the reader adds the prompt itself");
 });

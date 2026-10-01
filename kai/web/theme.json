@@ -315,9 +315,20 @@
     "virt_field": "Your virtualization software",
     "virt_hint": "Fills the highlighted placeholder in the prompt. Saved with your progress.",
     "no_skip": "Can't skip",
-    "cleared": "Cleared"
+    "cleared": "Cleared",
+    "tool": "Tool",
+    "docs": "Docs",
+    "step_only": "This step is only for",
+    "text_bigger": "Bigger text",
+    "text_smaller": "Smaller text",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "stages_nav": "Stages",
+    "step_done": "Done",
+    "stage_done": "Stage done",
+    "next_stage": "Next stage"
   },
-  "footer": "KAI, the Kairos armadillo, designed by Mauro Morales. Apache-2.0.",
+  "footer": "KAI v2 designed by Mauro Morales. Apache-2.0.",
   "welcome": {
     "mentor": "mauro",
     "pages": [
@@ -435,6 +446,49 @@
       "My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.",
       "{ask}",
       "Give me short numbered steps for my setup. If something is unclear, say what you need from me."
+    ]
+  },
+  "checkKinds": {
+    "command-available": "Command available",
+    "image-exists": "Image exists",
+    "iso-exists": "ISO exists",
+    "vm-running": "VM running",
+    "manual": "Manual check"
+  },
+  "modes": {
+    "question": "How do you want to follow the workshop?",
+    "intro": "You can switch at any time.",
+    "game": {
+      "label": "Play the game",
+      "md": "Travel with KAI, meet the mentors, collect items and earn XP."
+    },
+    "workshop": {
+      "label": "Just the workshop",
+      "md": "A plain workshop page with the same steps and commands. Good for projectors."
+    },
+    "switchToGame": "Switch to the game",
+    "switchToWorkshop": "Switch to just the workshop",
+    "toggleLabel": "Mode"
+  },
+  "sheet": {
+    "docTitle": "Q4 budget",
+    "appName": "Spreadsheet",
+    "menu": [
+      "File",
+      "Edit",
+      "View",
+      "Insert",
+      "Format",
+      "Data",
+      "Help"
+    ],
+    "columns": [
+      "#",
+      "Item",
+      "Goal",
+      "Details",
+      "Check",
+      "Status"
     ]
   }
 }

@@ -35,7 +35,7 @@
               <span style="font-size:16px;font-weight:600;">{{ it.label }}</span>
             </div>
             <div style="height:{{ it.h }}px;overflow:auto;border:3px solid #9BBC0F;background:#0F380F;">
-              <dc-import name="KAI Workshop" view="{{ it.view }}" stage="{{ it.stage }}" step="{{ it.step }}" status="{{ it.status }}" seed="{{ it.seed }}" copy="{{ it.copy }}" clear="{{ it.clear }}" settings-open="{{ it.settingsOpen }}" name-draft="{{ it.nameDraft }}" skip-ask="{{ it.skipAsk }}" welcome-page="{{ it.welcomePage }}" lq="{{ it.lq }}" arch-help="{{ it.archHelp }}" tip-open="{{ it.tipOpen }}" palette="{{ it.palette }}" reduce-motion="{{ it.reduce }}" persist="{{ false }}" keys="{{ false }}" hint-size="100%,800px"></dc-import>
+              <dc-import name="KAI Workshop" mode="{{ it.mode }}" boss="{{ it.boss }}" ws-size="{{ it.wsSize }}" ws-dark="{{ it.wsDark }}" view="{{ it.view }}" stage="{{ it.stage }}" step="{{ it.step }}" status="{{ it.status }}" seed="{{ it.seed }}" copy="{{ it.copy }}" clear="{{ it.clear }}" settings-open="{{ it.settingsOpen }}" name-draft="{{ it.nameDraft }}" skip-ask="{{ it.skipAsk }}" welcome-page="{{ it.welcomePage }}" lq="{{ it.lq }}" arch-help="{{ it.archHelp }}" tip-open="{{ it.tipOpen }}" palette="{{ it.palette }}" reduce-motion="{{ it.reduce }}" persist="{{ false }}" keys="{{ false }}" hint-size="100%,800px"></dc-import>
             </div>
           </div>
         </sc-for>
@@ -80,119 +80,84 @@ class Component extends DCLogic {
   componentDidMount() { window.KAIE.load().then(() => this.setState({ ready: true })).catch(e => console.error(e)); }
   renderVals() {
     const E = window.KAIE;
-    const macos = { virtualization: 'kairos-lab', os: 'macos', arch: 'arm64', runtime: 'docker' };
-    const linux = { virtualization: 'own', os: 'linux', arch: 'amd64', runtime: 'podman' };
-    const who = { name: 'Ana', character: 'cap' };
-    const D = (id, label, o) => ({ id, label, w: 1000, h: 860, view: 'stage', stage: 'kairos-lab', step: 0, status: 'todo', seed: { started: true, ...who }, copy: {}, clear: null, settingsOpen: false, palette: null, reduce: null, nameDraft: null, skipAsk: null, welcomePage: 0, lq: 0, archHelp: false, tipOpen: false, ...o, ...(o && o.seed ? { seed: { ...who, ...o.seed } } : {}) });
-    const Mb = (id, label, o) => D(id, label, { w: 390, h: 800, ...o });
+    if (!(this.state.ready && E.ready())) return { groups: [], terms: [], stateNotes: [] };
+    // Everything below comes from the data: stage ids, counts and step ids are never hard-coded.
+    const ids = E.stageIds(), N = ids.length, at = i => ids[Math.max(0, Math.min(N - 1, i))], last = ids[N - 1];
     const zen = { os: 'macos', virtualization: 'kairos-lab', arch: 'arm64', runtime: 'docker' };
     const master = { os: 'linux', virtualization: 'own', arch: 'amd64', runtime: 'podman' };
-    const win = { os: 'windows', virtualization: 'own', runtime: 'docker' };
-    const unset = { started: true, facts: { os: 'unsure', virtualization: 'unsure', arch: 'unsure', runtime: 'unsure' } };
+    const win = { os: 'windows', virtualization: 'own' };
+    const unsetF = Object.fromEntries(E.C.facts.map(x => [x.id, 'unsure']));
+    const who = { name: 'Ana', character: 'cap' };
+    const reqDone = (id, facts) => E.steps(id, facts).filter(s => !s.optional).map(s => E.stepKey(id, s.id));
+    const firstIdx = (id, facts, pred) => Math.max(0, E.steps(id, facts).findIndex(pred));
+    const linkStep = firstIdx(ids[0], zen, s => /\]\(stage:/.test(JSON.stringify(s.blocks)));
+    const D = (id, label, o) => ({ id, label, w: 1000, h: 860, mode: 'game', boss: false, wsSize: 3, wsDark: false, view: 'stage', stage: ids[0], step: 0, status: 'todo', copy: {}, clear: null, settingsOpen: false, palette: null, reduce: null, nameDraft: null, skipAsk: null, welcomePage: 0, lq: 0, archHelp: false, tipOpen: false, ...o, seed: { started: true, ...who, ...((o && o.seed) || {}) } });
+    const Mb = (id, label, o) => D(id, label, { w: 390, h: 800, ...o });
+    const all = { cleared: N, facts: zen, completedAt: '2026-09-30' };
+    const half = Math.floor(N / 2);
     const groups = [
-      { title: 'NEW IN ROUND 3 · WELCOME, LOADOUT, HELP, SKIP RULES', note: 'The name field has focus as soon as the screen opens. Mauro welcomes you over five pages. The loadout asks one question per screen. “It did not work” opens an AI prompt. Master players can ask KAI for a TIP.', items: [
-        D('11a', 'Name: field focused, caret visible', { view: 'name', seed: { started: true, name: '' }, nameDraft: 'Ana' }),
-        D('11b', 'Welcome, page 1 of 5', { view: 'welcome', welcomePage: 0 }),
-        D('11c', 'Welcome, page 5: patron link', { view: 'welcome', welcomePage: 4 }),
-        D('11d', 'Loadout 1: OS', { view: 'loadout', lq: 0, seed: unset }),
-        D('11e', 'Loadout: Windows → you play Master', { view: 'loadout', lq: 1, seed: { facts: win } }),
-        D('11f', 'Loadout 2: virtualization (Zen / Master)', { view: 'loadout', lq: 1, seed: { facts: { ...zen } } }),
-        D('11g', 'Loadout 3: architecture, “Not sure?” open', { view: 'loadout', lq: 2, archHelp: true, seed: { facts: zen } }),
-        D('11h', 'Loadout 4: runtime (Zen note)', { view: 'loadout', lq: 3, seed: { facts: zen } }),
-        D('11i', 'Labels hidden: loadout answers them (macOS)', { seed: { facts: zen } }),
-        D('11j', 'Lists + inline code in link label', { step: 1, seed: { facts: zen, done: ['kairos-lab/install'] } }),
-        D('11k', 'It did not work: AI prompt (Zen)', { status: 'failed', seed: { facts: zen } }),
-        D('11l', 'It did not work: Master placeholder', { stage: 'first-node', step: 1, status: 'failed', seed: { cleared: 1, facts: master } }),
-        D('11m', 'Master: Ask KAI for a TIP', { stage: 'first-node', step: 1, tipOpen: true, seed: { cleared: 1, facts: master, virtName: 'VirtualBox' } }),
-        D('11n', 'Route: kairos-lab not skippable (Zen)', { view: 'map', stage: 'kairos-lab', seed: { facts: zen } }),
-        D('11o', 'Route: cleared stops in their own color', { view: 'map', stage: 'pipelines', seed: { cleared: 4, facts: zen } })
+      { title: 'NEW IN ROUND 4 · TWO MODES, PROJECTOR, BOSS KEY', note: 'The first screen asks for a mode. “Just the workshop” has no game: stage list on the left, the same steps, commands, notes and prompts in the middle. Esc turns either mode into a spreadsheet.', items: [
+        D('13a', 'First screen: choose a mode', { mode: null, view: 'chooser', seed: { started: false, name: '', character: '' } }),
+        D('13b', 'Just the workshop · light', { mode: 'workshop', w: 1280, seed: { facts: zen } }),
+        D('13c', 'Just the workshop · dark', { mode: 'workshop', w: 1280, wsDark: true, seed: { facts: zen, done: [E.stepKey(ids[0], E.steps(ids[0], zen)[0].id)] }, step: 1 }),
+        D('13d', 'Projector: text at 175%', { mode: 'workshop', w: 1280, wsSize: 6, seed: { facts: zen } }),
+        D('13e', 'Workshop: loadout on first visit', { mode: 'workshop', view: 'loadout', w: 1280, seed: { facts: unsetF } }),
+        D('13f', 'Unset facts: items keep their labels', { mode: 'workshop', w: 1280, seed: { facts: unsetF } }),
+        D('13g', 'Boss key from the game', { boss: true, step: 1, seed: { facts: zen } }),
+        D('13h', 'Boss key from the workshop', { mode: 'workshop', boss: true, stage: at(1), w: 1280, seed: { cleared: 1, facts: zen } }),
+        D('13i', 'Step help: tool + docs, check kind', { step: 2, seed: { facts: zen } }),
+        D('13j', 'Stage link inside a step', { step: linkStep, seed: { facts: zen } }),
+        D('13k', 'It did not work: prompt from the step help', { step: 2, status: 'failed', seed: { facts: zen } }),
+        D('13l', 'Prompt with unset facts', { mode: 'workshop', w: 1280, status: 'failed', seed: { facts: unsetF } })
       ] },
-      { title: 'NEW IN ROUND 2 · PLAYER, MENTORS, ROUTE, ITEMS, BADGE', note: 'The mentor for each stop comes from the player\'s name through a stable hash, so “Ana” always gets the same mentors in the web and the terminal. The item and badge frames are seeded with finished progress.', items: [
-        D('10a', 'Name entry', { view: 'name', seed: { started: true, name: '' }, nameDraft: 'Ana' }),
-        D('10b', 'Choose your character', { view: 'character', seed: { started: true, character: '' } }),
-        D('10c', 'Mentor intro (start of stage)', { view: 'mentor', stage: 'build-image', seed: { cleared: 2, facts: macos } }),
-        D('10d', 'Route with a skipped stop', { view: 'map', stage: 'fleet', seed: { cleared: 2, skipped: ['build-image'], facts: macos } }),
-        D('10e', 'Skip confirm', { view: 'map', stage: 'fleet', seed: { cleared: 3, facts: macos }, skipAsk: 'fleet' }),
-        D('10f', 'Stage clear with the mentor', { view: 'clear-stage', stage: 'build-image', seed: { cleared: 3, facts: macos } }),
-        D('10g', 'Items, with the AuroraBoot mega item at 1/3', { view: 'items', stage: 'build-image', seed: { cleared: 3, facts: macos } }),
-        D('10h', 'Items: AuroraBoot 2/3, part 3 coming soon', { view: 'items', stage: 'fleet', seed: { cleared: 4, facts: macos } }),
-        D('10i', 'Complete: skipped stops show ??????', { view: 'complete', stage: 'edgevpn', seed: { cleared: 9, skipped: [], facts: macos, done: [] }, _skipTwo: true }),
-        D('10j', 'Badge', { view: 'badge', stage: 'edgevpn', seed: { cleared: 9, facts: macos, completedAt: '2026-09-30' } })
+      { title: 'ROUND 3 · WELCOME, LOADOUT, HELP, SKIP RULES', note: '', items: [
+        D('11a', 'Name: field focused, caret visible', { view: 'name', seed: { name: '' }, nameDraft: 'Ana' }),
+        D('11b', 'Welcome, first page', { view: 'welcome', welcomePage: 0 }),
+        D('11c', 'Welcome, last page: patron link', { view: 'welcome', welcomePage: E.W.welcome.pages.length - 1 }),
+        D('11d', 'Loadout: first question', { view: 'loadout', lq: 0, seed: { facts: unsetF } }),
+        D('11e', 'Loadout: Windows notice', { view: 'loadout', lq: 1, seed: { facts: win } }),
+        D('11g', 'Loadout: architecture, help open', { view: 'loadout', lq: 2, archHelp: true, seed: { facts: zen } }),
+        D('11h', 'Loadout: runtime (Zen note)', { view: 'loadout', lq: 3, seed: { facts: zen } }),
+        D('11m', 'Master: Ask KAI for a TIP', { stage: ids[0], tipOpen: true, seed: { facts: master, virtName: 'VirtualBox' } }),
+        D('11n', 'Route: first stop not skippable (Zen)', { view: 'map', stage: ids[0], seed: { facts: zen } }),
+        D('11o', 'Route: cleared stops in their own color', { view: 'map', stage: at(half), seed: { cleared: half, facts: zen } })
       ] },
-      { title: '1–3 · TITLE, LOADOUT, ROUTE', note: 'The menus sit inside the game screen, and plain buttons below repeat them.', items: [
+      { title: 'ROUND 2 · MENTORS, ROUTE, ITEMS, BADGE', note: '', items: [
+        D('10c', 'Mentor intro', { view: 'mentor', stage: at(2), seed: { cleared: 2, facts: zen } }),
+        D('10d', 'Route with a skipped stop', { view: 'map', stage: at(3), seed: { cleared: 2, skipped: [at(2)], facts: zen } }),
+        D('10f', 'Stage clear with the mentor', { view: 'clear-stage', stage: at(2), seed: { cleared: 3, facts: zen } }),
+        D('10g', 'Items', { view: 'items', stage: at(2), seed: { cleared: 3, facts: zen } }),
+        D('10i', 'Complete: skipped stops show ??????', { view: 'complete', stage: last, seed: { facts: zen, done: ids.filter((x, i) => i % 3 !== 1).flatMap(x => reqDone(x, zen)), skipped: ids.filter((x, i) => i % 3 === 1), completedAt: '2026-09-30' } }),
+        D('10j', 'Badge', { view: 'badge', stage: last, seed: all })
+      ] },
+      { title: 'ROUND 1 · TITLE, STAGE, SETTINGS, MOBILE', note: '', items: [
         D('1a', 'Title, new player', { view: 'title', seed: { started: false, name: '', character: '' } }),
-        D('1b', 'Title, saved game', { view: 'title', seed: { cleared: 1, done: ['first-node/build-iso'], facts: macos } }),
-        D('2a', 'Loadout, all “Not sure yet”', { view: 'loadout' }),
-        D('3a', 'Route: cleared, current, locked', { view: 'map', stage: 'build-image', seed: { cleared: 2, done: ['kairos-lab/runtime'], facts: macos } })
-      ] },
-      { title: '4 · STAGE SCREEN', note: 'Viewport on top, instructions below. You and KAI both point at commands and both read when the step is text only.', items: [
-        D('4a', 'Not sure yet: everything labeled “Only if”', {}),
-        D('4b', 'macOS loadout, copied', { seed: { facts: macos }, copy: { 'kairos-lab/install/2/0/0': 'copied' } }),
-        D('4c', 'Linux loadout, copy failed', { seed: { facts: linux }, copy: { 'kairos-lab/install/2/1/0': 'failed' } }),
-        D('4e', 'Long command wraps (Podman)', { stage: 'first-node', seed: { cleared: 1, facts: linux } }),
-        D('4g', 'It did not work: tips from KAI', { status: 'failed', seed: { facts: macos } }),
-        D('6a', 'Empty state: none of the options match', { seed: { facts: { ...macos, os: 'windows' } } })
-      ] },
-      { title: '5, 7, 8 · TRANSITIONS, SETTINGS, MOBILE', note: '', items: [
-        D('5a', 'Step cleared', { view: 'clear-step', seed: { facts: macos, done: ['kairos-lab/install'] }, clear: { xp: 50, optional: false, stageCleared: false } }),
-        D('7a', 'Settings', { settingsOpen: true, seed: { facts: macos } }),
-        D('7b', 'Kairos palette, reduced motion', { palette: 'kairos', reduce: true, view: 'map', stage: 'fleet', seed: { cleared: 3, facts: macos } }),
-        D('7c', 'Color palette', { palette: 'gbc', view: 'mentor', stage: 'pipelines', seed: { cleared: 4, facts: macos } }),
-        Mb('8a', 'Mobile: route', { view: 'map', stage: 'build-image', seed: { cleared: 2, facts: macos } }),
-        Mb('8b', 'Mobile: stage', { seed: { facts: macos } }),
-        Mb('8c', 'Mobile: badge', { view: 'badge', seed: { cleared: 9, facts: macos, completedAt: '2026-09-30' } })
+        D('4b', 'Stage, copied', { seed: { facts: zen }, copy: {} }),
+        D('7a', 'Settings (game)', { settingsOpen: true, seed: { facts: zen } }),
+        D('7d', 'Settings (workshop)', { mode: 'workshop', w: 1280, settingsOpen: true, seed: { facts: zen } }),
+        D('7b', 'Kairos palette, reduced motion', { palette: 'kairos', reduce: true, view: 'map', stage: at(half), seed: { cleared: half, facts: zen } }),
+        Mb('8b', 'Mobile: stage (game)', { seed: { facts: zen } }),
+        Mb('8d', 'Mobile: just the workshop', { mode: 'workshop', seed: { facts: zen } })
       ] }
     ];
-    groups.flatMap(g => g.items).forEach(it => { if (it._skipTwo) it.seed = { ...it.seed, cleared: 9 }; });
-    groups.flatMap(g => g.items).find(x => x.id === '10i').seed = { ...who, facts: macos, cleared: 0, done: [], skipped: [] , _custom: true };
-    const ready = this.state.ready && E.ready();
-    if (ready) {
-      const ids = E.stageIds(), done = [];
-      ids.forEach(id => { if (id !== 'pipelines' && id !== 'multi-node') E.stage(id).steps.forEach(s => { if (!s.optional) done.push(E.stepKey(id, s.id)); }); });
-      groups.flatMap(g => g.items).find(x => x.id === '10i').seed = { ...who, facts: macos, cleared: 0, done, skipped: ['pipelines', 'multi-node'], completedAt: '2026-09-30' };
-    }
-    const S = o => ready ? E.seedProgress({ ...who, ...o }) : null;
+    const S = o => E.seedProgress({ ...who, ...o });
     const spec = [
-      ['9a', 'Title · 80×24', 80, 24, { view: 'title', p: S({ cleared: 2, facts: macos }), cursor: 1 }],
-      ['9n', 'Name entry · 80×24', 80, 24, { view: 'name', p: S({}), nameText: 'ANA' }],
-      ['9o', 'Character · 80×24', 80, 24, { view: 'character', p: S({ character: '' }), charCursor: 1 }],
-      ['9c', 'Loadout · 80×24', 80, 24, { view: 'loadout', p: S({ facts: macos }), factCursor: 1 }],
-      ['9e', 'Route · 80×24 (scrolls)', 80, 24, { view: 'map', p: S({ cleared: 2, skipped: ['build-image'], facts: macos }), mapCursor: 3 }],
-      ['9f', 'Route · 120×40, Europe', 120, 40, { view: 'map', p: S({ cleared: 2, skipped: ['build-image'], facts: macos }), mapCursor: 3 }],
-      ['9s', 'Skip confirm · 80×24', 80, 24, { view: 'map', p: S({ cleared: 3, facts: macos }), mapCursor: 3, skipAsk: true }],
-      ['9m', 'Mentor intro · 80×24', 80, 24, { view: 'mentor', p: S({ cleared: 2, facts: macos }), stage: 'build-image' }],
-      ['9g', 'Stage · 80×24', 80, 24, { view: 'stage', p: S({ facts: macos }), stage: 'kairos-lab', step: 0 }],
-      ['9h', 'Stage · 120×40, long command', 120, 40, { view: 'stage', p: S({ cleared: 1, facts: macos }), stage: 'first-node', step: 0 }],
-      ['9j', 'Stage · 80×24 · ASCII, no color', 80, 24, { view: 'stage', p: S({}), stage: 'kairos-lab', step: 0, ascii: true, scroll: 4 }],
-      ['9k', 'Stage clear with mentor · 80×24', 80, 24, { view: 'clear-stage', p: S({ cleared: 3, facts: macos }), stage: 'build-image' }],
-      ['9l', 'Items · 80×24', 80, 24, { view: 'items', p: S({ cleared: 4, facts: macos }), stage: 'fleet' }],
-      ['9p', 'Complete · 120×40', 120, 40, { view: 'complete', p: ready ? E.seedProgress(groups.flatMap(g => g.items).find(x => x.id === '10i').seed) : null, stage: 'edgevpn' }],
-      ['9q', 'Badge · 80×24', 80, 24, { view: 'badge', p: S({ cleared: 9, facts: macos, completedAt: '2026-09-30' }) }]
-    ];
-    spec.unshift(
       ['12a', 'Welcome · 80×24', 80, 24, { view: 'welcome', p: S({ facts: zen }), welcomePage: 0 }],
-      ['12b', 'Loadout: Windows notice · 80×24', 80, 24, { view: 'loadout', p: S({ facts: win }), lq: 1 }],
-      ['12c', 'Loadout: virtualization · 120×40', 120, 40, { view: 'loadout', p: S({ facts: zen }), lq: 1, optCursor: 0 }],
-      ['12d', 'Loadout: arch help · 80×24', 80, 24, { view: 'loadout', p: S({ facts: zen }), lq: 2, optCursor: 1 }],
-      ['12e', 'It did not work: AI prompt · 120×40', 120, 40, { view: 'stage', p: S({ facts: zen }), stage: 'kairos-lab', step: 0, status: 'failed', scroll: 14, focus: 2 }],
-      ['12f', 'Master TIP · 80×24', 80, 24, { view: 'stage', p: S({ cleared: 1, facts: master }), stage: 'first-node', step: 1, status: 'tip' }],
-      ['12g', 'Route: cleared color + no-skip reason · 120×40', 120, 40, { view: 'map', p: S({ cleared: 3, facts: zen }), mapCursor: 0 }],
-      ['12h', 'Lists in the terminal · 80×24', 80, 24, { view: 'stage', p: S({ facts: zen, done: ['kairos-lab/install'] }), stage: 'kairos-lab', step: 1 }]
-    );
-    const terms = spec.map(([id, label, w, h, o]) => ({ id, label, ref: el => {
-      if (!el || !ready || !window.KAIT || !o.p) return;
-      el.innerHTML = window.KAIT.toHTML(window.KAIT.render(E, { w, h, palette: 'dmg', ...o }));
-    } }));
+      ['12c', 'Loadout · 120×40', 120, 40, { view: 'loadout', p: S({ facts: zen }), lq: 1, optCursor: 0 }],
+      ['14a', 'Stage with help line and $ prompt · 120×40', 120, 40, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 2 }],
+      ['14b', 'Stage · 80×24', 80, 24, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 1 }],
+      ['14c', 'Unset facts: labels + placeholders · 120×40', 120, 40, { view: 'stage', p: S({ facts: unsetF }), stage: ids[0], step: 0, status: 'failed', scroll: 30 }],
+      ['12e', 'It did not work: AI prompt · 120×40', 120, 40, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 2, status: 'failed', scroll: 8 }],
+      ['12g', 'Route · 120×40', 120, 40, { view: 'map', p: S({ cleared: half, facts: zen }), mapCursor: half }],
+      ['9j', 'Stage · 80×24 · ASCII, no color', 80, 24, { view: 'stage', p: S({ facts: zen }), stage: ids[0], step: 0, ascii: true }],
+      ['9q', 'Badge · 80×24', 80, 24, { view: 'badge', p: S(all) }]
+    ];
+    const terms = spec.map(([id, label, w, h, o]) => ({ id, label, ref: el => { if (!el || !window.KAIT) return; el.innerHTML = window.KAIT.toHTML(window.KAIT.render(E, { w, h, palette: 'dmg', ...o })); } }));
     const stateNotes = [
-      { screen: 'Round 3', states: ['Name: input focused on open, caret visible, typing works at once', 'Welcome: 5 pages with Mauro, Next / Back, last page “Start your quest”, patron link', 'Loadout: one question per screen; Windows → Master notice; virtualization only on Linux/macOS; arch “Not sure?” help; runtime note (+ Zen note)', '“Only if” labels only for unanswered facts or “show all”', 'Check: Next step / It did not work → AI prompt + Copy + warning; Master virtualization placeholder field', 'Master: Ask KAI for a TIP on every stage', 'Skip: disabled with reason when a stage rule forbids it', 'Route: cleared stops in their own color + ✓', 'Markdown lists and code inside link labels'] },
-      { screen: 'Name entry', states: ['Empty (placeholder shows the default “Friend”)', 'Typing: web input, max 12; terminal keys, Backspace', 'Empty on confirm → default name'] },
-      { screen: 'Character', states: ['Hoodie, Cap, Beanie: named by style', 'Selected: inverted + ● (web), [brackets] (terminal)', 'Poses: idle, walk ×4, happy, sad, point, read, celebrate'] },
-      { screen: 'Mentor intro', states: ['Portrait, name, country card', '“{mentor} will teach us today how to {goal}.”', 'Shown each time you enter a stop'] },
-      { screen: 'Route', states: ['Europe map; N stops spread along one polyline', 'Viewport and terminal window scroll to the cursor', 'Stop states: locked, current, cleared, skipped', 'Mentor portrait for the stop under the cursor', 'Skip: confirm, then the next stop opens'] },
-      { screen: 'Stage clear', states: ['Mentor portrait + KAI jump (still if reduced)', '“Nice work, {name}! {mentor} is proud of you.”'] },
-      { screen: 'Items', states: ['One row per item the stage grants', 'Mega item: AURORABOOT n/3 with the next part', 'A part no stage grants: “coming soon”'] },
-      { screen: 'Complete', states: ['Recap per stop, with mentor and skipped marker', 'Inventory: owned, ?????? (skipped), coming soon', 'CTA: install kairos-lab for your loadout'] },
-      { screen: 'Badge', states: ['KAI face, player name, completion date', 'Download as PNG (web)', 'Skipping never blocks the badge'] }
+      { screen: 'Round 4', states: ['First screen: Play the game / Just the workshop (saved in the browser)', 'Mode toggle in the header and in Settings', 'Workshop: stage list, same steps, light/dark, A− / A+ (90%–175%)', 'Boss key: Esc ⇄ spreadsheet, one sheet per stage, title + icon restored', 'Esc does nothing in dialogs and the loadout', 'Step help: tool + docs per step; prompts from step help', '$ prompt on every command', 'Unset facts: labels shown, placeholders from data', 'Stage count and list from data (' + N + ' stages now)'] },
+      { screen: 'Round 3', states: ['Name focus, welcome pages, one-question loadout, AI prompt, TIP, skip rules, cleared colors, lists'] },
+      { screen: 'Round 2', states: ['Name, character, mentors, route, items, mega item, badge'] },
+      { screen: 'Round 1', states: ['Title, stage, copy states, transitions, empty state, settings, mobile, terminal'] }
     ];
     return { groups, terms, stateNotes };
   }

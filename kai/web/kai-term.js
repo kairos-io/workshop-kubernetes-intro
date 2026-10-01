@@ -71,7 +71,7 @@
     const push = (segs, extra) => lines.push({ segs, ...(extra || {}) });
     const blank = () => { if (lines.length && lines[lines.length - 1].segs.length) push([]); };
     // blocks from E.md: paragraphs and lists, with a hanging indent under list markers
-    const words = segs => { const out = []; segs.forEach(g => String(g.v).split(/\s+/).forEach(w => { if (w) out.push({ s: w, st: g.t === 'b' || g.t === 'code' ? bold : null }); })); segs.filter(g => g.t === 'a').forEach(g => out.push({ s: '<' + g.href + '>', st: null })); return out; };
+    const words = segs => { const out = []; segs.forEach(g => String(g.v).split(/\s+/).forEach(w => { if (w) out.push({ s: w, st: g.t === 'b' || g.t === 'code' ? bold : null }); })); segs.filter(g => g.t === 'a').forEach(g => { const sl = E.stageLink(g.href); out.push({ s: sl ? '(stage ' + E.stageNo(sl) + ')' : '<' + g.href + '>', st: null }); }); return out; };
     const flow = (ws, ind, lead, hang) => {
       let cur = [], n = 0, first = true;
       const max = width - ind;
@@ -93,6 +93,9 @@
       });
     };
     const P = s => [{ k: 'p', segs: [{ t: 'text', v: s }] }];
+    const so = E.stepOnly(st, p.facts), hp = E.stepHelp(st);
+    if (so) push([{ s: '  ', st: null }, { s: '[' + so + ']', st: null }]);
+    if (hp.has && ui.status !== 'tip') { flow(words([{ t: 'b', v: (L.tool || 'Tool') + ':' }, { t: 'text', v: ' ' + hp.tool + (hp.source ? ' <' + hp.source + '>' : '') + (hp.docs ? '  ' + (L.docs || 'Docs') + ': <' + hp.docs + '>' : '') }]), 2, '', 2); }
     const opts = { key: sid + '/' + st.id, facts: p.facts, sel: {}, showAll: ui.showAll || {}, layout: 'stacked' };
     const rows = E.flatten(st.blocks, opts);
     if (ui.status === 'failed') { rows.push({ type: 'trouble', inset: 0 }); E.flatten(st.check.fail, { ...opts, key: opts.key + '/fail', inset: 1 }, rows); }
@@ -112,7 +115,9 @@
         const label = (r.isFile ? 'File: ' + r.name : 'Command ' + (ci + 1)) + (focus ? '  ·  c copy  ·  o print plain' : '');
         push([{ s: ' '.repeat(ind), st: null }, { s: (focus ? G.cur + ' ' : '  ') + label, st: focus ? ui.sel : null }], { cmd: ci });
         const ci2 = ind + 2;
-        r.code.split('\n').forEach(l => {
+        const cl = r.code.split('\n');
+        cl.forEach((l0, li) => {
+          const l = (r.isFile ? '' : (li > 0 && /\\\s*$/.test(cl[li - 1]) ? '  ' : '$ ')) + l0;
           let rest = l, firstW = width - ci2;
           if (T.len(rest) <= firstW) { push([{ s: ' '.repeat(ci2), st: null }, { s: rest, st: bold }], { cmd: ci, code: true }); return; }
           push([{ s: ' '.repeat(ci2), st: null }, { s: [...rest].slice(0, firstW).join(''), st: bold }], { cmd: ci, code: true });
@@ -287,7 +292,7 @@
       if (scroll > 0) g.put(w - 1, iy, G.up, { b: true });
       if (scroll + ih < ins.lines.length) g.put(w - 1, iy + ih - 1, G.down, { b: true });
       const done = p.done[E.stepKey(sid, st.id)];
-      g.put(wide ? 42 : 0, h - 2, T.clip(' Check: ' + st.check.prompt + (done ? '  ' + G.ok + ' cleared' : ''), wide ? w - 42 : w), { b: true });
+      g.put(wide ? 42 : 0, h - 2, T.clip(' Check (' + E.checkKind(st).label + '): ' + st.check.prompt + (done ? '  ' + G.ok + ' cleared' : ''), wide ? w - 42 : w), { b: true });
       const tipK = E.isMaster(p.facts) ? ' ' + G.dot + ' t TIP' : '';
       keys(done ? 'Enter next step ' + G.dot + ' left/right steps ' + G.dot + ' up/down scroll ' + G.dot + ' Tab cmd ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route'
         : 'Enter ' + L.next_step.toLowerCase() + ' ' + G.dot + ' n ' + L.did_not_work.toLowerCase() + ' ' + G.dot + ' up/down ' + G.dot + ' Tab ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route');

@@ -20,26 +20,70 @@ button:disabled{cursor:not-allowed;}
 </style>
 </helmet>
 <div style="min-height:100%;background:var(--bg,#0F380F);color:var(--onBg,#9BBC0F);font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:var(--fs,18px);line-height:1.5;{{ rootVars }}">
-  <header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;max-width:960px;margin:0 auto;box-sizing:border-box;">
+  <sc-if value="{{ boss.on }}" hint-placeholder-val="{{ false }}">
+    <dc-import name="KAI Sheet" sheet="{{ boss.sheet }}" contained="{{ boss.contained }}" hint-size="100%,100vh"></dc-import>
+  </sc-if>
+  <div style="display:{{ appDisplay }};">
+  <header style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;padding:14px 20px;max-width:{{ maxW }};margin:0 auto;box-sizing:border-box;">
     <div style="display:flex;flex-direction:column;gap:2px;min-width:0;">
-      <div style="font-weight:600;font-size:16px;">Kairos workshop</div>
+      <div style="font-weight:600;font-size:16px;">{{ headTitle }}</div>
       <div style="font-size:14px;">{{ crumb }}</div>
     </div>
-    <nav aria-label="Workshop" style="display:flex;flex-wrap:wrap;gap:8px;">
+    <nav aria-label="Workshop" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+      <sc-if value="{{ hasMode }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ toggleMode }}" aria-label="{{ modeAria }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">{{ modeLabel }}</button>
+      </sc-if>
+      <sc-if value="{{ isWorkshop }}" hint-placeholder-val="{{ false }}">
+        <span role="group" aria-label="Text size" style="display:flex;gap:4px;">
+          <button onClick="{{ textSmaller }}" disabled="{{ noSmaller }}" aria-label="{{ smallerLabel }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;min-width:44px;">A−</button>
+          <button onClick="{{ textBigger }}" disabled="{{ noBigger }}" aria-label="{{ biggerLabel }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;min-width:44px;font-size:19px;">A+</button>
+        </span>
+        <button onClick="{{ toggleDark }}" aria-pressed="{{ isDark }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">{{ darkLabel }}</button>
+      </sc-if>
       <sc-if value="{{ showMapBtn }}" hint-placeholder-val="{{ false }}">
         <button onClick="{{ goMap }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Route</button>
       </sc-if>
-      <button onClick="{{ goLoadout }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Loadout</button>
+      <sc-if value="{{ hasMode }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goLoadout }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Loadout</button></sc-if>
       <button onClick="{{ toggleSettings }}" aria-expanded="{{ settingsOpen }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">Settings</button>
     </nav>
   </header>
 
-  <main style="max-width:960px;margin:0 auto;padding:0 20px 40px;display:flex;flex-direction:column;gap:20px;box-sizing:border-box;">
+  <main style="max-width:{{ maxW }};margin:0 auto;padding:0 20px 40px;display:flex;flex-direction:column;gap:20px;box-sizing:border-box;zoom:{{ zoom }};">
+    <sc-if value="{{ show.chooser }}" hint-placeholder-val="{{ false }}">
+      <div role="dialog" aria-modal="false" aria-labelledby="kai-mode-q" style="display:flex;flex-direction:column;gap:20px;background:var(--surface);color:var(--ink);border:3px solid var(--ink);padding:28px clamp(16px,4vw,40px);max-width:880px;width:100%;margin:24px auto 0;box-sizing:border-box;">
+        <h1 id="kai-mode-q" style="margin:0;font-size:30px;font-weight:600;line-height:1.2;text-wrap:pretty;">{{ chooser.question }}</h1>
+        <p style="margin:0;font-size:18px;">{{ chooser.intro }}</p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;">
+          <sc-for list="{{ chooser.options }}" as="c" hint-placeholder-count="2">
+            <button onClick="{{ c.pick }}" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;text-align:left;padding:20px;min-height:140px;border:3px solid var(--ink);background:{{ c.bg }};color:{{ c.fg }};font:inherit;cursor:pointer;">
+              <span style="font-size:24px;font-weight:600;">{{ c.label }} ▶</span>
+              <span style="font-size:18px;line-height:1.5;text-wrap:pretty;">{{ c.desc }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="font-size:16px;">{{ chooser.hint }}</div>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showViewport }}" hint-placeholder-val="{{ true }}">
     <div style="width:100%;">
       <dc-import name="KAI Screen" screen="{{ vp.screen }}" palette="{{ vp.palette }}" reduce-motion="{{ vp.reduce }}" max-scale="{{ vp.maxScale }}" dialog="{{ vp.dialog }}" action="{{ vp.action }}" hud="{{ vp.hud }}" menu="{{ vp.menu }}" cursor="{{ vp.cursor }}" loadout="{{ vp.loadout }}" map="{{ vp.map }}" map-cursor="{{ vp.mapCursor }}" kind="{{ vp.kind }}" tool="{{ vp.tool }}" headline="{{ vp.headline }}" sub="{{ vp.sub }}" player="{{ vp.player }}" mentor="{{ vp.mentor }}" items="{{ vp.items }}" name-text="{{ vp.nameText }}" date="{{ vp.date }}" on-menu="{{ vp.onMenu }}" on-advance="{{ vp.onAdvance }}" on-map="{{ vp.onMap }}" hint-size="100%,288px"></dc-import>
     </div>
+    </sc-if>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start;width:100%;">
+    <sc-if value="{{ isWorkshop }}" hint-placeholder-val="{{ false }}">
+      <nav aria-label="{{ navLabel }}" style="display:flex;flex-direction:column;gap:8px;min-width:0;flex:1 1 240px;max-width:{{ navMax }};">
+        <div style="font-weight:600;font-size:18px;color:var(--onBg);">{{ navLabel }}</div>
+        <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;">
+          <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+            <li><button onClick="{{ n.open }}" aria-current="{{ n.current }}" style="width:100%;display:grid;grid-template-columns:2.4ch minmax(0,1fr) auto;gap:8px;align-items:start;text-align:left;padding:10px 12px;min-height:48px;border:3px solid var(--ink);background:{{ n.bg }};color:{{ n.fg }};font:inherit;font-size:17px;cursor:pointer;box-sizing:border-box;">
+              <span style="font-weight:600;">{{ n.no }}</span><span style="text-wrap:pretty;font-weight:{{ n.weight }};">{{ n.title }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:15px;white-space:nowrap;">{{ n.count }}</span>
+            </button></li>
+          </sc-for>
+        </ol>
+      </nav>
+    </sc-if>
 
-    <section aria-live="polite" style="background:var(--surface,#E6EFC8);color:var(--ink,#0F380F);border:3px solid var(--ink,#0F380F);padding:24px clamp(16px,4vw,32px);display:flex;flex-direction:column;gap:20px;width:100%;max-width:820px;margin:0 auto;box-sizing:border-box;">
+    <section aria-live="polite" style="background:var(--surface,#E6EFC8);color:var(--ink,#0F380F);border:3px solid var(--ink,#0F380F);padding:24px clamp(16px,4vw,32px);display:{{ sectionDisplay }};flex-direction:column;gap:20px;flex:999 1 420px;width:100%;max-width:{{ sectionMax }};margin:0 auto;box-sizing:border-box;min-width:0;">
 
       <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
         <div style="display:flex;flex-direction:column;gap:22px;">
@@ -64,26 +108,13 @@ button:disabled{cursor:not-allowed;}
             </div>
           </sc-for>
           <div style="display:flex;flex-direction:column;gap:6px;">
-            <div style="font-weight:600;">Plain view</div>
-            <div style="font-size:16px;">The same workshop as a normal document, without the game. <a href="{{ plainUrl }}">Open plain view</a></div>
+            <div style="font-weight:600;">{{ modeHeading }}</div>
+            <div style="font-size:16px;display:flex;flex-wrap:wrap;gap:10px;align-items:center;"><span>The same workshop as a normal page, without the game. Good for projectors.</span><button onClick="{{ toggleMode }}" style="background:transparent;color:var(--ink);border:2px solid var(--ink);padding:8px 12px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ modeLabel }}</button></div>
           </div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;">
             <button onClick="{{ toggleSettings }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Done</button>
             <button onClick="{{ resetProgress }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">{{ resetLabel }}</button>
           </div>
-        </div>
-      </sc-if>
-
-      <sc-if value="{{ show.title }}" hint-placeholder-val="{{ false }}">
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">A hands-on Kairos workshop</h1>
-          <p style="margin:0;max-width:62ch;text-wrap:pretty;">Seven stages, from your first node to rolling upgrades through Kubernetes. You type every command yourself. KAI keeps score, and failing a check costs nothing.</p>
-          <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            <button onClick="{{ newGame }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">New game</button>
-            <button onClick="{{ continueGame }}" disabled="{{ noSave }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">{{ continueLabel }}</button>
-            <a href="{{ plainUrl }}" style="display:inline-flex;align-items:center;padding:12px 8px;min-height:48px;box-sizing:border-box;font-size:16px;">Plain view</a>
-          </div>
-          <div style="font-size:15px;">Keyboard: ↑ ↓ to move, Enter to select.</div>
         </div>
       </sc-if>
 
@@ -238,7 +269,7 @@ button:disabled{cursor:not-allowed;}
       <sc-if value="{{ show.stage }}" hint-placeholder-val="{{ true }}">
         <div style="display:flex;flex-direction:column;gap:20px;">
           <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;">
-            <div style="font-size:15px;font-weight:600;min-width:0;">Stage {{ stageId }} · {{ location }}: {{ stageTitle }}</div>
+            <div style="font-size:15px;font-weight:600;min-width:0;">{{ stageHead }}</div>
             <div role="list" aria-label="Steps" style="display:flex;gap:6px;flex-wrap:wrap;">
               <sc-for list="{{ pills }}" as="p" hint-placeholder-count="3">
                 <button role="listitem" onClick="{{ p.go }}" aria-current="{{ p.current }}" aria-label="{{ p.aria }}" style="min-width:44px;height:44px;padding:0 8px;border:3px solid var(--ink);background:{{ p.bg }};color:{{ p.fg }};font:600 16px 'IBM Plex Mono',monospace;cursor:pointer;">{{ p.label }}</button>
@@ -259,6 +290,13 @@ button:disabled{cursor:not-allowed;}
             </sc-if>
             <h1 style="margin:0;font-size:calc(var(--fs) * 1.5);font-weight:600;line-height:1.2;text-wrap:pretty;">{{ stepTitle }}</h1>
             <div style="font-size:15px;">Step {{ stepNum }} of {{ stepCount }}</div>
+            <sc-if value="{{ hasStepOnly }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;border:2px dashed var(--ink);padding:2px 8px;font-size:15px;font-weight:600;">{{ stepOnly }}</div></sc-if>
+            <sc-if value="{{ help.has }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-wrap:wrap;gap:6px 18px;font-size:16px;">
+                <sc-if value="{{ help.hasTool }}" hint-placeholder-val="{{ false }}"><span><strong style="font-weight:600;">{{ help.toolLabel }}:</strong> <a href="{{ help.source }}" target="_blank" rel="noopener" style="color:var(--link,inherit);">{{ help.tool }}</a></span></sc-if>
+                <sc-if value="{{ help.hasDocs }}" hint-placeholder-val="{{ false }}"><span><strong style="font-weight:600;">{{ help.docsLabel }}:</strong> <a href="{{ help.docs }}" target="_blank" rel="noopener" style="color:var(--link,inherit);overflow-wrap:anywhere;">{{ help.docsText }}</a></span></sc-if>
+              </div>
+            </sc-if>
           </div>
 
           <div style="display:flex;flex-direction:column;">
@@ -268,7 +306,7 @@ button:disabled{cursor:not-allowed;}
                 <sc-if value="{{ r.isText }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;flex-direction:column;gap:10px;max-width:68ch;">
                     <sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;border:2px dashed var(--ink);padding:2px 8px;font-size:15px;font-weight:600;">{{ r.only }}</div></sc-if>
-                    <dc-import name="KAI Md" md="{{ r.md }}" hint-size="100%,24px"></dc-import>
+                    <dc-import name="KAI Md" md="{{ r.md }}" on-stage="{{ goStageLink }}" hint-size="100%,24px"></dc-import>
                   </div>
                 </sc-if>
 
@@ -320,7 +358,7 @@ button:disabled{cursor:not-allowed;}
                     <canvas ref="{{ r.iconRef }}" width="8" height="8" aria-hidden="true" style="width:32px;height:32px;image-rendering:pixelated;margin-top:2px;"></canvas>
                     <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
                       <div style="font-weight:600;">{{ r.kindLabel }}<sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><span style="font-weight:400;font-size:15px;"> · {{ r.only }}</span></sc-if></div>
-                      <dc-import name="KAI Md" md="{{ r.md }}" hint-size="100%,24px"></dc-import>
+                      <dc-import name="KAI Md" md="{{ r.md }}" on-stage="{{ goStageLink }}" hint-size="100%,24px"></dc-import>
                     </div>
                   </div>
                 </sc-if>
@@ -362,7 +400,7 @@ button:disabled{cursor:not-allowed;}
 
           <div aria-label="Check" role="group" style="display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;border:3px solid var(--ink);padding:16px;background:var(--surface2);">
             <div style="display:flex;flex-direction:column;gap:4px;min-width:min(100%,260px);flex:1;">
-              <div style="font-size:15px;font-weight:600;">Check</div>
+              <div style="font-size:15px;font-weight:600;">Check · {{ checkKind }}</div>
               <div style="font-weight:600;text-wrap:pretty;">{{ checkPrompt }}</div>
             </div>
             <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
@@ -509,16 +547,18 @@ button:disabled{cursor:not-allowed;}
         </div>
       </sc-if>
     </section>
+    </div>
   </main>
 
-  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span><a href="{{ plainUrl }}" style="color:var(--onBg);">Plain view</a></footer>
+  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span><button onClick="{{ toggleMode }}" style="background:transparent;color:var(--onBg);border:0;padding:4px 0;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;">{{ footerModeLabel }}</button></footer>
+  </div>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;title&quot;,&quot;name&quot;,&quot;welcome&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:&quot;title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kairos-lab&quot;,&quot;first-node&quot;,&quot;build-image&quot;,&quot;fleet&quot;,&quot;pipelines&quot;,&quot;manual-upgrade&quot;,&quot;multi-node&quot;,&quot;operator-upgrade&quot;,&quot;edgevpn&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;welcomePage&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:4,&quot;tsType&quot;:&quot;number&quot;},&quot;lq&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:4,&quot;tsType&quot;:&quot;number&quot;},&quot;archHelp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;tipOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{name?:string,character?:string,cleared?:number,skipped?:string[],done?:string[],facts?:object,xp?:number,started?:boolean,settings?:object,completedAt?:string,virtName?:string}&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,'copied'|'failed'&gt;&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,boolean&gt;&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;chooser&quot;,&quot;title&quot;,&quot;name&quot;,&quot;welcome&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:&quot;title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;mode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;game&quot;,&quot;workshop&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;boss&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;wsSize&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:1,&quot;max&quot;:6,&quot;tsType&quot;:&quot;number&quot;},&quot;wsDark&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;welcomePage&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;lq&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:9,&quot;tsType&quot;:&quot;number&quot;},&quot;archHelp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;tipOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
   state = {
     ready: false, p: null,
-    view: this.props.view ?? 'title', stage: this.props.stage ?? null, step: this.props.step ?? 0,
+    view: this.props.view ?? 'title', stage: this.props.stage ?? null, step: this.props.step ?? 0, mode: this.props.mode ?? null, boss: !!this.props.boss, ws: { size: this.props.wsSize ?? 3, dark: !!this.props.wsDark },
     status: this.props.status ?? 'todo', alt: {}, showAll: this.props.showAll ?? {}, copy: this.props.copy ?? {},
     cursor: 0, factCursor: 0, mapCursor: 0, settingsOpen: !!this.props.settingsOpen,
     returnView: null, clear: this.props.clear ?? null, resetArmed: false, nameDraft: this.props.nameDraft ?? null, charCursor: 0, skipAsk: this.props.skipAsk ?? null,
@@ -531,6 +571,12 @@ class Component extends DCLogic {
     E.load().then(() => {
       const p = this.props.seed ? E.seedProgress(this.props.seed) : (this.persist() ? E.loadProgress() : E.newProgress());
       const stage = this.state.stage || E.currentStage(p) || E.stageIds()[0];
+      const mode = this.props.mode ?? E.getMode(), stored = this.props.seed ? null : E.getView();
+      if (stored && this.props.wsSize == null) this.setState({ ws: { size: stored.size, dark: !!stored.dark } });
+      let view0 = this.state.view;
+      if (!mode && this.props.view == null) view0 = 'chooser';
+      else if (mode === 'workshop' && !['loadout', 'stage'].includes(view0)) view0 = this.needsLoadout(p) ? 'loadout' : 'stage';
+      this.setState({ mode, view: view0 });
       let clear = this.state.clear;
       if (!clear && ['clear-step', 'clear-stage', 'items'].includes(this.state.view)) clear = { xp: E.W.xp.step, optional: false, stageCleared: this.state.view !== 'clear-step' };
       const ci = Math.max(0, E.W.player.characters.findIndex(c => c.id === p.character));
@@ -540,9 +586,44 @@ class Component extends DCLogic {
     this.onKey = e => this.key(e);
     window.addEventListener('keydown', this.onKey);
   }
-  componentDidUpdate(pp, ps) { if (this.state.view === 'name' && ps.view !== 'name') this.focusName(); }
+  componentDidUpdate(pp, ps) {
+    if (this.state.view === 'name' && ps.view !== 'name') this.focusName();
+    if (this.state.boss !== ps.boss && this.props.keys !== false) this.disguise(this.state.boss);
+  }
+  // Boss key: tab title + icon look like a spreadsheet; both are restored on the way back.
+  disguise(on) {
+    try {
+      const W = window.KAIE.W, sheet = W.sheet || {};
+      let link = document.querySelector('link[rel~="icon"]');
+      if (on) {
+        this.saved = { title: document.title, href: link ? link.getAttribute('href') : null, created: !link };
+        if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+        link.href = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16"><rect width="16" height="16" rx="2" fill="#2f6f4f"/><path d="M3 4h10v9H3z" fill="#fff"/><path d="M3 7h10M3 10h10M7 4v9M10 4v9" stroke="#2f6f4f" stroke-width="1"/></svg>');
+        document.title = sheet.docTitle || 'Q4 budget';
+      } else if (this.saved) {
+        document.title = this.saved.title;
+        if (link) { if (this.saved.created) link.remove(); else link.setAttribute('href', this.saved.href); }
+        this.saved = null;
+      }
+    } catch (err) {}
+  }
+  needsLoadout(p) { const E = window.KAIE; return E.loadoutQuestions(p.facts).some(q => q.type === 'fact' && E.unset(p.facts, q.id)); }
+  chooseMode(m) {
+    const E = window.KAIE; E.setMode(m);
+    if (m === 'workshop') this.go(this.needsLoadout(this.state.p) ? 'loadout' : 'stage', { mode: m, lq: 0, returnView: 'stage', status: 'todo', stage: this.state.stage || E.currentStage(this.state.p) || E.stageIds()[0] });
+    else this.go('title', { mode: m, cursor: 0 });
+  }
+  toggleMode() { this.chooseMode(this.isWorkshop() ? 'game' : 'workshop'); }
+  isWorkshop() { return this.state.mode === 'workshop'; }
+  setWs(patch) { const ws = { ...this.state.ws, ...patch }; this.setState({ ws }); if (!this.props.seed) window.KAIE.setView(ws); }
+  goStageLink(id) {
+    const E = window.KAIE;
+    if (this.isWorkshop()) this.go('stage', { stage: id, step: E.firstOpenStep(this.state.p, id), status: 'todo', tipOpen: false });
+    else if (E.stageState(this.state.p, id) !== 'locked') this.openStage(id);
+    else this.go('map', { mapCursor: E.stageIds().indexOf(id) });
+  }
   focusName() { if (this.props.keys === false) return; setTimeout(() => { const el = this.nameEl; if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) {} } }, 40); }
-  componentWillUnmount() { window.removeEventListener('keydown', this.onKey); Object.values(this.ct).forEach(clearTimeout); }
+  componentWillUnmount() { if (this.state.boss) this.disguise(false); window.removeEventListener('keydown', this.onKey); Object.values(this.ct).forEach(clearTimeout); }
 
   persist() { return this.props.persist !== false && !this.props.seed; }
   setP(fn) { this.setState(s => { const p = fn(JSON.parse(JSON.stringify(s.p))); if (this.persist()) window.KAIE.saveProgress(p); return { p }; }); }
@@ -578,7 +659,7 @@ class Component extends DCLogic {
   menuSelect(i) {
     if (i === 0) this.newGame();
     else if (i === 1) this.continueGame();
-    else if (i === 2 && typeof window !== 'undefined') window.location.href = window.KAIE.W.links.plainView;
+    else if (i === 2) this.chooseMode('workshop');
   }
   nameDone() {
     const W = window.KAIE.W, n = String(this.state.nameDraft || '').trim().slice(0, W.player.nameMax) || W.player.defaultName;
@@ -597,7 +678,7 @@ class Component extends DCLogic {
   curQ() { const qs = this.questions(); return qs[Math.min(this.state.lq, qs.length - 1)]; }
   qAnswered(q) { return !q || q.type !== 'fact' || !window.KAIE.unset(this.state.p.facts, q.id); }
   loadoutNext() { const qs = this.questions(), q = this.curQ(); if (!this.qAnswered(q)) return; if (this.state.lq + 1 < qs.length) this.setState({ lq: this.state.lq + 1, archHelp: false }); else this.loadoutDone(); }
-  loadoutBack() { if (this.state.lq > 0) this.setState({ lq: this.state.lq - 1, archHelp: false }); else { const rv = this.state.returnView; if (rv && !['title', 'loadout', 'name', 'character', 'welcome'].includes(rv)) this.go(rv); else this.go('character'); } }
+  loadoutBack() { if (this.isWorkshop() && this.state.lq === 0) { if (!this.needsLoadout(this.state.p)) this.go('stage'); return; } if (this.state.lq > 0) this.setState({ lq: this.state.lq - 1, archHelp: false }); else { const rv = this.state.returnView; if (rv && !['title', 'loadout', 'name', 'character', 'welcome'].includes(rv)) this.go(rv); else this.go('character'); } }
   cycleFact(dir) {
     const E = window.KAIE, q = this.curQ(); if (!q || q.type !== 'fact') return;
     const ids = E.fact(q.id).options.map(o => o.id), i = ids.indexOf(this.facts()[q.id]);
@@ -605,6 +686,7 @@ class Component extends DCLogic {
   }
   goLoadout() { this.go('loadout', { lq: 0, returnView: this.state.view === 'loadout' ? this.state.returnView : this.state.view }); }
   loadoutDone() {
+    if (this.isWorkshop()) return this.go('stage', { status: 'todo' });
     const rv = this.state.returnView;
     if (rv && !['title', 'loadout', 'map', 'name', 'character', 'welcome'].includes(rv)) this.go(rv, { status: 'todo' });
     else this.goMap();
@@ -643,6 +725,13 @@ class Component extends DCLogic {
     if (this.persist()) E.saveProgress(p2);
     const stageCleared = !was && E.stageCleared(p2, sid);
     this.setState({ p: p2 });
+    if (this.isWorkshop()) {
+      const sts = E.steps(sid, p2.facts), nx = sts.findIndex((x, i) => i > this.state.step && !p2.done[E.stepKey(sid, x.id)]);
+      if (nx >= 0) return this.go('stage', { step: nx, status: 'todo', tipOpen: false });
+      if (this.state.step < sts.length - 1) return this.go('stage', { step: this.state.step + 1, status: 'todo', tipOpen: false });
+      const ids = E.stageIds(), ni = ids.indexOf(sid) + 1;
+      return ni < ids.length ? this.go('stage', { stage: ids[ni], step: E.firstOpenStep(p2, ids[ni]), status: 'todo', tipOpen: false }) : this.setState({ status: 'done' });
+    }
     this.go('clear-step', { status: 'done', clear: { xp: gain, optional: !!st.optional, stageCleared } });
   }
   didNot() { this.setState({ status: 'failed' }); this.scrollToAi = 'fail'; }
@@ -709,7 +798,11 @@ class Component extends DCLogic {
     if (this.props.keys === false || !this.state.ready) return;
     const a = document.activeElement, onCtl = a && ['BUTTON', 'A', 'INPUT', 'TEXTAREA', 'SELECT'].includes(a.tagName);
     const k = e.key, v = this.state.view, E = window.KAIE;
-    if (this.state.settingsOpen) { if (k === 'Escape') this.setState({ settingsOpen: false }); return; }
+    if (k === 'Escape') {
+      if (this.state.settingsOpen || this.state.skipAsk || v === 'chooser' || v === 'loadout') return;
+      e.preventDefault(); this.setState({ boss: !this.state.boss }); return;
+    }
+    if (this.state.boss || this.state.settingsOpen) return;
     if (a && a.tagName === 'INPUT') return;
     const arrows = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
     if (v === 'title') {
@@ -724,11 +817,11 @@ class Component extends DCLogic {
       else if (k === 'Enter' && !onCtl) this.characterDone();
     } else if (v === 'welcome') {
       if ((k === 'Enter' && !onCtl) || k === 'ArrowRight') { this.welcomeNext(); e.preventDefault(); }
-      else if (k === 'ArrowLeft' || k === 'Escape') this.welcomeBack();
+      else if (k === 'ArrowLeft') this.welcomeBack();
     } else if (v === 'loadout') {
       if (arrows.includes(k)) { this.cycleFact(k === 'ArrowDown' || k === 'ArrowRight' ? 1 : -1); e.preventDefault(); }
       else if (k === 'Enter' && !onCtl) this.loadoutNext();
-      else if (k === 'Escape') this.loadoutBack();
+      else if (k === 'Backspace') { e.preventDefault(); this.loadoutBack(); }
     } else if (v === 'map') {
       if (arrows.includes(k)) { const n = E.stageIds().length, d = (k === 'ArrowRight' || k === 'ArrowDown') ? 1 : -1; this.setState({ mapCursor: Math.max(0, Math.min(n - 1, this.state.mapCursor + d)), skipAsk: null }); e.preventDefault(); }
       else if (k === 'Enter' && !onCtl) this.openStage(E.stageIds()[this.state.mapCursor]);
@@ -738,8 +831,6 @@ class Component extends DCLogic {
       if (k === 'Enter' && !onCtl) this.go('stage');
     } else if (v === 'complete') {
       if (k === 'Enter' && !onCtl) this.go('badge');
-    } else if (v === 'stage') {
-      if (k === 'Escape') this.goMap();
     }
   }
 
@@ -849,22 +940,63 @@ class Component extends DCLogic {
       settingsOpen: s.settingsOpen, show: {}, vp: {}, rows: [], pills: [], stages: [], facts: [], recap: [], ctaCmds: [], settingGroups: [], clear: {}, characters: [], inventory: [],
       skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
       welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
-      nameRef: el => { this.nameEl = el; }
+      nameRef: el => { this.nameEl = el; },
+      boss: { on: false }, appDisplay: 'block', headTitle: 'Kairos workshop', footerModeLabel: '', modeLabel: '', modeAria: '', darkLabel: '', modeHeading: '', navLabel: '', checkKind: '', stepOnly: '', hasStepOnly: false, chooser: { options: [] }, nav: [], help: {}, gridDisplay: 'block', gridCols: '1fr', sectionDisplay: 'flex', sectionMax: '820px', maxW: '960px', zoom: 1, showViewport: false, isWorkshop: false, hasMode: false,
+      toggleMode: () => this.toggleMode(), goStageLink: id => this.goStageLink(id), textBigger: () => this.setWs({ size: Math.min(6, this.state.ws.size + 1) }), textSmaller: () => this.setWs({ size: Math.max(1, this.state.ws.size - 1) }), toggleDark: () => this.setWs({ dark: !this.state.ws.dark })
     };
     if (!s.ready || !E.ready() || !s.p) return base;
     const W = E.W, L = W.labels, M = W.messages, p = s.p, v = s.view, mode = this.palette(), pg = E.page(mode), name = this.pname();
     const fsz = { s: [16, 17], m: [18, 19], l: [20, 21] }[this.settings().text] || [18, 19];
-    const rootVars = Object.entries(pg).map(([k, c]) => '--' + k + ':' + c + ';').join('') + '--fs:' + fsz[0] + 'px;--fsCode:' + fsz[1] + 'px;';
+    const WS = this.isWorkshop() || v === 'chooser', dark = s.ws.dark;
+    const wsPal = dark
+      ? { bg: '#0E0E0E', onBg: '#F3F3F3', surface: '#161616', surface2: '#242424', ink: '#F3F3F3', muted: '#C8C8C8', line: '#F3F3F3', codeBg: '#000000', codeInk: '#F3F3F3', accent: '#8EC5FF', link: '#9CCBFF', cleared: '#2E7D46', onCleared: '#FFFFFF' }
+      : { bg: '#F2F2F2', onBg: '#111111', surface: '#FFFFFF', surface2: '#F0F0F0', ink: '#111111', muted: '#333333', line: '#111111', codeBg: '#111111', codeInk: '#F8F8F8', accent: '#0B4FB3', link: '#0B4FB3', cleared: '#1F6F3A', onCleared: '#FFFFFF' };
+    const rootVars = WS ? Object.entries(wsPal).map(([k, c]) => '--' + k + ':' + c + ';').join('') + '--fs:20px;--fsCode:21px;'
+      : Object.entries(pg).map(([k, c]) => '--' + k + ':' + c + ';').join('') + '--fs:' + fsz[0] + 'px;--fsCode:' + fsz[1] + 'px;';
     const sid = s.stage, th = E.themeStage(sid), sc = E.stage(sid), g = E.stageProgress(p, sid), tot = E.totals(p), ids = E.stageIds(), plan = E.mentorPlan(name);
-    const so = !s.settingsOpen;
+    const so = !s.settingsOpen && v !== 'chooser';
     const show = { title: v === 'title' && so, name: v === 'name' && so, welcome: v === 'welcome' && so, character: v === 'character' && so, loadout: v === 'loadout' && so, map: v === 'map' && so, mentor: v === 'mentor' && so, stage: v === 'stage' && so,
       clearStep: v === 'clear-step' && so, clearStage: v === 'clear-stage' && so, items: v === 'items' && so, complete: v === 'complete' && so, badge: v === 'badge' && so };
-    const out = { ...base, rootVars, show, vp: this.vpProps(), plainUrl: W.links.plainView, footer: W.footer, playerName: name };
+    show.chooser = v === 'chooser';
+    const out = { ...base, rootVars, show, vp: v === 'chooser' || this.isWorkshop() ? {} : this.vpProps(), plainUrl: W.links.plainView, footer: W.footer, playerName: name };
+    // ---------- modes ----------
+    const MO = W.modes || {}, isWs = this.isWorkshop();
+    Object.assign(out, {
+      isWorkshop: isWs, hasMode: !!s.mode, showViewport: !!s.mode && !isWs,
+      headTitle: isWs ? 'Kairos workshop · ' + E.stageIds().length + ' stages' : 'Kairos workshop',
+      modeLabel: isWs ? MO.switchToGame : MO.switchToWorkshop, modeAria: (MO.toggleLabel || 'Mode') + ': ' + (isWs ? MO.workshop.label : MO.game.label) + '. ' + (isWs ? MO.switchToGame : MO.switchToWorkshop),
+      modeHeading: MO.toggleLabel || 'Mode', footerModeLabel: isWs ? MO.switchToGame : MO.workshop.label,
+      smallerLabel: L.text_smaller, biggerLabel: L.text_bigger, noSmaller: s.ws.size <= 1, noBigger: s.ws.size >= 6, isDark: s.ws.dark, darkLabel: s.ws.dark ? '☀ ' + L.theme_light : '☾ ' + L.theme_dark,
+      zoom: isWs ? [0.9, 1, 1.15, 1.3, 1.5, 1.75][s.ws.size - 1] : 1, maxW: isWs ? '1440px' : '960px',
+      gridDisplay: isWs ? 'grid' : 'block', gridCols: isWs ? 'repeat(auto-fit,minmax(min(100%,260px),300px)) minmax(min(100%,420px),1fr)' : '1fr', sectionMax: isWs ? 'none' : '820px',
+      navLabel: L.stages_nav, navMax: (typeof window !== 'undefined' && window.innerWidth / ([0.9, 1, 1.15, 1.3, 1.5, 1.75][s.ws.size - 1] || 1) < 760) ? '100%' : '300px',
+      chooser: { question: MO.question, intro: MO.intro, hint: 'Press Esc at any time for a quick change of scenery.', options: ['game', 'workshop'].map(m => ({ label: MO[m].label, desc: E.mdPlain(MO[m].md), bg: m === 'workshop' ? 'var(--ink)' : 'transparent', fg: m === 'workshop' ? 'var(--surface)' : 'var(--ink)', pick: () => this.chooseMode(m) })) }
+    });
+    out.nav = E.stageIds().map((id, i) => { const gg = E.stageProgress(p, id), cur = id === sid, done = E.stageCleared(p, id);
+      return { no: i + 1, title: E.stage(id).title, count: (done ? '✓ ' : '') + gg.done + '/' + gg.total, current: cur ? 'page' : 'false', weight: cur ? 600 : 400,
+        bg: cur ? 'var(--ink)' : done ? 'var(--cleared)' : 'var(--surface)', fg: cur ? 'var(--surface)' : done ? 'var(--onCleared)' : 'var(--ink)', open: () => this.go('stage', { stage: id, step: E.firstOpenStep(p, id), status: 'todo', tipOpen: false }) }; });
+    const anyPanel = s.settingsOpen || Object.keys(show).some(k => k !== 'title' && k !== 'chooser' && show[k]);
+    out.sectionDisplay = anyPanel ? 'flex' : 'none';
+    // ---------- boss key ----------
+    out.appDisplay = s.boss ? 'none' : 'block';
+    if (s.boss) {
+      const sh = W.sheet || {}, bs = s.stage || ids[0];
+      out.boss = { on: true, contained: this.props.keys === false, sheet: {
+        docTitle: sh.docTitle, appName: sh.appName, menu: sh.menu || [], columns: sh.columns || [],
+        tabs: ids.map(id => ({ id, label: E.stageNo(id) + ' ' + E.stage(id).title })), active: bs, step: s.step,
+        stages: ids.map(id => ({ id, rows: E.steps(id, p.facts).map((st2, i) => {
+          const rows2 = E.flatten(st2.blocks, { key: id + '/' + st2.id, facts: p.facts, sel: s.alt, showAll: {}, layout: 'stacked' });
+          const cmds = rows2.filter(r => r.type === 'command').map(r => r.isFile ? '# ' + r.name + '\n' + r.code : r.code.split('\n').map((l, j, arr) => (j > 0 && /\\\s*$/.test(arr[j - 1]) ? '  ' : '$ ') + l).join('\n'));
+          return { n: i + 1, title: st2.title, goal: st2.goal || '', details: cmds.join('\n\n'), check: st2.check.prompt, status: p.done[E.stepKey(id, st2.id)] ? 'Done' : (st2.optional ? 'Optional' : 'To do') };
+        }) })),
+        onExit: () => this.setState({ boss: false })
+      } };
+    }
     const steps = this.steps(), st = this.curStep(), no = E.stageNo(sid);
     out.crumb = { title: 'Title screen', name: 'New game · your name', welcome: 'Welcome · page ' + (s.welcomePage + 1) + ' of ' + W.welcome.pages.length, character: 'New game · your look', loadout: 'Loadout', map: 'Route · ' + (tot.cleared + tot.skipped) + ' of ' + tot.stages + ' stops done',
       mentor: 'Stop ' + no + ' · ' + th.location + ' · your mentor', stage: 'Stop ' + no + ' · ' + th.location + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length,
       'clear-step': 'Stop ' + no + ' · step cleared', 'clear-stage': 'Stop ' + no + ' cleared', items: 'New items', complete: 'Workshop complete', badge: 'Your badge' }[v] || '';
-    out.showMapBtn = !['title', 'name', 'welcome', 'character', 'map'].includes(v) && p.started && !!p.character;
+    out.showMapBtn = !this.isWorkshop() && !['title', 'name', 'welcome', 'character', 'map'].includes(v) && p.started && !!p.character;
 
     out.noSave = !p.started; out.continueLabel = p.started ? 'Continue as ' + name + ' · ' + tot.done + '/' + tot.total + ' steps' : 'Continue';
     // name + character
@@ -929,6 +1061,12 @@ class Component extends DCLogic {
       });
       out.rows = v === 'stage' ? this.stageRows().map(r => this.decorate(r)) : [];
       out.checkPrompt = st.check.prompt;
+      out.checkKind = E.checkKind(st).label;
+      if (isWs) out.crumb = v === 'loadout' ? 'Loadout' : 'Stage ' + no + ' of ' + ids.length + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length;
+      out.stageHead = isWs ? 'Stage ' + no + ' of ' + ids.length + ': ' + sc.title : 'Stage ' + no + ' · ' + th.location + ': ' + sc.title;
+      const hp = E.stepHelp(st);
+      out.help = { has: hp.has, hasTool: !!hp.tool, hasDocs: !!hp.docs, tool: hp.tool, source: hp.source || hp.docs || '#', docs: hp.docs, docsText: hp.docs.replace(/^https?:\/\//, ''), toolLabel: L.tool || 'Tool', docsLabel: L.docs || 'Docs' };
+      out.stepOnly = E.stepOnly(st, p.facts); out.hasStepOnly = !!out.stepOnly;
       const isDone = !!p.done[E.stepKey(sid, st.id)];
       out.isDone = isDone; out.notDone = !isDone; out.isFailed = s.status === 'failed';
       out.didItLabel = L.next_step; out.didNotLabel = L.did_not_work;
@@ -988,12 +1126,20 @@ class Component extends DCLogic {
     // settings
     const set = this.settings(), sysRed = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const opt = (k, val, label, extra) => { const sel = set[k] === val; return { label, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', pick: () => this.setSetting(k, val), hasSwatch: false, swatch: [], ...(extra || {}) }; };
+    const modeGroup = { label: MO.toggleLabel || 'Mode', hint: MO.intro, options: ['game', 'workshop'].map(m => ({ label: MO[m].label, selected: s.mode === m, mark: s.mode === m ? '●' : '○', bg: s.mode === m ? 'var(--ink)' : 'transparent', fg: s.mode === m ? 'var(--surface)' : 'var(--ink)', pick: () => this.chooseMode(m), hasSwatch: false, swatch: [] })) };
     out.settingGroups = [
       { label: 'Palette', hint: 'Changes the game screen and this page.', options: [['dmg', 'DMG'], ['kairos', 'Kairos'], ['gbc', 'Color']].map(([k, l]) => opt('palette', k, l, { hasSwatch: true, swatch: E.pal(k, 'ui') })) },
       { label: 'Motion', hint: 'Reduced motion shows a still KAI and a still character: no walking, no jumping, no typing effect. Your system setting is ' + (sysRed ? 'reduced.' : 'full motion.'), options: [opt('motion', 'system', 'Follow system'), opt('motion', 'reduce', 'Reduce motion'), opt('motion', 'full', 'Full motion')] },
       { label: 'Text size', hint: 'Instructions and commands. The game screen keeps its pixel size.', options: [opt('text', 's', 'Small'), opt('text', 'm', 'Medium'), opt('text', 'l', 'Large')] },
       { label: 'Alternatives', hint: 'How to show “pick one” options, like the install methods.', options: [opt('layout', 'tabs', 'Tabs'), opt('layout', 'stacked', 'Stacked')] }
     ];
+    if (isWs) {
+      const pick = (lab, sel, fn) => ({ label: lab, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', pick: fn, hasSwatch: false, swatch: [] });
+      out.settingGroups = [modeGroup,
+        { label: 'Theme', hint: 'Light is best on most projectors.', options: [pick(L.theme_light, !s.ws.dark, () => this.setWs({ dark: false })), pick(L.theme_dark, s.ws.dark, () => this.setWs({ dark: true }))] },
+        { label: 'Text size', hint: 'Also on the A− / A+ buttons in the header. Everything on the page scales, including commands.', options: [1, 2, 3, 4, 5, 6].map(n => pick(['90%', '100%', '115%', '130%', '150%', '175%'][n - 1], s.ws.size === n, () => this.setWs({ size: n }))) },
+        out.settingGroups[out.settingGroups.length - 1]];
+    } else out.settingGroups = [modeGroup, ...out.settingGroups];
     out.resetLabel = s.resetArmed ? 'Click again to erase progress' : 'Reset progress';
     return out;
   }

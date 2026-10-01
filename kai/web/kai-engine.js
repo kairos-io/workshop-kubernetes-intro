@@ -361,19 +361,34 @@
     promptVars(p, sid, st, sel) {
       const P = E.W.prompts, f = p.facts, sc = E.stage(sid);
       const lab = id => E.unset(f, id) ? E.fill(P.unsetPlaceholder, { fact: E.fact(id).label.toUpperCase() }) : E.optLabel(id, f[id]);
-      const virt = f.virtualization === 'kairos-lab' ? 'kairos-lab' : (String(p.virtName || '').trim() || P.virtPlaceholder);
+      const virt = E.unset(f, 'virtualization') ? lab('virtualization') : f.virtualization === 'kairos-lab' ? 'kairos-lab' : (String(p.virtName || '').trim() || P.virtPlaceholder);
       const v = { stage: sc.title, os: lab('os'), arch: lab('arch'), runtime: lab('runtime'), virtualization: virt,
         tool: (sc.tool && sc.tool.name) || '', source: (sc.tool && sc.tool.url) || '', docs: sc.docs || '', logs: P.logsPlaceholder, goal: sc.goal || sc.title };
       if (st) {
         const rows = E.flatten(st.blocks, { key: sid + '/' + st.id, facts: f, sel: sel || {}, showAll: {}, layout: sel ? 'tabs' : 'stacked' });
         const cmds = rows.filter(r => r.type === 'command' && !r.isFile).map(r => r.code);
         const outs = rows.filter(r => r.type === 'output').map(r => r.lines.join('\n'));
-        Object.assign(v, { step: st.title, goal: st.goal || st.title, commands: cmds.join('\n\n') || P.noCommands, expected: outs.length ? outs.join('\n') + '\n(' + st.check.prompt + ')' : st.check.prompt });
+        const h = st.help || {};
+        Object.assign(v, { step: st.title, goal: st.goal || st.title, tool: h.tool || '', source: h.source || '', docs: h.docs || '', commands: cmds.join('\n\n') || P.noCommands, expected: h.expect || st.check.prompt });
       }
       v.ask = E.fill(sc.tip || '', v);
       return v;
     },
-    prompt(kind, p, sid, st, sel) { return E.W.prompts[kind].map(l => E.fill(l, E.promptVars(p, sid, st, sel))).join('\n'); },
+    // A template line whose placeholders resolve to nothing (e.g. a step without help) is dropped, not filled with made-up text.
+    prompt(kind, p, sid, st, sel) {
+      const v = E.promptVars(p, sid, st, sel);
+      return E.W.prompts[kind].filter(l => (l.match(/\{(\w+)\}/g) || []).every(m => { const k = m.slice(1, -1); return !(k in v) || String(v[k]).trim() !== ''; })).map(l => E.fill(l, v)).join('\n');
+    },
+    stepHelp(st) { const h = (st && st.help) || {}; return { tool: h.tool || '', source: h.source || '', docs: h.docs || '', expect: h.expect || '', has: !!(h.tool || h.docs) }; },
+    stepOnly(st, facts) { return E.onlyLabel(st && st.only, facts); },
+    checkKind(st) { const k = st && st.check && st.check.kind; return { id: k || 'manual', label: (E.W.checkKinds && E.W.checkKinds[k]) || k || '' }; },
+    // [label](stage:id) links inside markdown point at another stage
+    stageLink(href) { const m = /^stage:([^#]+)/.exec(String(href || '')); return m && E.C.stages.some(s => s.id === m[1]) ? m[1] : null; },
+    // ---------- reader mode (game | workshop) and projector prefs, stored in the browser ----------
+    getMode() { try { const m = localStorage.getItem('kai.mode'); return m === 'game' || m === 'workshop' ? m : null; } catch (err) { return null; } },
+    setMode(m) { try { localStorage.setItem('kai.mode', m); } catch (err) {} },
+    getView() { try { return { size: 3, dark: false, ...JSON.parse(localStorage.getItem('kai.workshop.view') || '{}') }; } catch (err) { return { size: 3, dark: false }; } },
+    setView(v) { try { localStorage.setItem('kai.workshop.view', JSON.stringify(v)); } catch (err) {} },
     promptSegs(text) { return String(text).split(/(\[[^\]\n]+\])/).filter(Boolean).map(v => ({ v, ph: /^\[[^\]]+\]$/.test(v) })); },
     today() { return new Date().toISOString().slice(0, 10); }
   };
