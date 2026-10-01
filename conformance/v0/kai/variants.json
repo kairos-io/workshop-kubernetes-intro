@@ -93,6 +93,7 @@
         }
       ],
       "check": {
+        "kind": "command-available",
         "prompt": "The it command is available in a new terminal.",
         "fail": []
       }

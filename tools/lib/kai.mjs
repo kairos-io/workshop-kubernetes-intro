@@ -1,5 +1,6 @@
 import { FACT_DEFS, FACTS, VALUES } from "./facts.mjs";
 import { normalizeWhen } from "./load.mjs";
+import { expectText } from "./prompt.mjs";
 import { checkPrompt } from "./labels.mjs";
 import { uniqueSlugs } from "./slug.mjs";
 
@@ -17,6 +18,9 @@ export const PROMPTS = {
 export const MARKDOWN_STEP = { id: "on-github", title: "Continue on GitHub", line: "This part is not in the game yet." };
 
 export const MAX_LINE = 60;
+
+// The check kinds of the format, and "manual" for a step with no named check.
+const CHECK_KINDS = ["command-available", "image-exists", "iso-exists", "vm-running"];
 
 // KAI knows three callout kinds. Ours has five.
 const CALLOUT_KIND = { note: "note", tip: "note", important: "warning", warning: "warning", caution: "caution" };
@@ -58,11 +62,13 @@ const withOnly = (only, block) => {
 };
 
 // The help of a step with the help of its stage as defaults: goal, tool, source, docs.
-function mergeHelp(stageHelp, stepHelp) {
+// `expect` is the sentence for the {expect} slot of the step prompt.
+function mergeHelp(stageHelp, stepHelp, check) {
   if (!stepHelp) return undefined;
   const all = { ...stageHelp, ...stepHelp };
   const out = { goal: all.goal };
   for (const k of ["tool", "source", "docs"]) if (all[k] !== undefined) out[k] = all[k];
+  out.expect = expectText(check);
   return out;
 }
 
@@ -84,8 +90,10 @@ function body(b, { text = true, warnings = true, tail = true } = {}) {
   return out;
 }
 
+// `kind` is the kind of the named check, or "manual" when the prompt is a default one.
 function checkOf(step, fallback) {
   return {
+    kind: step.check ? step.check.kind : "manual",
     prompt: step.check ? checkPrompt(step.check) : fallback,
     fail: step.onFail ? [textBlock(step.onFail)] : [],
   };
@@ -110,7 +118,7 @@ export function compileStage(doc, lines = {}) {
         line: lineFor(slugs[si], section.title),
         ...(sectionOnly && { only: sectionOnly }),
         blocks: sectionBlocks,
-        check: { prompt: PROMPTS.read, fail: [] },
+        check: { kind: "manual", prompt: PROMPTS.read, fail: [] },
       });
       return;
     }
@@ -125,7 +133,7 @@ export function compileStage(doc, lines = {}) {
         line: lineFor(slugs[si], section.title),
         ...(sectionOnly && { only: sectionOnly }),
         blocks: sectionBlocks,
-        check: { prompt: PROMPTS.read, fail: [] },
+        check: { kind: "manual", prompt: PROMPTS.read, fail: [] },
       });
       lead = [];
     }
@@ -156,7 +164,7 @@ export function compileStage(doc, lines = {}) {
         line: lineFor(step.id, title),
         ...(step.optional && { optional: true }),
         ...(only && { only }),
-        ...(step.help && { help: mergeHelp(doc.help, step.help) }),
+        ...(step.help && { help: mergeHelp(doc.help, step.help, step.check) }),
         blocks,
         check: checkOf(step, PROMPTS.step),
       });
@@ -189,7 +197,7 @@ export function compileMarkdownStage(entry, repository, lines = {}) {
         title: MARKDOWN_STEP.title,
         line: lines[`${entry.id}/${MARKDOWN_STEP.id}`] ?? MARKDOWN_STEP.line,
         blocks: [textBlock(`This stage is not in the game yet. [Open it on GitHub](${url}).`)],
-        check: { prompt: PROMPTS.stage, fail: [] },
+        check: { kind: "manual", prompt: PROMPTS.stage, fail: [] },
       },
     ],
   };
@@ -326,8 +334,8 @@ function checkBlocks(blocks, where, errors) {
 }
 
 function checkHelp(help, where, errors) {
-  checkShape(help, ["goal"], ["tool", "source", "docs"], `${where}, help`, errors);
-  for (const k of ["goal", "tool"]) if (help[k] !== undefined && (typeof help[k] !== "string" || help[k] === "")) errors.push(`${where}, help: "${k}" must be text`);
+  checkShape(help, ["goal"], ["tool", "source", "docs", "expect"], `${where}, help`, errors);
+  for (const k of ["goal", "tool", "expect"]) if (help[k] !== undefined && (typeof help[k] !== "string" || help[k] === "")) errors.push(`${where}, help: "${k}" must be text`);
   for (const k of ["source", "docs"]) if (help[k] !== undefined && !/^https:\/\/\S+$/.test(help[k])) errors.push(`${where}, help: "${k}" must be an https URL`);
 }
 
@@ -399,7 +407,8 @@ export function validateContent(content) {
       const c = st.check;
       if (!c || typeof c.prompt !== "string" || c.prompt === "") errors.push(`${w}: check.prompt is required`);
       else {
-        checkShape(c, ["prompt", "fail"], [], `${w}, check`, errors);
+        checkShape(c, ["prompt", "fail"], ["kind"], `${w}, check`, errors);
+        if (c.kind !== undefined && ![...CHECK_KINDS, "manual"].includes(c.kind)) errors.push(`${w}, check: unknown check kind "${c.kind}"`);
         checkBlocks(c.fail, `${w}, check.fail`, errors);
       }
     });

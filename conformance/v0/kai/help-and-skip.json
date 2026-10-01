@@ -24,7 +24,8 @@
         "goal": "Do A",
         "tool": "demo",
         "source": "https://example.com/src",
-        "docs": "https://example.com/docs"
+        "docs": "https://example.com/docs",
+        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -33,6 +34,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }
@@ -45,7 +47,8 @@
         "goal": "Do B",
         "tool": "other",
         "source": "https://example.com/src",
-        "docs": "https://example.com/docs"
+        "docs": "https://example.com/docs",
+        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -54,6 +57,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }
@@ -69,6 +73,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }

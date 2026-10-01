@@ -24,7 +24,8 @@
         "goal": "Install the kairos-lab command",
         "tool": "kairos-lab",
         "source": "https://github.com/kairos-io/kairos-lab",
-        "docs": "https://github.com/kairos-io/kairos-lab#readme"
+        "docs": "https://github.com/kairos-io/kairos-lab#readme",
+        "expect": "The kairos-lab command is available in a new terminal."
       },
       "blocks": [
         {
@@ -114,6 +115,7 @@
         }
       ],
       "check": {
+        "kind": "command-available",
         "prompt": "The kairos-lab command is available in a new terminal.",
         "fail": []
       }
@@ -131,7 +133,8 @@
         "goal": "Run the first-time setup of kairos-lab and AuroraBoot",
         "tool": "kairos-lab",
         "source": "https://github.com/kairos-io/kairos-lab",
-        "docs": "https://github.com/kairos-io/kairos-lab#readme"
+        "docs": "https://github.com/kairos-io/kairos-lab#readme",
+        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -180,6 +183,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }
@@ -197,7 +201,8 @@
         "goal": "Check that the auroraboot command works",
         "tool": "AuroraBoot",
         "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/"
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "The auroraboot command is available in a new terminal."
       },
       "blocks": [
         {
@@ -210,6 +215,7 @@
         }
       ],
       "check": {
+        "kind": "command-available",
         "prompt": "The auroraboot command is available in a new terminal.",
         "fail": [
           {
@@ -232,7 +238,8 @@
         "goal": "Get the AuroraBoot container image",
         "tool": "AuroraBoot",
         "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/"
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "The quay.io/kairos/auroraboot:latest image is present in your container runtime."
       },
       "blocks": [
         {
@@ -276,6 +283,7 @@
         }
       ],
       "check": {
+        "kind": "image-exists",
         "prompt": "The quay.io/kairos/auroraboot:latest image is present in your container runtime.",
         "fail": []
       }
@@ -294,7 +302,8 @@
         "goal": "Run AuroraBoot in a container",
         "tool": "AuroraBoot",
         "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/"
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -350,6 +359,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }
@@ -380,6 +390,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You read this.",
         "fail": []
       }
@@ -401,7 +412,8 @@
         "goal": "Build AuroraBoot locally on Linux",
         "tool": "AuroraBoot",
         "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/"
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -418,6 +430,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }
@@ -439,7 +452,8 @@
         "goal": "Run your local AuroraBoot build",
         "tool": "AuroraBoot",
         "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/"
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -456,6 +470,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": [
           {

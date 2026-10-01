@@ -109,8 +109,8 @@ Rendering rules:
 - `{os}`: Linux, macOS or Windows. `{arch}`: amd64 or arm64. `{runtime}`: Docker or Podman. `{virtualization}`: `kairos-lab` when the fact is `kairos-lab`, and `[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]` when it is `own`.
 - A fact that is unset renders as `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
 - `{commands}`: the commands the step shows for those facts (every `command` block that matches, in the order shown, including the ones inside an alternatives item that matches), one per line, each starting with `$ `. A command with several lines gives one line per command line. A line that ends with a backslash continues on the next line, and the continuation lines are written as they are, with no `$ `. When there are none, write `(this step has no commands)`. With no facts set, every command of every alternative shows.
-- `{expect}`: the sentence of the step's named check, which is `check.prompt` (for example "The auroraboot command is available in a new terminal."). A step with no named check has one of the default prompts ("You finished this step.", "You read this.", "You finished this stage."). For such a step write `the step finishes without errors`.
-- `{goal}`, `{tool}`, `{source}`, `{docs}`: from the step's `help`.
+- `{expect}`: `help.expect` of the step. It is a ready sentence: the sentence of the step's named check (for example "The auroraboot command is available in a new terminal."), or `the step finishes without errors` when the step has no named check.
+- `{goal}`, `{tool}`, `{source}`, `{docs}`: `help.goal`, `help.tool`, `help.source`, `help.docs` of the step.
 - `{request}`: the stage's `tip.request` after the same substitution of `{os}`, `{arch}`, `{runtime}` and `{virtualization}`.
 - A line of the template that holds a placeholder with no value is dropped. The exception is a line that holds `[paste your logs`: it is always kept, and a placeholder in it with no value becomes empty text.
 - A value is inserted as it is. Do not look for placeholders inside a value.
@@ -177,7 +177,7 @@ For stage 1 the value is `{ "virtualization": ["kairos-lab"] }`: a learner who c
 | `line` | What KAI says in the dialogue box. Plain text, at most 60 characters. |
 | `optional` | Optional. `true` for a side quest. |
 | `only` | Optional. Show the step only when this matches. |
-| `help` | Optional. `{ goal, tool?, source?, docs? }`. The input for the step help prompt. `goal` is plain text of at most 100 characters. `source` and `docs` are `https` URLs. The stage defaults for `tool`, `source` and `docs` are already merged in. |
+| `help` | Optional. `{ goal, tool?, source?, docs?, expect }`. The input for the step help prompt. `goal` is plain text of at most 100 characters. `source` and `docs` are `https` URLs. `expect` is the sentence for the `{expect}` slot of the prompt. The stage defaults for `tool`, `source` and `docs` are already merged in. |
 | `blocks` | What the step shows, in reading order. At least one. |
 | `check` | `{ prompt, fail }`. |
 
@@ -198,4 +198,8 @@ Each block has a `type` and may have an `only`. When `only` does not match, hide
 
 ### Check
 
-`check.prompt` is the sentence the learner confirms ("The auroraboot command is available in a new terminal.", or a default such as "You finished this step."). `check.fail` is a list of blocks to show when the learner says it did not work. It can be empty.
+`check` is `{ kind, prompt, fail }`.
+
+- `kind` says what the check is. It is one of `command-available`, `image-exists`, `iso-exists`, `vm-running`, or `manual`. `manual` means the step names no check and `prompt` is a default sentence ("You finished this step.", "You read this." or "You finished this stage."). A reader can treat every kind as a manual confirmation. `content.json` carries the sentence only, not the values a check would need to run.
+- `prompt` is the sentence the learner confirms ("The auroraboot command is available in a new terminal.", or a default such as "You finished this step.").
+- `fail` is a list of blocks to show when the learner says it did not work. It can be empty.

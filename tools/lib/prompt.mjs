@@ -19,6 +19,12 @@ const UNSET = {
 };
 const OWN_SOFTWARE = "[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]";
 
+// The `{expect}` text of a step with no named check.
+export const DEFAULT_EXPECT = "the step finishes without errors";
+
+// The `{expect}` text of a step: the check sentence, or the default.
+export const expectText = (check) => (check ? checkPrompt(check) : DEFAULT_EXPECT);
+
 const hasValue = (v) => v !== undefined && v !== null && v !== "";
 
 // Replace {name} in each line of `template` with values[name]. A line that holds a placeholder
@@ -93,7 +99,7 @@ export function buildStepPrompt(workshop, stage, step, facts = {}) {
     source: help.source,
     docs: help.docs,
     commands: commandLines(commands),
-    expect: s.check ? checkPrompt(s.check) : "the step finishes without errors",
+    expect: expectText(s.check),
   });
 }
 

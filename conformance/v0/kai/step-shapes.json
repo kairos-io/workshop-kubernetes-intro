@@ -56,6 +56,7 @@
         }
       ],
       "check": {
+        "kind": "image-exists",
         "prompt": "The quay.io/kairos/auroraboot:latest image is present in your container runtime.",
         "fail": [
           {
@@ -76,6 +77,7 @@
         }
       ],
       "check": {
+        "kind": "vm-running",
         "prompt": "The demo VM is running.",
         "fail": []
       }
@@ -91,6 +93,7 @@
         }
       ],
       "check": {
+        "kind": "iso-exists",
         "prompt": "The ISO file exists.",
         "fail": []
       }
@@ -106,6 +109,7 @@
         }
       ],
       "check": {
+        "kind": "vm-running",
         "prompt": "The VM is running.",
         "fail": []
       }
@@ -122,6 +126,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
       }
@@ -137,6 +142,7 @@
         }
       ],
       "check": {
+        "kind": "manual",
         "prompt": "You finished this step.",
         "fail": [
           {

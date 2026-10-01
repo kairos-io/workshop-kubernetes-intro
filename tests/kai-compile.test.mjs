@@ -190,7 +190,7 @@ test("rule 10: a markdown stage is one step that points at the file on GitHub", 
         title: "Continue on GitHub",
         line: "A line.",
         blocks: [{ type: "text", md: "This stage is not in the game yet. [Open it on GitHub](https://github.com/kairos-io/workshop-kubernetes-intro/blob/main/stage-2.md)." }],
-        check: { prompt: "You finished this stage.", fail: [] },
+        check: { kind: "manual", prompt: "You finished this stage.", fail: [] },
       },
     ],
   });
@@ -262,8 +262,8 @@ test("stage 1 carries its skip rule and its tip, and every step with commands ca
   assert.deepEqual(one.tip, { request: "Explain how to install {runtime} on {os} ({arch}) and how to check that it works." });
   assert.deepEqual(Object.keys(one), ["id", "title", "goal", "notSkippableWhen", "tip", "steps"]);
   const byId = Object.fromEntries(one.steps.map((s) => [s.id, s]));
-  assert.deepEqual(byId["install-kairos-lab"].help, { goal: "Install the kairos-lab command", tool: "kairos-lab", source: "https://github.com/kairos-io/kairos-lab", docs: "https://github.com/kairos-io/kairos-lab#readme" });
-  assert.deepEqual(byId["pull-auroraboot"].help, { goal: "Get the AuroraBoot container image", tool: "AuroraBoot", source: "https://github.com/kairos-io/AuroraBoot", docs: "https://kairos.io/docs/reference/auroraboot/" });
+  assert.deepEqual(byId["install-kairos-lab"].help, { goal: "Install the kairos-lab command", tool: "kairos-lab", source: "https://github.com/kairos-io/kairos-lab", docs: "https://github.com/kairos-io/kairos-lab#readme", expect: "The kairos-lab command is available in a new terminal." });
+  assert.deepEqual(byId["pull-auroraboot"].help, { goal: "Get the AuroraBoot container image", tool: "AuroraBoot", source: "https://github.com/kairos-io/AuroraBoot", docs: "https://kairos.io/docs/reference/auroraboot/", expect: "The quay.io/kairos/auroraboot:latest image is present in your container runtime." });
   assert.equal(byId["build-it-locally-linux-only"].help, undefined, "a section-only step has no help");
   assert.ok(!("notSkippableWhen" in two) && !("tip" in two));
   for (const s of two.steps) assert.ok(!("help" in s));
@@ -421,4 +421,38 @@ test("kai/DATA.md names every field of the generated content and has no em dash"
   assert.ok(!doc.includes("\u2014"));
   for (const p of ["stage", "step", "os", "arch", "runtime", "virtualization", "goal", "tool", "source", "docs", "commands", "expect", "request"]) assert.ok(doc.includes(`\`{${p}}\``), `placeholder ${p}`);
   assert.ok(doc.includes("[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]"));
+});
+
+test("every check has a kind: the named kind, or manual for a default prompt", () => {
+  const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
+  const byId = Object.fromEntries(out.stages[0].steps.map((s) => [s.id, s.check]));
+  assert.deepEqual(byId["install-kairos-lab"], { kind: "command-available", prompt: "The kairos-lab command is available in a new terminal.", fail: [] });
+  assert.equal(byId["pull-auroraboot"].kind, "image-exists");
+  assert.equal(byId["kairos-lab-setup"].kind, "manual");
+  assert.equal(byId["kairos-lab-setup"].prompt, PROMPTS.step);
+  assert.equal(byId["build-it-locally-linux-only"].kind, "manual");
+  assert.equal(byId["build-it-locally-linux-only"].prompt, PROMPTS.read);
+  for (const s of out.stages.slice(1)) assert.deepEqual([s.steps[0].check.kind, s.steps[0].check.prompt], ["manual", PROMPTS.stage]);
+  for (const st of out.stages.flatMap((s) => s.steps)) {
+    assert.ok(["command-available", "image-exists", "iso-exists", "vm-running", "manual"].includes(st.check.kind), st.id);
+    assert.equal(st.check.kind === "manual", [PROMPTS.step, PROMPTS.read, PROMPTS.stage].includes(st.check.prompt), st.id);
+  }
+});
+
+test("every help has an expect: the check sentence, or the default sentence", () => {
+  const out = compileWorkshop(loadWorkshop(root), readYaml(join(root, "kai/lines.yaml")));
+  const steps = out.stages[0].steps.filter((s) => s.help);
+  assert.equal(steps.length, 7);
+  for (const s of steps) {
+    assert.equal(s.help.expect, s.check.kind === "manual" ? "the step finishes without errors" : s.check.prompt, s.id);
+    assert.deepEqual(Object.keys(s.help), ["goal", "tool", "source", "docs", "expect"]);
+  }
+  assert.equal(steps.find((s) => s.id === "auroraboot-version").help.expect, "The auroraboot command is available in a new terminal.");
+  assert.equal(steps.find((s) => s.id === "kairos-lab-setup").help.expect, "the step finishes without errors");
+});
+
+test("the validator checks check.kind and help.expect", () => {
+  validateContent(bad((s) => { s.check.kind = "manual"; s.help = { goal: "g", expect: "e" }; }));
+  assert.throws(() => validateContent(bad((s) => { s.check.kind = "telepathy"; })), /check kind "telepathy"/);
+  assert.throws(() => validateContent(bad((s) => { s.help = { goal: "g", expect: "" }; })), /"expect" must be text/);
 });
