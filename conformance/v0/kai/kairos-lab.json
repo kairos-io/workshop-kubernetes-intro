@@ -2,14 +2,6 @@
   "id": "kairos-lab",
   "title": "Setting up kairos-lab",
   "goal": "set up kairos-lab",
-  "notSkippableWhen": {
-    "virtualization": [
-      "kairos-lab"
-    ]
-  },
-  "tip": {
-    "request": "Explain how to install {runtime} on {os} ({arch}) and how to check that it works."
-  },
   "steps": [
     {
       "id": "install-kairos-lab",
@@ -19,13 +11,6 @@
         "virtualization": [
           "kairos-lab"
         ]
-      },
-      "help": {
-        "goal": "Install the kairos-lab command",
-        "tool": "kairos-lab",
-        "source": "https://github.com/kairos-io/kairos-lab",
-        "docs": "https://github.com/kairos-io/kairos-lab#readme",
-        "expect": "The kairos-lab command is available in a new terminal."
       },
       "blocks": [
         {
@@ -118,6 +103,13 @@
         "kind": "command-available",
         "prompt": "The kairos-lab command is available in a new terminal.",
         "fail": []
+      },
+      "goal": "Install the kairos-lab command",
+      "help": {
+        "tool": "kairos-lab",
+        "source": "https://github.com/kairos-io/kairos-lab",
+        "docs": "https://github.com/kairos-io/kairos-lab#readme",
+        "expect": "The kairos-lab command is available in a new terminal."
       }
     },
     {
@@ -128,13 +120,6 @@
         "virtualization": [
           "kairos-lab"
         ]
-      },
-      "help": {
-        "goal": "Run the first-time setup of kairos-lab and AuroraBoot",
-        "tool": "kairos-lab",
-        "source": "https://github.com/kairos-io/kairos-lab",
-        "docs": "https://github.com/kairos-io/kairos-lab#readme",
-        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -186,6 +171,13 @@
         "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
+      },
+      "goal": "Run the first-time setup of kairos-lab and AuroraBoot",
+      "help": {
+        "tool": "kairos-lab",
+        "source": "https://github.com/kairos-io/kairos-lab",
+        "docs": "https://github.com/kairos-io/kairos-lab#readme",
+        "expect": "the step finishes without errors"
       }
     },
     {
@@ -196,13 +188,6 @@
         "virtualization": [
           "kairos-lab"
         ]
-      },
-      "help": {
-        "goal": "Check that the auroraboot command works",
-        "tool": "AuroraBoot",
-        "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/",
-        "expect": "The auroraboot command is available in a new terminal."
       },
       "blocks": [
         {
@@ -223,6 +208,13 @@
             "md": "If your shell says the command is not found, `~/.local/bin` is not on your\n`PATH`. `kairos-lab setup` tells you what to add."
           }
         ]
+      },
+      "goal": "Check that the auroraboot command works",
+      "help": {
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "The auroraboot command is available in a new terminal."
       }
     },
     {
@@ -233,13 +225,6 @@
         "virtualization": [
           "own"
         ]
-      },
-      "help": {
-        "goal": "Get the AuroraBoot container image",
-        "tool": "AuroraBoot",
-        "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/",
-        "expect": "The quay.io/kairos/auroraboot:latest image is present in your container runtime."
       },
       "blocks": [
         {
@@ -286,6 +271,13 @@
         "kind": "image-exists",
         "prompt": "The quay.io/kairos/auroraboot:latest image is present in your container runtime.",
         "fail": []
+      },
+      "goal": "Get the AuroraBoot container image",
+      "help": {
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "The quay.io/kairos/auroraboot:latest image is present in your container runtime."
       }
     },
     {
@@ -297,13 +289,6 @@
         "virtualization": [
           "own"
         ]
-      },
-      "help": {
-        "goal": "Run AuroraBoot in a container",
-        "tool": "AuroraBoot",
-        "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/",
-        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -362,6 +347,13 @@
         "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
+      },
+      "goal": "Run AuroraBoot in a container",
+      "help": {
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "the step finishes without errors"
       }
     },
     {
@@ -408,13 +400,6 @@
           "linux"
         ]
       },
-      "help": {
-        "goal": "Build AuroraBoot locally on Linux",
-        "tool": "AuroraBoot",
-        "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/",
-        "expect": "the step finishes without errors"
-      },
       "blocks": [
         {
           "type": "text",
@@ -433,6 +418,13 @@
         "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
+      },
+      "goal": "Build AuroraBoot locally on Linux",
+      "help": {
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "the step finishes without errors"
       }
     },
     {
@@ -447,13 +439,6 @@
         "os": [
           "linux"
         ]
-      },
-      "help": {
-        "goal": "Run your local AuroraBoot build",
-        "tool": "AuroraBoot",
-        "source": "https://github.com/kairos-io/AuroraBoot",
-        "docs": "https://kairos.io/docs/reference/auroraboot/",
-        "expect": "the step finishes without errors"
       },
       "blocks": [
         {
@@ -478,7 +463,28 @@
             "md": "If the build stops with `could not find any shim file to copy`, the image does\nnot include a shim. The container carries a fallback for that case and a local\nbuild does not, so use the container for that image."
           }
         ]
+      },
+      "goal": "Run your local AuroraBoot build",
+      "help": {
+        "tool": "AuroraBoot",
+        "source": "https://github.com/kairos-io/AuroraBoot",
+        "docs": "https://kairos.io/docs/reference/auroraboot/",
+        "expect": "the step finishes without errors"
       }
     }
-  ]
+  ],
+  "tool": {
+    "name": "kairos-lab",
+    "url": "https://github.com/kairos-io/kairos-lab"
+  },
+  "docs": "https://github.com/kairos-io/kairos-lab#readme",
+  "tip": "Explain how to install {runtime} on {os} ({arch}) and how to check that it works.",
+  "noSkip": {
+    "when": {
+      "virtualization": [
+        "kairos-lab"
+      ]
+    },
+    "reason": "You play Zen, so every later stage uses kairos-lab. Set it up first."
+  }
 }

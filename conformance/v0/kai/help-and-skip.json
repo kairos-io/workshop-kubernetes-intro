@@ -2,31 +2,11 @@
   "id": "helpful",
   "title": "Helpful",
   "goal": "get help",
-  "notSkippableWhen": {
-    "virtualization": [
-      "kairos-lab"
-    ]
-  },
-  "tip": {
-    "only": {
-      "virtualization": [
-        "own"
-      ]
-    },
-    "request": "Install {runtime} on {os}."
-  },
   "steps": [
     {
       "id": "a",
       "title": "One",
       "line": "One",
-      "help": {
-        "goal": "Do A",
-        "tool": "demo",
-        "source": "https://example.com/src",
-        "docs": "https://example.com/docs",
-        "expect": "the step finishes without errors"
-      },
       "blocks": [
         {
           "type": "command",
@@ -37,19 +17,19 @@
         "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
+      },
+      "goal": "Do A",
+      "help": {
+        "tool": "demo",
+        "source": "https://example.com/src",
+        "docs": "https://example.com/docs",
+        "expect": "the step finishes without errors"
       }
     },
     {
       "id": "b",
       "title": "One",
       "line": "One",
-      "help": {
-        "goal": "Do B",
-        "tool": "other",
-        "source": "https://example.com/src",
-        "docs": "https://example.com/docs",
-        "expect": "the step finishes without errors"
-      },
       "blocks": [
         {
           "type": "command",
@@ -60,6 +40,13 @@
         "kind": "manual",
         "prompt": "You finished this step.",
         "fail": []
+      },
+      "goal": "Do B",
+      "help": {
+        "tool": "other",
+        "source": "https://example.com/src",
+        "docs": "https://example.com/docs",
+        "expect": "the step finishes without errors"
       }
     },
     {
@@ -78,5 +65,24 @@
         "fail": []
       }
     }
-  ]
+  ],
+  "tool": {
+    "name": "demo",
+    "url": "https://example.com/src"
+  },
+  "docs": "https://example.com/docs",
+  "tip": "Install {runtime} on {os}.",
+  "tipOnly": {
+    "virtualization": [
+      "own"
+    ]
+  },
+  "noSkip": {
+    "when": {
+      "virtualization": [
+        "kairos-lab"
+      ]
+    },
+    "reason": "Set this up first, every later stage needs it."
+  }
 }

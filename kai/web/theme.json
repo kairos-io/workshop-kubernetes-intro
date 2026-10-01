@@ -1,72 +1,247 @@
 {
-  "game": { "title": "KAIROS", "subtitle": "HADRON", "edition": "WORKSHOP", "character": "KAI" },
-  "links": { "plainView": "https://kairos.io/docs/", "kairosLab": "https://github.com/kairos-io/kairos-lab" },
-  "attribution": "KAI artwork from kairos-io/community, Apache-2.0.",
-  "xp": { "step": 50, "sideQuest": 25 },
-
+  "game": {
+    "title": "KAIROS",
+    "subtitle": "HADRON",
+    "edition": "WORKSHOP",
+    "character": "KAI"
+  },
+  "links": {
+    "plainView": "https://github.com/kairos-io/workshop-kubernetes-intro",
+    "kairosLab": "https://github.com/kairos-io/kairos-lab"
+  },
+  "xp": {
+    "step": 50,
+    "sideQuest": 25
+  },
   "player": {
     "nameMax": 12,
     "defaultName": "Friend",
     "characters": [
-      { "id": "hoodie", "label": "Hoodie", "desc": "Hood up, dark trousers." },
-      { "id": "cap",    "label": "Cap",    "desc": "Cap, light tee, backpack straps." },
-      { "id": "beanie", "label": "Beanie", "desc": "Beanie with a bobble, scarf, dark coat." }
+      {
+        "id": "hoodie",
+        "label": "Hoodie",
+        "desc": "Hood up, dark trousers."
+      },
+      {
+        "id": "cap",
+        "label": "Cap",
+        "desc": "Cap, light tee, backpack straps."
+      },
+      {
+        "id": "beanie",
+        "label": "Beanie",
+        "desc": "Beanie with a bobble, scarf, dark coat."
+      }
     ],
-    "poses": ["idle", "walk-down", "walk-up", "walk-left", "walk-right", "happy", "sad", "point", "read", "celebrate"]
+    "poses": [
+      "idle",
+      "walk-down",
+      "walk-up",
+      "walk-left",
+      "walk-right",
+      "happy",
+      "sad",
+      "point",
+      "read",
+      "celebrate"
+    ]
   },
-
   "mentors": [
-    { "id": "itxaka",   "name": "Itxaka",               "country": "Spain",   "portrait": "itxaka",   "github": "https://github.com/Itxaka" },
-    { "id": "ettore",   "name": "Ettore Di Giacinto",   "country": "Italy",   "portrait": "ettore",   "github": "https://github.com/mudler" },
-    { "id": "dimitris", "name": "Dimitris Karakasilis", "country": "Greece",  "portrait": "dimitris", "github": "https://github.com/jimmykarily" },
-    { "id": "mauro",    "name": "Mauro Morales",        "country": "Belgium", "portrait": "mauro",    "github": "https://github.com/mauromorales" }
+    {
+      "id": "itxaka",
+      "name": "Itxaka",
+      "country": "Spain",
+      "portrait": "itxaka",
+      "github": "https://github.com/Itxaka"
+    },
+    {
+      "id": "ettore",
+      "name": "Ettore Di Giacinto",
+      "country": "Italy",
+      "portrait": "ettore",
+      "github": "https://github.com/mudler"
+    },
+    {
+      "id": "dimitris",
+      "name": "Dimitris Karakasilis",
+      "country": "Greece",
+      "portrait": "dimitris",
+      "github": "https://github.com/jimmykarily"
+    },
+    {
+      "id": "mauro",
+      "name": "Mauro Morales",
+      "country": "Belgium",
+      "portrait": "mauro",
+      "github": "https://github.com/mauromorales"
+    }
   ],
   "mentorPick": "Stages are split into blocks of len(mentors) in content order. Each block is a Fisher-Yates shuffle of the mentors, driven by mulberry32(fnv1a32(lower(trim(name)) + '|' + block stage ids joined by ',')). If a block would start with the previous block's last mentor, its first two entries swap. Same in kai-engine.js (mentorPlan) and tui/main.go (mentorPlan).",
-
   "stages": [
-    { "id": "kairos-lab",       "location": "KAIROS-LAB",     "nodes": 0, "items": ["kairos-lab"] },
-    { "id": "first-node",       "location": "FIRST BOOT",     "nodes": 1, "items": ["hadron"] },
-    { "id": "build-image",      "location": "IMAGE FORGE",    "nodes": 0, "items": ["kairos-init", "bootable-container", "auroraboot#1"] },
-    { "id": "pipelines",        "location": "THE PIPELINE",   "nodes": 0, "items": ["gh-workflow"] },
-    { "id": "manual-upgrade",   "location": "A/B BRIDGE",     "nodes": 1, "items": ["kairos-agent"] },
-    { "id": "multi-node",       "location": "THE CLUSTER",    "nodes": 3, "items": ["cloud-config"] },
-    { "id": "operator-upgrade", "location": "OPERATOR TOWER", "nodes": 3, "items": ["kairos-operator"] }
+    {
+      "id": "kairos-lab",
+      "location": "KAIROS-LAB",
+      "nodes": 0,
+      "items": [
+        "kairos-lab"
+      ]
+    },
+    {
+      "id": "first-node",
+      "location": "FIRST BOOT",
+      "nodes": 1,
+      "items": [
+        "hadron"
+      ]
+    },
+    {
+      "id": "build-image",
+      "location": "IMAGE FORGE",
+      "nodes": 0,
+      "items": [
+        "kairos-init",
+        "bootable-container",
+        "auroraboot#1"
+      ]
+    },
+    {
+      "id": "pipelines",
+      "location": "THE PIPELINE",
+      "nodes": 0,
+      "items": [
+        "gh-workflow"
+      ]
+    },
+    {
+      "id": "manual-upgrade",
+      "location": "A/B BRIDGE",
+      "nodes": 1,
+      "items": [
+        "kairos-agent"
+      ]
+    },
+    {
+      "id": "multi-node",
+      "location": "THE CLUSTER",
+      "nodes": 3,
+      "items": [
+        "cloud-config"
+      ]
+    },
+    {
+      "id": "operator-upgrade",
+      "location": "OPERATOR TOWER",
+      "nodes": 3,
+      "items": [
+        "kairos-operator"
+      ]
+    }
   ],
-
   "items": {
-    "kairos-lab":         { "name": "KAIROS-LAB",   "icon": "kairos-lab",         "desc": "Creates and runs your workshop VMs." },
-    "hadron":             { "name": "HADRON",       "icon": "hadron",             "desc": "Minimal Linux base: musl and systemd." },
-    "kairos-init":        { "name": "KAIROS-INIT",  "icon": "kairos-init",        "desc": "Turns any image into a Kairos image." },
-    "bootable-container": { "name": "BOOT IMAGE",   "icon": "bootable-container", "desc": "A Kairos bootable container image." },
-    "kairos-fleet":       { "name": "KAIROS FLEET", "icon": "kairos-fleet",       "desc": "Many machines, one image." },
-    "gh-workflow":        { "name": "GH WORKFLOW",  "icon": "gh-workflow",        "desc": "Builds your image on every push. Works on GitHub only." },
-    "kairos-agent":       { "name": "KAIROS-AGENT", "icon": "kairos-agent",       "desc": "Installs, upgrades and resets nodes." },
-    "cloud-config":       { "name": "CLOUD-CONFIG", "icon": "cloud-config",       "desc": "The scroll that tells a node who to be." },
-    "kairos-operator":    { "name": "OPERATOR",     "icon": "kairos-operator",    "desc": "Upgrades nodes through Kubernetes." },
-    "edgevpn":            { "name": "EDGEVPN",      "icon": "edgevpn",            "desc": "Peer-to-peer mesh that links nodes." }
+    "kairos-lab": {
+      "name": "KAIROS-LAB",
+      "icon": "kairos-lab",
+      "desc": "Creates and runs your workshop VMs."
+    },
+    "hadron": {
+      "name": "HADRON",
+      "icon": "hadron",
+      "desc": "Minimal Linux base: musl and systemd."
+    },
+    "kairos-init": {
+      "name": "KAIROS-INIT",
+      "icon": "kairos-init",
+      "desc": "Turns any image into a Kairos image."
+    },
+    "bootable-container": {
+      "name": "BOOT IMAGE",
+      "icon": "bootable-container",
+      "desc": "A Kairos bootable container image."
+    },
+    "kairos-fleet": {
+      "name": "KAIROS FLEET",
+      "icon": "kairos-fleet",
+      "desc": "Many machines, one image."
+    },
+    "gh-workflow": {
+      "name": "GH WORKFLOW",
+      "icon": "gh-workflow",
+      "desc": "Builds your image on every push. Works on GitHub only."
+    },
+    "kairos-agent": {
+      "name": "KAIROS-AGENT",
+      "icon": "kairos-agent",
+      "desc": "Installs, upgrades and resets nodes."
+    },
+    "cloud-config": {
+      "name": "CLOUD-CONFIG",
+      "icon": "cloud-config",
+      "desc": "The scroll that tells a node who to be."
+    },
+    "kairos-operator": {
+      "name": "OPERATOR",
+      "icon": "kairos-operator",
+      "desc": "Upgrades nodes through Kubernetes."
+    },
+    "edgevpn": {
+      "name": "EDGEVPN",
+      "icon": "edgevpn",
+      "desc": "Peer-to-peer mesh that links nodes."
+    }
   },
   "mega": {
     "auroraboot": {
-      "name": "AURORABOOT", "icon": "auroraboot", "desc": "Builds ISOs, provisions fleets, netboots machines.",
-      "parts": [ { "label": "Build ISOs" }, { "label": "Provision a fleet" }, { "label": "Netboot", "icon": "netboot" } ]
+      "name": "AURORABOOT",
+      "icon": "auroraboot",
+      "desc": "Builds ISOs, provisions fleets, netboots machines.",
+      "parts": [
+        {
+          "label": "Build ISOs"
+        },
+        {
+          "label": "Provision a fleet"
+        },
+        {
+          "label": "Netboot",
+          "icon": "netboot"
+        }
+      ]
     }
   },
-
   "poses": {
-    "title": "walk", "loadout": "idle", "map": "walk-down",
-    "command": "point", "text": "read", "empty": "think",
-    "fail": "sad", "stepClear": "celebrate", "stageClear": "jump",
-    "item": "happy", "complete": "celebrate", "badge": "happy", "name": "wave", "character": "idle", "mentor": "wave"
+    "title": "walk",
+    "loadout": "idle",
+    "map": "walk-down",
+    "command": "point",
+    "text": "read",
+    "empty": "think",
+    "fail": "sad",
+    "stepClear": "celebrate",
+    "stageClear": "jump",
+    "item": "happy",
+    "complete": "celebrate",
+    "badge": "happy",
+    "name": "wave",
+    "character": "idle",
+    "mentor": "wave"
   },
-
   "messages": {
-    "title_menu": ["NEW GAME", "CONTINUE", "PLAIN VIEW"],
+    "title_menu": [
+      "NEW GAME",
+      "CONTINUE",
+      "PLAIN VIEW"
+    ],
     "name_prompt": "WHAT'S YOUR NAME?",
     "name_line": "Hi! I'm KAI. I'll travel with you and give you tips.",
     "character_prompt": "PICK YOUR LOOK",
     "character_line": "Looking good, {name}! Which one is you?",
-    "loadout": "Tell me your gear, {name}. NOT SURE shows everything.",
-    "loadout_labels": { "virtualization": "VIRT", "os": "OS", "arch": "ARCH", "runtime": "RUN" },
+    "loadout": "Tell me your gear, {name}. One question at a time.",
+    "loadout_labels": {
+      "virtualization": "VIRT",
+      "os": "OS",
+      "arch": "ARCH",
+      "runtime": "RUN"
+    },
     "unsure": "NOT SURE",
     "map_title": "ROUTE",
     "map_current": "{done}/{total} STEPS. LET'S GO!",
@@ -85,8 +260,8 @@
     "coming_soon": "COMING SOON",
     "unknown_item": "??????",
     "fail_head": "NOT YET",
-    "fail_sub": "NO PENALTY",
-    "fail_line": "That happens to everyone. Check the tips below.",
+    "fail_sub": "LET'S FIX IT",
+    "fail_line": "KAI has a prompt ready for your AI assistant.",
     "empty_line": "Hmm... no path for your loadout.",
     "skip_line": "Skip {location}? You can come back any time.",
     "complete_head": "WORKSHOP CLEAR!",
@@ -99,13 +274,12 @@
       "Tip: if a check fails, nothing is lost.",
       "Tip: A/B partitions mean you can always roll back."
     ],
-    "goodbye": "Progress saved. See you soon, {name}!"
+    "goodbye": "Progress saved. See you soon, {name}!",
+    "tip_line": "Here is a TIP prompt for your AI assistant.",
+    "no_skip_line": "THIS STOP CAN'T BE SKIPPED."
   },
-
   "labels": {
-    "did_it": "I did it",
     "did_not_work": "It did not work",
-    "no_penalty": "No penalty",
     "side_quest": "Side quest",
     "optional": "optional, doesn't count toward progress",
     "only_if": "Only if",
@@ -117,8 +291,10 @@
     "copy": "Copy",
     "copied": "Copied",
     "copy_failed": "Copy failed. The text is selected: press Ctrl+C or Cmd+C.",
-    "note": "Note", "caution": "Caution", "warning": "Warning",
-    "troubleshooting": "Tips from KAI",
+    "note": "Note",
+    "caution": "Caution",
+    "warning": "Warning",
+    "troubleshooting": "It did not work",
     "cta": "Continue in your terminal: install kairos-lab",
     "plain_view": "Plain view",
     "skip": "Skip this stage",
@@ -126,6 +302,139 @@
     "skip_cancel": "Keep it",
     "skipped": "Skipped",
     "coming_soon": "Coming soon",
-    "download_badge": "Download badge (PNG)"
+    "download_badge": "Download badge (PNG)",
+    "next_step": "Next step",
+    "common_fixes": "Try these first",
+    "ai_title": "Ask your AI assistant",
+    "ai_intro": "Copy this prompt into your favorite AI assistant. The highlighted parts are placeholders: fill them in first.",
+    "tip_title": "A TIP from KAI",
+    "tip_intro": "A ready prompt for this stage. Paste it into your favorite AI assistant.",
+    "ask_tip": "Ask KAI for a TIP",
+    "copy_prompt": "Copy prompt",
+    "close": "Close",
+    "virt_field": "Your virtualization software",
+    "virt_hint": "Fills the highlighted placeholder in the prompt. Saved with your progress.",
+    "no_skip": "Can't skip",
+    "cleared": "Cleared"
+  },
+  "footer": "KAI, the Kairos armadillo, designed by Mauro Morales. Apache-2.0.",
+  "welcome": {
+    "mentor": "mauro",
+    "pages": [
+      {
+        "line": "Hi {name}! Welcome aboard.",
+        "md": "Hi {name}! I'm Mauro, one of the maintainers of Kairos, and this is KAI, our armadillo mascot. In this workshop you build and run an immutable Kubernetes cluster, one stage at a time. You type every command yourself, because that is how it sticks. KAI helps when you get stuck."
+      },
+      {
+        "line": "Immutable means image-based.",
+        "md": "An immutable system treats the operating system like an application image. You never patch it in place. You build a new image, boot into it, and go back to the previous one if it misbehaves."
+      },
+      {
+        "line": "Predictable. Instant. Identical.",
+        "md": "Why? Upgrades are predictable, rollbacks are instant, and every machine is identical, so nothing drifts."
+      },
+      {
+        "line": "Open source, CNCF Sandbox.",
+        "md": "Kairos is a fully open source CNCF Sandbox project. It turns the Linux distribution of your choice into an immutable, image-based system with Kubernetes built in. Bare metal, VMs, edge and public cloud, we have you covered!"
+      },
+      {
+        "line": "Thanks to our patron!",
+        "md": "This workshop is brought to you by our generous patron, [Spectro Cloud](https://www.spectrocloud.com/solutions/kairos-support)."
+      }
+    ],
+    "next": "Next",
+    "back": "Back",
+    "start": "Start your quest"
+  },
+  "loadout": {
+    "title": "Choose your loadout",
+    "progress": "Question {n} of {total}",
+    "next": "Next",
+    "back": "Back",
+    "done": "Start the trip",
+    "questions": {
+      "os": {
+        "title": "What is your computer running?",
+        "options": {
+          "linux": {},
+          "macos": {},
+          "windows": {}
+        }
+      },
+      "virtualization": {
+        "title": "How will you run the VMs?",
+        "options": {
+          "kairos-lab": {
+            "badge": "recommended",
+            "md": "kairos-lab creates and boots the VMs and sets up their network for you, so you can focus on Kairos."
+          },
+          "own": {
+            "md": "You bring your own virtualization software. You must know how to create a VM, give it a network that is shared with your computer (or use tunneling), and make sure the VM can reach the internet. Stuck? Ask KAI for a TIP: a ready prompt you paste into your favorite AI assistant."
+          }
+        }
+      },
+      "arch": {
+        "title": "Which CPU architecture?",
+        "options": {
+          "amd64": {},
+          "arm64": {}
+        },
+        "help": {
+          "label": "Not sure?",
+          "md": "Run this in a terminal:",
+          "code": "uname -m",
+          "after": "x86_64 means amd64. arm64 or aarch64 means arm64."
+        }
+      },
+      "runtime": {
+        "title": "Which container runtime?",
+        "md": "It is your choice, but Docker is the more battle-tested one for this workshop.",
+        "options": {
+          "docker": {},
+          "podman": {}
+        },
+        "when": [
+          {
+            "only": {
+              "virtualization": [
+                "kairos-lab"
+              ]
+            },
+            "md": "If you already have a runtime, `kairos-lab setup` uses it. If you have none, it asks before it installs one. Docker is the default. Run `kairos-lab setup -runtime podman` to use Podman."
+          }
+        ]
+      }
+    },
+    "notices": {
+      "windows": {
+        "title": "Windows: you play Master",
+        "line": "Not game over! You play MASTER.",
+        "md": "This is not game over. Zen is not available on Windows, so you play Master."
+      }
+    }
+  },
+  "prompts": {
+    "virtPlaceholder": "[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]",
+    "logsPlaceholder": "[paste your logs or the error here]",
+    "unsetPlaceholder": "[YOUR {fact}]",
+    "noCommands": "(this step has no commands)",
+    "warning": "Remove tokens, passwords and private addresses before you paste.",
+    "fail": [
+      "I'm following the Kairos workshop, stage \"{stage}\", step \"{step}\".",
+      "My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.",
+      "Goal of this step: {goal}.",
+      "Tool: {tool} ({source}). Docs: {docs}.",
+      "What I ran:",
+      "{commands}",
+      "What I expected: {expected}",
+      "What happened: {logs}",
+      "Give me short numbered steps for my setup. If something is unclear, say what you need from me. Prefer the docs above over guesses."
+    ],
+    "tip": [
+      "I'm following the Kairos workshop, stage \"{stage}\".",
+      "My setup: {os}, {arch}, container runtime {runtime}, VMs with {virtualization}.",
+      "{ask}",
+      "Give me short numbered steps for my setup. If something is unclear, say what you need from me."
+    ]
   }
 }

@@ -5,7 +5,8 @@ import { checkPrompt } from "./labels.mjs";
 import { uniqueSlugs } from "./slug.mjs";
 
 // The compiler from the workshop model (stage, sections, steps, variants) to the model of the KAI
-// game reader (stage, steps, blocks). The reader's shape is described in kai/README.md.
+// game reader (stage, steps, blocks). The reader's shape is described in kai/README.md and kai/DATA.md.
+// This file writes content.json. tools/lib/theme.mjs writes the part of theme.json that comes from us.
 
 // Prompts for steps that have no named check. Every KAI step needs one.
 export const PROMPTS = {
@@ -61,12 +62,12 @@ const withOnly = (only, block) => {
   return { type, ...(kind !== undefined && { kind }), only, ...rest };
 };
 
-// The help of a step with the help of its stage as defaults: goal, tool, source, docs.
-// `expect` is the sentence for the {expect} slot of the step prompt.
+// The help of a step with the help of its stage as defaults: tool, source, docs. `expect` is the
+// sentence for the {expect} slot of the step prompt. The goal is not part of it: the reader has
+// its own field for it (`goal` on the step).
 function mergeHelp(stageHelp, stepHelp, check) {
-  if (!stepHelp) return undefined;
   const all = { ...stageHelp, ...stepHelp };
-  const out = { goal: all.goal };
+  const out = {};
   for (const k of ["tool", "source", "docs"]) if (all[k] !== undefined) out[k] = all[k];
   out.expect = expectText(check);
   return out;
@@ -164,22 +165,27 @@ export function compileStage(doc, lines = {}) {
         line: lineFor(step.id, title),
         ...(step.optional && { optional: true }),
         ...(only && { only }),
-        ...(step.help && { help: mergeHelp(doc.help, step.help, step.check) }),
         blocks,
         check: checkOf(step, PROMPTS.step),
+        ...(step.help && { goal: step.help.goal, help: mergeHelp(doc.help, step.help, step.check) }),
       });
     });
   });
 
   const skip = toOnly(doc.not_skippable_when);
   const tipOnly = toOnly(doc.tip?.when);
+  const help = doc.help ?? {};
   return {
     id: doc.id,
     title: stripStageNumber(doc.title),
     goal: doc.goal,
-    ...(skip && { notSkippableWhen: skip }),
-    ...(doc.tip && { tip: { ...(tipOnly && { only: tipOnly }), request: doc.tip.request } }),
     steps,
+    ...(help.tool && { tool: { name: help.tool, ...(help.source && { url: help.source }) } }),
+    ...(help.docs && { docs: help.docs }),
+    // The reader offers the tip to a learner of Master. A condition of our own is kept as `tipOnly`.
+    ...(doc.tip && { tip: doc.tip.request }),
+    ...(tipOnly && { tipOnly }),
+    ...(skip && { noSkip: { when: skip, reason: doc.not_skippable_reason } }),
   };
 }
 
@@ -203,41 +209,42 @@ export function compileMarkdownStage(entry, repository, lines = {}) {
   };
 }
 
-// The facts the loadout asks about, in the fixed fact order, with the question and the option labels
-// from the loadout.
-export function compileFacts(loadout) {
-  const out = [];
-  for (const def of FACT_DEFS) {
-    const q = loadout.questions.find((x) => x.fact === def.id);
-    if (!q) continue;
-    out.push({ id: def.id, label: def.label, question: q.title, options: q.options.map((o) => ({ id: o.value, label: o.label })) });
-  }
-  return out;
+// The reader does not know `ends`. After an answer that ends the loadout it asks no more questions only
+// because every later question has an `askIf` that is false under that answer. So each later question
+// must have a `when` that the answer (with what it forces) does not satisfy.
+function checkEndsOptions(loadout) {
+  loadout.questions.forEach((q, i) => {
+    for (const o of q.options.filter((x) => x.ends === true)) {
+      const answers = { [q.fact]: o.value, ...o.forces };
+      for (const later of loadout.questions.slice(i + 1)) {
+        const when = normalizeWhen(later.when);
+        const asked = !when || Object.entries(when).every(([fact, values]) => answers[fact] !== undefined && values.includes(answers[fact]));
+        if (asked) throw new CompileError(`workshop.yaml: the option "${o.value}" of "${q.fact}" ends the loadout, but the question about "${later.fact}" has no when that stops the game from asking it`);
+      }
+    }
+  });
 }
 
-export const compileWelcome = (welcome) => ({ pages: [...welcome.pages] });
-
-// The loadout in the shape of the YAML, with every `when` as lists and a fixed order of keys.
-export function compileLoadout(loadout) {
-  const when = (w) => (w ? { when: normalizeWhen(w) } : {});
-  return {
-    questions: loadout.questions.map((q) => ({
-      fact: q.fact,
-      title: q.title,
-      ...(q.text !== undefined && { text: q.text }),
-      ...when(q.when),
+// The facts the loadout asks about, in the order of the questions, with the question and the option
+// labels from the loadout. `askIf` is the `when` of the question. An option has `forces` when ours does
+// and `notice` (the option value, which names an entry of `notices` in theme.json) when it ends the flow.
+export function compileFacts(loadout) {
+  checkEndsOptions(loadout);
+  return loadout.questions.map((q) => {
+    const askIf = toOnly(normalizeWhen(q.when));
+    return {
+      id: q.fact,
+      label: FACT_DEFS.find((d) => d.id === q.fact).label,
+      question: q.title,
       options: q.options.map((o) => ({
-        value: o.value,
+        id: o.value,
         label: o.label,
-        ...(o.text !== undefined && { text: o.text }),
-        ...(o.recommended !== undefined && { recommended: o.recommended }),
         ...(o.forces && { forces: { ...o.forces } }),
-        ...(o.ends !== undefined && { ends: o.ends }),
+        ...(o.ends === true && { notice: o.value }),
       })),
-      ...(q.help && { help: { label: q.help.label, command: q.help.command, text: q.help.text } }),
-      ...(q.notes && { notes: q.notes.map((n) => ({ ...when(n.when), text: n.text })) }),
-    })),
-  };
+      ...(askIf && { askIf }),
+    };
+  });
 }
 
 // `loaded` is the result of loadWorkshop. `lines` is the parsed kai/lines.yaml.
@@ -247,13 +254,7 @@ export function compileWorkshop(loaded, lines = {}) {
     if (!value) throw new CompileError(`workshop.yaml needs ${key} for the game`);
   }
   const stages = loaded.stages.map((s) => (s.kind === "converted" ? compileStage(s.doc, lines) : compileMarkdownStage(s, repository, lines)));
-  const content = {
-    facts: compileFacts(loadout),
-    welcome: compileWelcome(welcome),
-    loadout: compileLoadout(loadout),
-    prompts: { step: prompts.step, tip: prompts.tip },
-    stages,
-  };
+  const content = { facts: compileFacts(loadout), stages };
   checkLines(content, lines, loaded.workshop);
   validateContent(content);
   return content;
@@ -284,7 +285,7 @@ export const endingOptions = (loadout) => loadout.questions.flatMap((q) => q.opt
 
 // The `welcome` and `notices` sections, when present: one line per welcome page, and a title and a line
 // for each option that ends the loadout. Whether they are present is checked where they are used.
-function checkLineSections(lines, workshop) {
+export function checkLineSections(lines, workshop) {
   if (lines.welcome !== undefined) {
     const pages = workshop.welcome?.pages ?? [];
     if (!Array.isArray(lines.welcome) || lines.welcome.length !== pages.length) {
@@ -372,62 +373,71 @@ function checkBlocks(blocks, where, errors) {
   });
 }
 
+const isText = (v) => typeof v === "string" && v !== "";
+const isHttps = (v) => typeof v === "string" && /^https:\/\/\S+$/.test(v);
+
+// The `help` of a step: the sentence for {expect}, and the tool, source and docs for the step.
 function checkHelp(help, where, errors) {
-  checkShape(help, ["goal"], ["tool", "source", "docs", "expect"], `${where}, help`, errors);
-  for (const k of ["goal", "tool", "expect"]) if (help[k] !== undefined && (typeof help[k] !== "string" || help[k] === "")) errors.push(`${where}, help: "${k}" must be text`);
-  for (const k of ["source", "docs"]) if (help[k] !== undefined && !/^https:\/\/\S+$/.test(help[k])) errors.push(`${where}, help: "${k}" must be an https URL`);
+  checkShape(help, ["expect"], ["tool", "source", "docs"], `${where}, help`, errors);
+  for (const k of ["tool", "expect"]) if (help[k] !== undefined && !isText(help[k])) errors.push(`${where}, help: "${k}" must be text`);
+  for (const k of ["source", "docs"]) if (help[k] !== undefined && !isHttps(help[k])) errors.push(`${where}, help: "${k}" must be an https URL`);
 }
 
-// The welcome pages, the loadout and the prompts at the top of the content.
-function checkExtras(content, errors) {
-  if (content.welcome !== undefined) {
-    checkShape(content.welcome, ["pages"], [], "welcome", errors);
-    const pages = content.welcome.pages;
-    if (!Array.isArray(pages) || pages.length < 1 || pages.length > 10 || pages.some((p) => typeof p !== "string" || p === "")) errors.push("welcome.pages must be 1 to 10 texts");
+// The facts at the top of the content: one per fact that the loadout asks, in the order of the questions.
+function checkFacts(facts, errors) {
+  if (!Array.isArray(facts) || facts.length === 0) {
+    errors.push("facts must be a non-empty list");
+    return;
   }
-  if (content.prompts !== undefined) {
-    checkShape(content.prompts, ["step", "tip"], [], "prompts", errors);
-    for (const k of ["step", "tip"]) if (typeof content.prompts[k] !== "string" || content.prompts[k] === "") errors.push(`prompts.${k} must be text`);
-  }
-  if (content.loadout !== undefined) {
-    checkShape(content.loadout, ["questions"], [], "loadout", errors);
-    if (!Array.isArray(content.loadout.questions) || content.loadout.questions.length === 0) errors.push("loadout.questions must be a list");
-    (content.loadout.questions ?? []).forEach((q, i) => {
-      const w = `loadout.questions[${i}]`;
-      checkShape(q, ["fact", "title", "options"], ["text", "when", "help", "notes"], w, errors);
-      if (!VALUES[q.fact]) {
-        errors.push(`${w}: unknown fact "${q.fact}"`);
-        return;
-      }
-      checkOnly(q.when, `${w}.when`, errors);
-      if (!Array.isArray(q.options) || q.options.length < 2) errors.push(`${w}: needs at least two options`);
-      (q.options ?? []).forEach((o, j) => {
-        checkShape(o, ["value", "label"], ["text", "recommended", "forces", "ends"], `${w}.options[${j}]`, errors);
-        if (!VALUES[q.fact].includes(o.value)) errors.push(`${w}.options[${j}]: unknown value "${o.value}"`);
-      });
-      for (const n of q.notes ?? []) {
-        checkShape(n, ["text"], ["when"], `${w}.notes`, errors);
-        checkOnly(n.when, `${w}.notes.when`, errors);
+  const seen = new Set();
+  facts.forEach((f, i) => {
+    const w = `facts[${i}]`;
+    checkShape(f, ["id", "label", "question", "options"], ["askIf"], w, errors);
+    if (!VALUES[f.id]) {
+      errors.push(`${w}: unknown fact "${f.id}"`);
+      return;
+    }
+    if (seen.has(f.id)) errors.push(`${w}: duplicate fact "${f.id}"`);
+    seen.add(f.id);
+    for (const k of ["label", "question"]) if (!isText(f[k])) errors.push(`${w}: "${k}" must be text`);
+    checkOnly(f.askIf, `${w}.askIf`, errors);
+    if (!Array.isArray(f.options) || f.options.length < 2) errors.push(`${w}: needs at least two options`);
+    (f.options ?? []).forEach((o, j) => {
+      const ow = `${w}.options[${j}]`;
+      checkShape(o, ["id", "label"], ["forces", "notice"], ow, errors);
+      if (!VALUES[f.id].includes(o.id)) errors.push(`${ow}: unknown value "${o.id}"`);
+      if (!isText(o.label)) errors.push(`${ow}: "label" must be text`);
+      if (o.notice !== undefined && !isText(o.notice)) errors.push(`${ow}: "notice" must be text`);
+      if (o.forces !== undefined) {
+        checkShape(o.forces, [], Object.keys(VALUES), `${ow}.forces`, errors);
+        for (const [fact, value] of Object.entries(o.forces)) if (VALUES[fact] && !VALUES[fact].includes(value)) errors.push(`${ow}.forces: "${value}" is not a value of "${fact}"`);
       }
     });
-  }
+  });
 }
 
 // Throws a CompileError that lists every problem.
 export function validateContent(content) {
   const errors = [];
-  checkShape(content, ["facts", "stages"], ["welcome", "loadout", "prompts"], "content", errors);
-  checkExtras(content, errors);
+  checkShape(content, ["facts", "stages"], [], "content", errors);
+  checkFacts(content.facts, errors);
   const stageIds = new Set();
   (content.stages ?? []).forEach((s, si) => {
     const sw = `stage "${s.id}"`;
-    checkShape(s, ["id", "title", "goal", "steps"], ["notSkippableWhen", "tip"], sw, errors);
-    checkOnly(s.notSkippableWhen, `${sw}, notSkippableWhen`, errors);
-    if (s.tip !== undefined) {
-      checkShape(s.tip, ["request"], ["only"], `${sw}, tip`, errors);
-      checkOnly(s.tip.only, `${sw}, tip.only`, errors);
-      if (typeof s.tip.request !== "string" || s.tip.request === "") errors.push(`${sw}, tip: "request" must be text`);
+    checkShape(s, ["id", "title", "goal", "steps"], ["tool", "docs", "tip", "tipOnly", "noSkip"], sw, errors);
+    if (s.noSkip !== undefined) {
+      checkShape(s.noSkip, ["when", "reason"], [], `${sw}, noSkip`, errors);
+      checkOnly(s.noSkip.when, `${sw}, noSkip.when`, errors);
+      if (!isText(s.noSkip.reason)) errors.push(`${sw}, noSkip: "reason" must be text`);
     }
+    if (s.tip !== undefined && !isText(s.tip)) errors.push(`${sw}: "tip" must be text`);
+    checkOnly(s.tipOnly, `${sw}, tipOnly`, errors);
+    if (s.tool !== undefined) {
+      checkShape(s.tool, ["name"], ["url"], `${sw}, tool`, errors);
+      if (!isText(s.tool.name)) errors.push(`${sw}, tool: "name" must be text`);
+      if (s.tool.url !== undefined && !isHttps(s.tool.url)) errors.push(`${sw}, tool: "url" must be an https URL`);
+    }
+    if (s.docs !== undefined && !isHttps(s.docs)) errors.push(`${sw}: "docs" must be an https URL`);
     if (stageIds.has(s.id)) errors.push(`${sw}: duplicate stage id`);
     stageIds.add(s.id);
     for (const k of ["title", "goal"]) if (typeof s[k] !== "string" || s[k] === "") errors.push(`${sw}: "${k}" must be text`);
@@ -435,7 +445,8 @@ export function validateContent(content) {
     const stepIds = new Set();
     (s.steps ?? []).forEach((st) => {
       const w = `${sw}, step "${st.id}"`;
-      checkShape(st, ["id", "title", "line", "blocks", "check"], ["optional", "only", "help"], w, errors);
+      checkShape(st, ["id", "title", "line", "blocks", "check"], ["optional", "only", "goal", "help"], w, errors);
+      if (st.goal !== undefined && !isText(st.goal)) errors.push(`${w}: "goal" must be text`);
       if (st.help !== undefined) checkHelp(st.help, w, errors);
       if (stepIds.has(st.id)) errors.push(`${w}: duplicate step id`);
       stepIds.add(st.id);
