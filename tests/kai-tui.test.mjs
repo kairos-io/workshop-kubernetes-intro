@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 import { parse } from "yaml";
 import { view } from "../tools/lib/view.mjs";
 import { FACTS } from "../tools/lib/facts.mjs";
-import { E } from "./helpers/kai-engine.mjs";
+import { pathToFileURL } from "node:url";
+import { E, web as webDir } from "./helpers/kai-engine.mjs";
 
 // The designer's terminal app, built from kai/tui with the Go standard library only. Set KAI_TUI_SRC to build
 // from another folder, for example a newer copy of the file. The tests are
@@ -247,3 +248,53 @@ shows("the TIP screen of Master writes the stage prompt with the placeholder for
   assert.match(out, /VMs with \[NAME OF YOUR VIRTUALIZATION SOFTWARE, e\.g\. VirtualBox\]\./);
   assert.match(out, /Explain how to install Docker on Linux \(amd64\) and how to check that it works\./);
 });
+
+// ---- the verify of a check, under the check line: the Go app and its JS twin draw the same rows ----
+await import(pathToFileURL(join(webDir, "kai-term.js")).href);
+const T = window.KAIT;
+
+const verifyFacts = { os: "linux", arch: "amd64", runtime: "docker", virtualization: "kairos-lab" };
+const goRows = (facts, step, size) => {
+  const flag = Object.entries(facts).map(([k, v]) => `${k}=${v}`).join(",");
+  const r = spawnSync(bin, ["render", "--assets", webDir, "--screen", "stage", "--stage", "kairos-lab", "--step", String(step), "--facts", flag, "--color", "none", "--size", size], { encoding: "utf8" });
+  assert.equal(r.status, 0, r.stderr);
+  return r.stdout.split("\n").map((l) => l.trimEnd());
+};
+const jsRows = (facts, step, size) => {
+  const [w, h] = size.split("x").map(Number);
+  const p = { ...E.newProgress(), facts: Object.fromEntries(FACTS.map((f) => [f, facts[f] ?? "unsure"])) };
+  const g = T.render(E, { w, h, p, view: "stage", stage: "kairos-lab", step, ascii: false, palette: "dmg" });
+  return g.c.map((row) => row.map((c) => c.ch).join("").trimEnd());
+};
+const stepIndex = (facts, id) => E.steps("kairos-lab", Object.fromEntries(FACTS.map((f) => [f, facts[f] ?? "unsure"]))).findIndex((s) => s.id === id);
+
+shows("the terminal shows the verify under the check line: the command, and the output when the stage gives one", () => {
+  const rows = goRows(verifyFacts, stepIndex(verifyFacts, "install-kairos-lab"), "120x40");
+  const at = rows.findIndex((l) => l.includes("Check (Command available)"));
+  assert.ok(at > 0);
+  assert.deepEqual(rows.slice(at + 1, at + 5).map((l) => l.trim()), ["How to check", "$ kairos-lab --version", "You should see something like:", "0.1.3"]);
+  const bare = goRows(verifyFacts, stepIndex(verifyFacts, "auroraboot-version"), "120x40");
+  const at2 = bare.findIndex((l) => l.includes("Check (Command available)"));
+  assert.deepEqual(bare.slice(at2 + 1, at2 + 3).map((l) => l.trim()), ["How to check", "$ auroraboot --version"]);
+  assert.ok(!bare.join("\n").includes("You should see something like"), "no example output, no label");
+  assert.match(bare[at2 + 3], /Enter next step/, "the key line follows the verify");
+});
+
+shows("the terminal shows no verify for a step that has none", () => {
+  const facts = { os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" };
+  const rows = goRows(facts, stepIndex(facts, "pull-auroraboot"), "120x40");
+  assert.ok(rows.some((l) => l.includes("Check (Image exists)")));
+  assert.ok(!rows.join("\n").includes("How to check"));
+});
+
+for (const size of ["120x40", "80x30"]) {
+  for (const id of ["install-kairos-lab", "auroraboot-version"]) {
+    shows(`the JS twin draws the same rows as the Go app for the verify of ${id} at ${size}`, () => {
+      const step = stepIndex(verifyFacts, id);
+      const h = Number(size.split("x")[1]);
+      const tail = (rows) => rows.slice(h - 9, h).map((l) => l.trim());
+      assert.deepEqual(tail(jsRows(verifyFacts, step, size)), tail(goRows(verifyFacts, step, size)));
+      assert.ok(tail(jsRows(verifyFacts, step, size)).join("\n").includes("How to check"));
+    });
+  }
+}

@@ -64,6 +64,23 @@
     g.sprite(x0 + (opt && opt.kx != null ? opt.kx : 4), y0, f.map, K, codes, { flip: f.flip });
   };
 
+  // ---------- verify rows ----------
+  // The rows under the check line: the title, the command to run by hand and, when the step has an
+  // example, its label and lines (same as verifyRows in tui/main.go). The command and the title are bold.
+  T.verifyRows = function (E, st, width) {
+    const L = E.W.labels, v = E.stepVerify(st);
+    if (!v.has) return [];
+    const row = (s, b) => ({ s: T.clip(s, width), st: b ? { b: true } : {} });
+    const rows = [row(' ' + L.check_verify_title, true), row('   $ ' + v.command, true)];
+    if (v.hasOutput) {
+      rows.push(row('   ' + L.check_output_label + ':'));
+      const ol = v.output.split('\n');
+      ol.slice(0, 4).forEach(l => rows.push(row('     ' + l)));
+      if (ol.length > 4) rows.push({ s: '     ...', st: {} });
+    }
+    return rows;
+  };
+
   // ---------- instruction lines ----------
   // Line = { segs: [{s, st}], cmd?: index }
   T.instructions = function (E, p, st, sid, width, ui) {
@@ -286,12 +303,16 @@
         g.fill(42, 1, w - 42, 1, sel); g.put(42, 1, T.clip(sub, w - 42), sel);
         ix = 42; iy = 2; ih = h - 5;
       }
+      const vrows = T.verifyRows(E, st, wide ? w - 42 : w);
+      ih = Math.max(1, ih - vrows.length);
       const scroll = Math.max(0, Math.min(o.scroll || 0, Math.max(0, ins.lines.length - ih)));
       ins.lines.slice(scroll, scroll + ih).forEach((ln, j) => { let x = ix; ln.segs.forEach(sg => { g.put(x, iy + j, sg.s, sg.st || {}); x += T.len(sg.s); }); });
       if (scroll > 0) g.put(w - 1, iy, G.up, { b: true });
       if (scroll + ih < ins.lines.length) g.put(w - 1, iy + ih - 1, G.down, { b: true });
       const done = p.done[E.stepKey(sid, st.id)];
-      g.put(wide ? 42 : 0, h - 2, T.clip(' Check (' + E.checkKind(st).label + '): ' + st.check.prompt + (done ? '  ' + G.ok + ' cleared' : ''), wide ? w - 42 : w), { b: true });
+      const cy = h - 2 - vrows.length;
+      g.put(wide ? 42 : 0, cy, T.clip(' Check (' + E.checkKind(st).label + '): ' + st.check.prompt + (done ? '  ' + G.ok + ' cleared' : ''), wide ? w - 42 : w), { b: true });
+      vrows.forEach((r, i) => g.put(wide ? 42 : 0, cy + 1 + i, r.s, r.st));
       const tipK = E.tipFor(p, sid) ? ' ' + G.dot + ' t TIP' : '';
       keys(done ? 'Enter next step ' + G.dot + ' left/right steps ' + G.dot + ' up/down scroll ' + G.dot + ' Tab cmd ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route'
         : 'Enter ' + L.next_step.toLowerCase() + ' ' + G.dot + ' n ' + L.did_not_work.toLowerCase() + ' ' + G.dot + ' up/down ' + G.dot + ' Tab ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route');

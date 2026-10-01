@@ -231,6 +231,10 @@ type Step struct {
 		Kind   string  `json:"kind"`
 		Prompt string  `json:"prompt"`
 		Fail   []Block `json:"fail"`
+		Verify *struct {
+			Command string `json:"command"`
+			Output  string `json:"output"`
+		} `json:"verify"`
 	} `json:"check"`
 }
 
@@ -805,6 +809,33 @@ func stageLink(href string) string {
 		}
 	}
 	return ""
+}
+
+// verifyRows are the rows under the check line: the title, the command to run by hand and, when
+// the step has an example, its label and lines (same as T.verifyRows in kai-term.js). Bold is the command and the title.
+type vrow struct {
+	S string
+	B bool
+}
+
+func verifyRows(st Step, width int) []vrow {
+	v := st.Check.Verify
+	if v == nil {
+		return nil
+	}
+	rows := []vrow{{clip(" "+W.Labels["check_verify_title"], width), true}, {clip("   $ "+v.Command, width), true}}
+	if v.Output != "" {
+		rows = append(rows, vrow{clip("   "+W.Labels["check_output_label"]+":", width), false})
+		ol := strings.Split(v.Output, "\n")
+		for i, l := range ol {
+			if i == 4 {
+				rows = append(rows, vrow{"     ...", false})
+				break
+			}
+			rows = append(rows, vrow{clip("     "+l, width), false})
+		}
+	}
+	return rows
 }
 
 func checkKind(st Step) string {
@@ -2311,6 +2342,12 @@ func (a *App) render(w, h int) *Grid {
 			g.put(42, 1, clip(sub, w-42), sel)
 			ix, iy, ih = 42, 2, h-5
 		}
+		vw := w
+		if wide {
+			vw = w - 42
+		}
+		vrows := verifyRows(st, vw)
+		ih = maxi(1, ih-len(vrows))
 		a.scroll = maxi(0, mini(a.scroll, maxi(0, len(ins)-ih)))
 		for j := 0; j < ih && a.scroll+j < len(ins); j++ {
 			x := ix
@@ -2334,7 +2371,11 @@ func (a *App) render(w, h int) *Grid {
 		if done {
 			chk += "  " + G.Ok + " cleared"
 		}
-		g.put(cx, h-2, clip(chk, cw), St{B: true})
+		cy := h - 2 - len(vrows)
+		g.put(cx, cy, clip(chk, cw), St{B: true})
+		for i, r := range vrows {
+			g.put(cx, cy+1+i, r.S, St{B: r.B})
+		}
 		if done {
 			tipK := ""
 			if tipFor(p, sid) {
@@ -3120,6 +3161,7 @@ func (a *App) revealFocus(w, h int) {
 	if w >= 100 {
 		iw, ih = w-44, h-5
 	}
+	ih = maxi(1, ih-len(verifyRows(a.curStep(), iw)))
 	for i, l := range a.instructions(a.curStep(), a.stage, iw, St{}) {
 		if l.Label && l.Cmd == a.focus {
 			if i < a.scroll || i >= a.scroll+ih-3 {
