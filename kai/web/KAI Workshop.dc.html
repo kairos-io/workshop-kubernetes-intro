@@ -30,9 +30,6 @@ button:disabled{cursor:not-allowed;}
       <div style="font-size:14px;">{{ crumb }}</div>
     </div>
     <nav aria-label="Workshop" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-      <sc-if value="{{ hasMode }}" hint-placeholder-val="{{ false }}">
-        <button onClick="{{ toggleMode }}" aria-label="{{ modeAria }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">{{ modeLabel }}</button>
-      </sc-if>
       <sc-if value="{{ isWorkshop }}" hint-placeholder-val="{{ false }}">
         <span role="group" aria-label="Text size" style="display:flex;gap:4px;">
           <button onClick="{{ textSmaller }}" disabled="{{ noSmaller }}" aria-label="{{ smallerLabel }}" style="background:transparent;color:var(--onBg);border:2px solid var(--onBg);padding:8px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;min-width:44px;">A−</button>
@@ -552,7 +549,7 @@ button:disabled{cursor:not-allowed;}
     </div>
   </main>
 
-  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span><button onClick="{{ toggleMode }}" hidden="{{ noMode }}" style="background:transparent;color:var(--onBg);border:0;padding:4px 0;font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;">{{ footerModeLabel }}</button></footer>
+  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span></footer>
   </div>
 </div>
 </x-dc>
