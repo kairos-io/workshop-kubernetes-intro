@@ -573,3 +573,12 @@ test("the validator checks check.kind and help.expect", () => {
   assert.throws(() => validateContent(bad((s) => { s.check.kind = "telepathy"; })), /check kind "telepathy"/);
   assert.throws(() => validateContent(bad((s) => { s.help = { expect: "" }; })), /"expect" must be text/);
 });
+
+test("a manual check of the stage compiles to kind manual with its text as the prompt, and the fallback is unchanged", () => {
+  const steps = stepsOf("  - title: S\n    text: T\n    steps:\n      - id: a\n        commands: [c]\n        check: { kind: manual, text: setup finished., verify: { command: kairos-lab status, output: \"vms: none\\n\" } }\n        onFail: Try again.\n        help: { goal: g }\n      - id: b\n        commands: [c]\n        check: { kind: manual, text: It is done. }\n      - id: c\n        commands: [c]\n");
+  assert.deepEqual(steps[0].check, { kind: "manual", prompt: "Setup finished.", verify: { command: "kairos-lab status", output: "vms: none" }, fail: [{ type: "text", md: "Try again." }] });
+  assert.equal(steps[0].help.expect, "Setup finished.", "the {expect} sentence of a manual check is its text");
+  assert.deepEqual(steps[1].check, { kind: "manual", prompt: "It is done.", fail: [] });
+  assert.deepEqual(steps[2].check, { kind: "manual", prompt: PROMPTS.step, fail: [] }, "a step with no check keeps the default sentence");
+  validateContent({ facts: good().facts, stages: [{ id: "t", title: "T", goal: "g", steps }] });
+});

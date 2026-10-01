@@ -131,6 +131,11 @@ test("a command that continues over lines with a backslash stays one command", (
   assert.ok(text.includes("What I ran:\n$ docker run -it --rm \\\n  -v a:b \\\n  image run\n$ second\nWhat I expected"));
 });
 
+test("the expected line of a manual check is its text, capitalized", () => {
+  const manual = { ...stage, sections: [{ title: "S", steps: [{ id: "m", help: { goal: "Do M" }, commands: ["echo m"], check: { kind: "manual", text: "the setup finished." } }] }] };
+  assert.ok(buildStepPrompt(workshop, manual, "m", {}).includes("What I expected: The setup finished."));
+});
+
 test("a tip prompt for your own software", () => {
   const facts = { os: "linux", arch: "amd64", runtime: "docker", virtualization: "own" };
   assert.equal(
