@@ -246,7 +246,7 @@
   "title_menu": [
    "NEW GAME",
    "CONTINUE",
-   "PLAIN VIEW"
+   "PRESENTATION"
   ],
   "name_prompt": "WHAT'S YOUR NAME?",
   "name_line": "Hi! I'm KAI. I'll travel with you and give you tips.",
@@ -477,15 +477,15 @@
   "question": "How do you want to follow the workshop?",
   "intro": "You can switch at any time.",
   "game": {
-   "label": "Play the game",
+   "label": "Quest",
    "md": "Travel with KAI, meet the mentors, collect items and earn XP."
   },
   "workshop": {
-   "label": "Just the workshop",
+   "label": "Presentation",
    "md": "A plain workshop page with the same steps and commands. Good for projectors."
   },
-  "switchToGame": "Switch to the game",
-  "switchToWorkshop": "Switch to just the workshop",
+  "switchToGame": "Switch to Quest",
+  "switchToWorkshop": "Switch to Presentation",
   "toggleLabel": "Mode"
  },
  "sheet": {

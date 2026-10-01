@@ -254,9 +254,9 @@ The reader (`kai/web/`, `kai/tui/main.go`, round 5 of the designer's export, the
 | `stage.tool`, `docs`, `tip` | The stage tip prompt: `{tool}`, `{source}`, `{docs}` and `{ask}`. |
 | `stage.tipOnly` | Who is offered the TIP (`E.tipFor`, the `t` key in the terminal, the banner in the web). A fact that is unset or "unsure" counts as a match. A stage without `tipOnly` has no TIP. |
 | `theme.factPrompt` | The text that stands for a fact value in a prompt, and which value needs a free text (the name of the learner's own virtualization software). |
-| `theme.messages.boss_hint` | The line about the Esc key: on the mode chooser, on page 1 of the welcome in the game, and above the first step in "Just the workshop". Not in the terminal, which has no boss key. |
+| `theme.messages.boss_hint` | The line about the Esc key: on the mode chooser, on page 1 of the welcome in the game, and above the first step in Presentation. Not in the terminal, which has no boss key. |
 | `theme.labels.take_home`, `tip_banner`, `free_text_hint`, `free_text_placeholder` | The "Take KAI home" line at the end of the workshop, the text of the TIP banner, the hint to type the name of the software, and the placeholder of that field. |
-| `theme.labels.app_title`, `app_title_stages`, `badge_file_prefix`, `badge_aria` | The title in the page header (with the number of stages in "Just the workshop"), the start of the file name of the badge download, and the aria text of the badge. |
+| `theme.labels.app_title`, `app_title_stages`, `badge_file_prefix`, `badge_aria` | The title in the page header (with the number of stages in Presentation), the start of the file name of the badge download, and the aria text of the badge. |
 | `stage.noSkip` | The reason shown when a Zen learner tries to skip stage 1. |
 | `step.line` | The text of the dialogue box. |
 | `step.only`, block `only` | Hide the item, or show it with an "Only if" label while the fact is unset. A step with `only` shows its label in the web and in the terminal. |
@@ -269,7 +269,7 @@ The reader (`kai/web/`, `kai/tui/main.go`, round 5 of the designer's export, the
 | `theme.prompts.fail`, `tip`, `unsetPlaceholder` | The prompt templates. An unset fact is written with `unsetPlaceholder`. |
 | `theme.stages` | The location, nodes and items of each stage of the route. |
 
-The web reader asks first for a mode ("Play the game" or "Just the workshop", saved as `kai.mode`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows the goal, the commands, `check.prompt` and the state for each step. The goal is `step.goal`, then the `goal` of the step help, then the title of the step, so no cell is empty. On a first visit with no saved mode the page always asks for the mode first (a mode saved in `kai.mode` skips the question).
+The web reader asks first for a mode ("Quest" or "Presentation", saved as `kai.mode` with the internal values `game` and `workshop`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows the goal, the commands, `check.prompt` and the state for each step. The goal is `step.goal`, then the `goal` of the step help, then the title of the step, so no cell is empty. On a first visit with no saved mode the page always asks for the mode first (a mode saved in `kai.mode` skips the question).
 
 ### Where the reader and our reference differ
 
@@ -284,7 +284,7 @@ Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{so
 - **`ends`**: the reader stops the loadout only through `askIf` (the compiler checks that this holds). It does not read `ends` from `workshop.yaml`.
 - **`check.kind` values**: a reader that can run a check needs the values (the command, the image, the ISO), which `content.json` does not carry. The round 4 reader only names the kind.
 - **`step.goal` for every step**: only a step with `help` has one. The spreadsheet uses the title of the step for the others. The YAML does not hold a goal for them, and we do not write one for the reader.
-- **`theme.links.plainView`**: the reader still reads it (the theme must have `links`), and no screen uses the address any more. "Plain view" opens "Just the workshop".
+- **`theme.links.plainView`**: the reader still reads it (the theme must have `links`), and no screen uses the address any more. The title menu entry "Presentation" (`messages.title_menu`) opens the Presentation mode.
 - **Dropped stages**: `theme.stages` leaves out `fleet` and `edgevpn` until those stages exist. The item `kairos-fleet`, the item `edgevpn` and part 2 of `auroraboot` are then granted by no stage.
 - **The overlay**: the base still holds copies of `welcome`, `loadout`, `prompts` and `stages`. The reader does not need them from the base, and the compiler replaces them. They can go from `theme.base.json` when the designer wants.
 

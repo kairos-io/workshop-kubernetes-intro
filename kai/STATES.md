@@ -8,7 +8,7 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 - Fact ids and values come only from `content.facts`. Prompt placeholders are built for every fact id. A value can be rewritten through `theme.factPrompt` (design-owned), where `@freeText` means "what the learner typed", e.g. the name of their virtualization software
 - TIP: shown only where `content.stages[].tipOnly` matches the loadout (an "only" map; a fact that is unset or "unsure" counts as a match). No `tipOnly` in the data means no TIP
 - Spreadsheet Goal column: `step.goal`, then `help.goal`, then the step title
-- Boss key line: `messages.boss_hint`. Shown once in the intro (welcome page 1 in the game, the first step in "Just the workshop") and as the small hint on the mode chooser. Not in the terminal: it has no boss key
+- Boss key line: `messages.boss_hint`. Shown once in the intro (welcome page 1 in Quest, the first step in Presentation) and as the small hint on the mode chooser. Not in the terminal: it has no boss key
 - "Take KAI home…" and the TIP banner are now `labels.take_home` and `labels.tip_banner`
 
 ## Round 4: new screens and states
@@ -18,11 +18,11 @@ Every state is live in `web/KAI States.dc.html`, including the terminal frames a
 - `theme.base.json` holds the design-owned keys. Round 4 adds `checkKinds`, `modes`, `sheet` and a few `labels` (tool, docs, text_bigger, text_smaller, theme_light, theme_dark, stages_nav)
 
 ### Mode chooser (first screen)
-- "Play the game" / "Just the workshop". Saved in localStorage `kai.mode` (try/catch). Shown when nothing is saved
-- Toggle: header button in both modes, plus a Mode group in Settings. The title menu's 3rd item and the footer link open "Just the workshop"
+- "Quest" / "Presentation". The internal values are `game` and `workshop`, and `kai.mode` keeps them. Saved in localStorage `kai.mode` (try/catch). Shown when nothing is saved
+- Switch: the Mode group in Settings. The title menu's 3rd item ("Presentation") opens the Presentation mode
 - The website panel under the title screen is gone. The section under the game only shows when it has content
 
-### Just the workshop
+### Presentation (internal value `workshop`)
 - No welcome, mentors, XP, route or game screen. Stage list on the left (✓ and done/total), the current stage in the middle, with the same steps, commands, notes, help and AI prompts
 - Loadout: same one-question flow on the first visit, then from the header
 - "Next step" marks the step done and goes straight to the next open step, then the next stage
