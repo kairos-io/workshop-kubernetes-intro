@@ -119,6 +119,7 @@ const WANTED = {
   "workshop-welcome-image.yaml": /welcome\.pages\[0\]: only one paragraph of inline markdown is allowed/,
   "workshop-option-text-html.yaml": /options\[0\]\.text: raw HTML is not allowed/,
   "workshop-note-alert.yaml": /notes\[0\]\.text: GitHub alert syntax is not allowed/,
+  "verify-command-placeholder.yaml": /sections\[0\]\.steps\[0\]\.check\.verify\.command: a placeholder is not allowed/,
   "tip-unknown-placeholder.yaml": /tip\.request: unknown placeholder \{stage\}/,
   "tip-spaced-placeholder.yaml": /tip\.request: unknown placeholder \{ runtime \}/,
 };

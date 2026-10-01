@@ -1,0 +1,10 @@
+# expect-error: a verify has only a command and an output
+format: kairos-workshop/v0
+id: bad
+title: Bad
+goal: try the example
+sections:
+  - title: X
+    steps:
+      - id: s
+        check: { kind: iso-exists, verify: { command: ls, run: true } }

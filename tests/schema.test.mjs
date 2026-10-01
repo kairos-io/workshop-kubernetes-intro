@@ -53,3 +53,15 @@ test("a reason of 160 characters is valid", () => {
   doc.not_skippable_reason = "x".repeat(161);
   assert.equal(validateStageSchema(doc).ok, false);
 });
+
+test("verify is optional, belongs to a check, and needs one line of command", () => {
+  const errorsOf = (f) => validateStageSchema(parse(load("invalid", f))).errors.join("\n");
+  assert.match(errorsOf("verify-without-check.yaml"), /must NOT have additional properties/);
+  assert.match(errorsOf("verify-without-command.yaml"), /must have required property 'command'/);
+  assert.match(errorsOf("verify-multiline-command.yaml"), /command must match pattern/);
+  assert.match(errorsOf("verify-unknown-key.yaml"), /must NOT have additional properties/);
+  assert.match(errorsOf("verify-empty-output.yaml"), /output must NOT have fewer than 1 characters/);
+  const doc = parse(load("valid", "full.yaml"));
+  const checks = doc.sections.flatMap((s) => s.steps ?? []).map((st) => st.check).filter(Boolean);
+  assert.ok(checks.some((c) => c.verify?.output) && checks.some((c) => c.verify && c.verify.output === undefined), "full.yaml has a verify with and without output");
+});

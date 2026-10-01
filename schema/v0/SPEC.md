@@ -97,7 +97,7 @@ Every reader renders a block in this order. Warnings come before commands.
 5. `commands`.
 6. `expect`.
 7. `after`.
-8. The check, as a sentence.
+8. The check, as a sentence, then its `verify` (the command, then the example output) when it has one.
 9. `onFail`.
 
 A condition label goes below a heading. It never goes inside the heading text, so a heading keeps the same anchor for every reader.
@@ -124,6 +124,12 @@ Kinds in v0:
 | `vm-running` | `name` (optional) | A VM is running. |
 
 Parameters are restricted by pattern in the schema, so they cannot hold shell metacharacters.
+
+A check can have `verify`: `{ command, output? }`. It tells the learner how to check by hand. It is allowed on every kind and it lives inside the check, so a step cannot have `verify` without a `check`.
+
+- `command` is required. It is plain text on one line (at most 200 characters), the command the learner runs to validate the step. It holds no placeholder: a validator rejects `{name}` and `<name>`. A step with variants has one `verify`, so a step whose command differs between variants (for example `docker` and `podman`) has none.
+- `output` is optional plain text, and it can have several lines. It is an example of what the learner sees. A reader presents it as an example and never as an exact match.
+- Like every command in this format, `verify.command` is text for the learner to run. A reader never runs it. The check parameters and `verify` are independent: `verify` does not change what the check means.
 
 Reader duties:
 
@@ -247,6 +253,7 @@ Unreleased v0:
 - A step can carry `help` (`goal`, `tool`, `source`, `docs`). A stage can carry `help` (defaults for its steps), `tip` (`when`, `request`), `not_skippable_when` and `not_skippable_reason`.
 - `tools/lib/loadout.mjs` (`nextQuestion`, `applyAnswer`) and `tools/lib/prompt.mjs` (`fillPrompt`, `buildStepPrompt`, `buildTipPrompt`) are reference implementations, with fixtures in `conformance/v0/loadout/` and `conformance/v0/prompt/`.
 - The `virtualization` value `other` is now `own`.
+- A check can carry `verify` (`command`, `output`), the command a learner runs to check the step and an example of the output. It is allowed on every check kind. The markdown publisher writes it under the check sentence.
 - The game content carries the condition of a stage tip as `tipOnly` for every stage that has a `tip`, with the default `{ virtualization: own }` applied when the stage sets no `when`.
 
 ## The visible outline
@@ -265,7 +272,7 @@ The outline follows the render order above and leaves out prose fields (`text`, 
 | warning | `kind: "warning"`, `warningKind`, `state` |
 | command | `kind: "command"`, `text` (one entry of `commands`, unchanged) |
 | expect | `kind: "expect"` |
-| check | `kind: "check"`, `checkKind` |
+| check | `kind: "check"`, `checkKind` (the parameters and `verify` of the check are not part of the outline) |
 | no-match | `kind: "no-match"`, `step` (a visible step with variants where every variant is hidden) |
 
 `state` is `shown` when the item's `when` evaluates to `true` or the item has no `when`, and `conditional` when it evaluates to `unknown`. The state of an item does not depend on the state of the items around it.

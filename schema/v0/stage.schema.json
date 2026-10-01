@@ -201,6 +201,25 @@
         "minLength": 1
       }
     },
+    "verify": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command"
+      ],
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "pattern": "^[^\\n]+$"
+        },
+        "output": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
     "check": {
       "type": "object",
       "required": [
@@ -219,6 +238,9 @@
             "command": {
               "type": "string",
               "pattern": "^[A-Za-z0-9._+-]+$"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
             }
           }
         },
@@ -234,6 +256,9 @@
             "image": {
               "type": "string",
               "pattern": "^[a-z0-9./:_@-]+$"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
             }
           }
         },
@@ -242,6 +267,9 @@
           "properties": {
             "kind": {
               "const": "iso-exists"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
             }
           }
         },
@@ -253,6 +281,9 @@
             },
             "name": {
               "$ref": "#/$defs/id"
+            },
+            "verify": {
+              "$ref": "#/$defs/verify"
             }
           }
         }

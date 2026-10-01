@@ -93,6 +93,9 @@ function checkLink(href, ctx) {
 
 // The semantic rules for one stage document (raw or normalized). It must already pass the schema.
 // ctx: { root, stages: Map<id, { slugs: Set<slug> | null }>, converted: Map<"stage-<n>.md", Set<slug>> }, see buildContext
+// A placeholder is a lower case name in braces or in angle brackets, such as {name} or <name>.
+const VERIFY_PLACEHOLDER = /\{[a-z][a-z0-9_-]*\}|<[A-Za-z][A-Za-z0-9_-]*>/;
+
 export function checkStage(doc, ctx) {
   const errors = [];
   const md_ = (text, where) => text && errors.push(...checkMarkdown(text, where, ctx));
@@ -120,6 +123,9 @@ export function checkStage(doc, ctx) {
       md_(step.after, `${tw}.after`);
       md_(step.onFail, `${tw}.onFail`);
       warnings(step.warnings, tw);
+      // A verify command is plain text for the learner to run, so it holds no placeholder.
+      const vc = step.check?.verify?.command;
+      if (vc && VERIFY_PLACEHOLDER.test(vc)) errors.push(`${tw}.check.verify.command: a placeholder is not allowed, write the command as the learner runs it`);
       const variantIds = new Set();
       (step.variants ?? []).forEach((v, vi) => {
         const vw = `${tw}.variants[${vi}]`;
