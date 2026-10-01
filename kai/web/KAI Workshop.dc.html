@@ -451,7 +451,7 @@ button:disabled{cursor:not-allowed;}
 
           <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;">
             <button onClick="{{ prevStep }}" disabled="{{ noPrev }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">◀ Previous step</button>
-            <button onClick="{{ skipNext }}" disabled="{{ noNext }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">Next step ▶</button>
+            <button onClick="{{ skipNext }}" disabled="{{ noNext }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ skipNextLabel }}</button>
           </div>
         </div>
       </sc-if>
@@ -1096,8 +1096,13 @@ class Component extends DCLogic {
       if (s.status === 'failed') out.aiPanels.push(panel('fail', E.prompt('fail', p, sid, st, this.settings().layout === 'tabs' ? s.alt : null), L.ai_title, L.ai_intro));
       out.nextLabel = s.step < steps.length - 1 ? 'Next step ▶' : 'Route ▶';
       out.nextStep = () => s.step < steps.length - 1 ? this.goStep(s.step + 1) : this.goMap();
-      out.prevStep = () => this.goStep(Math.max(0, s.step - 1)); out.skipNext = () => this.goStep(Math.min(steps.length - 1, s.step + 1));
-      out.noPrev = s.step <= 0; out.noNext = s.step >= steps.length - 1;
+      out.prevStep = () => this.goStep(Math.max(0, s.step - 1)); out.skipNext = () => {
+        if (!isWs) return this.goStep(Math.min(steps.length - 1, s.step + 1));
+        if (isDone || s.status === 'failed') return out.nextStep();
+        this.didIt();
+      };
+      out.noPrev = s.step <= 0; out.noNext = !isWs && s.step >= steps.length - 1;
+      out.skipNextLabel = isWs && s.step >= steps.length - 1 ? out.nextLabel : 'Next step ▶';
     }
     // transitions
     const c = s.clear || {};
