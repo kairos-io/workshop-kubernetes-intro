@@ -6,19 +6,24 @@ The game reader loads three JSON files from `kai/web/`. Two of them are generate
 |---|---|---|
 | `kai/web/content.json` | generated | The facts and the stages with their steps. Workshop data. |
 | `kai/web/theme.json` | generated | `kai/theme.base.json` with four keys replaced by data of ours. |
-| `kai/theme.base.json` | the designer | The theme as the designer delivered it. We never edit it. |
+| `kai/theme.base.json` | the designer | The theme as the designer delivered it, in `web/theme.base.json` of the export. We never edit it. |
 | `kai/lines.yaml` | us | The short lines of the dialogue box (step lines, welcome lines, notice titles and lines). |
 | `workshop.yaml`, `stages/*.yaml` | us | The source of every text the learner reads. |
+| everything else in `kai/` (`web/*.html`, `web/*.js`, `web/kai-sprites.json`, `tui/`, `assets/`, `STATES.md`, the designer's part of `README.md`) | the designer | The reader. We copy it from the export and never edit it. |
+
+The designer's export holds its own `web/theme.json` and `web/content.json`. We do not keep them, because ours are generated. In round 4 both are the same data as ours (the same values and the same key order), written with another indent and without the final newline.
 
 `npm run compile:kai -- --out kai/web` writes `content.json` and `theme.json`. Do not edit either by hand. `npm run compile:kai -- --check --out kai/web` fails when one of them is stale, and CI runs it. The output is stable: the same key order, a two-space indent, a newline at the end, no timestamps.
 
 The reader must ignore a field it does not know. New fields can appear in later versions.
 
+The reader loads three files from `kai/web/`: `kai-sprites.json` (the designer's), `theme.json` and `content.json`. It reads stage count, stage list and step ids from the data and does not hard-code them (see "What the reader reads").
+
 There is one source of truth for every text that is workshop content: our YAML. The reader reads it from the two generated files. The designer's base file holds real theme only: mentors, locations, items, poses, labels, messages, the footer and the labels of the buttons.
 
 ## theme.json
 
-`theme.json` is the base with four top-level keys generated. Our data wins: whatever the base holds for these keys is discarded. Every other key is copied from the base without a change (`game`, `links`, `xp`, `player`, `mentors`, `mentorPick`, `items`, `mega`, `poses`, `messages`, `labels`, `footer`), and the keys keep the order of the base.
+`theme.json` is the base with four top-level keys generated. The base still holds a copy of our earlier output under these four keys (the designer built it from our files), and the compiler ignores that copy. Our data wins: whatever the base holds for these keys is discarded. Every other key is copied from the base without a change (`game`, `links`, `xp`, `player`, `mentors`, `mentorPick`, `items`, `mega`, `poses`, `messages`, `labels`, `footer`, and since round 4 `checkKinds`, `modes` and `sheet`), and the keys keep the order of the base.
 
 | Key | Generated from |
 |---|---|
@@ -114,7 +119,7 @@ The facts, `askIf`, `forces` and `notice` are enough to run the loadout. Keep th
 
 **Changing an answer later.** Start again from the answers you keep and ask the questions again.
 
-`tools/lib/loadout.mjs` is the reference implementation of this flow,.
+`tools/lib/loadout.mjs` is the reference implementation of this flow.
 
 Example, from the data: choosing Windows for `os` sets `virtualization` to `own` (it forces it) and shows the notice "Windows: you play Master". The architecture and the runtime are never asked, because their `askIf` needs Linux or macOS. The learner plays Master, because Zen does not run on Windows. Choosing Linux or macOS goes on to the virtualization question, then the architecture, then the runtime.
 
@@ -126,7 +131,7 @@ The templates are lists of lines. A placeholder is a name in braces. The reader 
 
 `{stage}`, `{step}`, `{os}`, `{arch}`, `{runtime}`, `{virtualization}`, `{goal}`, `{tool}`, `{source}`, `{docs}`, `{commands}`, `{expected}`, `{logs}`, `{ask}`.
 
-Our reference implementation is `tools/lib/prompt.mjs`, with the fixtures in `conformance/v0/prompt/`. It spells two names in another way: `{expect}` for `{expected}` and `{request}` for `{ask}`. In our YAML the templates use `{expect}` and `{request}`, and the compiler renames them. The rest of this section describes our reference rules. The reader's own rules are in `kai/web/kai-engine.js`, and `tests/kai-engine.test.mjs` pins where the two differ (see "For the designer").
+Our reference implementation is `tools/lib/prompt.mjs`, with the fixtures in `conformance/v0/prompt/`. It spells two names in another way: `{expect}` for `{expected}` and `{request}` for `{ask}`. In our YAML the templates use `{expect}` and `{request}`, and the compiler renames them. The rest of this section describes our reference rules. The reader's own rules are in `kai/web/kai-engine.js`, and `tests/kai-engine.test.mjs` pins where the two differ (see "Where the reader and our reference differ").
 
 - `{stage}`, `{step}`: the stage title and the step title.
 - `{os}`: Linux, macOS or Windows. `{arch}`: amd64 or arm64. `{runtime}`: Docker or Podman. `{virtualization}`: `kairos-lab` when the fact is `kairos-lab`, and `[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]` when it is `own`.
@@ -233,23 +238,45 @@ Each block has a `type` and may have an `only`. When `only` does not match, hide
 - `prompt` is the sentence the learner confirms ("The auroraboot command is available in a new terminal.", or a default such as "You finished this step.").
 - `fail` is a list of blocks to show when the learner says it did not work. It can be empty.
 
-## For the designer
+## What the reader reads
 
-The generated files hold fields that the reader of round 3 does not read yet. If the next round reads them, the overlay that the compiler writes for the loadout, the welcome pages, the prompts and the stage list can go away, and `theme.base.json` can hold real theme only. What to read from our data:
+Round 4 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `content.json` and `theme.json` that we write, except the ones in "Not used yet". `tests/kai-engine.test.mjs`, `tests/kai-tui.test.mjs` and `tests/kai-theme.test.mjs` pin each use below.
 
-- **`workshop.yaml` `loadout`** (the source of `facts` and of `theme.loadout.questions`): the reader could read the question titles, option texts, `recommended`, `forces`, `ends`, `help` and `notes` from one structure, and use `ends` to stop the flow, so that a loadout does not depend on `askIf` for it. Today the reader reads `askIf`, `forces` and `notice` from `content.facts`, and the texts from `theme.loadout`.
-- **`workshop.yaml` `welcome`** and **`kai/lines.yaml`**: pages and short lines that the reader reads from `theme.welcome` today.
-- **`workshop.yaml` `prompts`**: the templates in our placeholder names (`{expect}`, `{request}`), with the rules of `tools/lib/prompt.mjs`. The reader has its own copy of the rules. They are not the same.
-- **`step.help`** (`tool`, `source`, `docs`, `expect`): the reader reads `tool`, `docs` and the expected result from the stage and from the output blocks. A step can name its own tool (AuroraBoot in the middle of the kairos-lab stage), and `help.expect` is a ready sentence for `{expected}`.
-- **`stage.tipOnly`**: the condition for offering the TIP. The reader offers it to Master only.
-- **`check.kind`**: what a check is (`command-available`, `image-exists`, `iso-exists`, `vm-running`, `manual`). A reader that can run a check needs the values, which `content.json` does not carry yet.
-- **Dropped stages**: the generated `theme.stages` leaves out `fleet` and `edgevpn` until those stages exist. The item `kairos-fleet`, the item `edgevpn` and part 2 of `auroraboot` are then granted by no stage.
+| Field of ours | What the reader does with it |
+|---|---|
+| `facts[].askIf`, `forces`, `notice` | Runs the loadout (`E.loadoutQuestions`, `E.withFact`). The same questions, in the same order, as `tools/lib/loadout.mjs`. |
+| `facts[].label`, `options[].label` | The names in the loadout rows and in the `[YOUR {fact}]` stand-in of the prompts (the label in upper case). |
+| `theme.loadout.questions`, `notices` | The texts of the loadout and of the notice after an ending answer. |
+| `theme.welcome.pages` | The welcome pages and their short lines. |
+| `stage.id`, `title`, `goal`, `steps` | The route, the stage page and the mentor screen. The number of stages is the length of the list. |
+| `stage.tool`, `docs`, `tip` | The stage tip prompt: `{tool}`, `{source}`, `{docs}` and `{ask}`. |
+| `stage.noSkip` | The reason shown when a Zen learner tries to skip stage 1. |
+| `step.line` | The text of the dialogue box. |
+| `step.only`, block `only` | Hide the item, or show it with an "Only if" label while the fact is unset. A step with `only` shows its label in the web and in the terminal. |
+| `step.blocks` | The step page. A command is shown with a `$ ` prompt that the reader adds. The data has none, and Copy copies the bare command. |
+| `step.goal`, `step.help` | The line "Tool: ... Docs: ..." under the step title, in the web (both modes) and in the terminal. The step help prompt: `{goal}`, `{tool}`, `{source}`, `{docs}` and `{expected}` (`help.expect`). A line of the template whose placeholders are all empty is dropped. |
+| `step.check.kind` | The check row names the kind with `theme.checkKinds` ("Command available"). The reader never runs a check. |
+| `step.check.prompt`, `fail` | The sentence to confirm, and the blocks of the "It did not work" panel. |
+| `step.optional` | The side quest marker. |
+| `stage:<id>` links | Open that stage in the web, and write "(stage N)" in the terminal. |
+| `theme.prompts.fail`, `tip`, `unsetPlaceholder` | The prompt templates. An unset fact is written with `unsetPlaceholder`. |
+| `theme.stages` | The location, nodes and items of each stage of the route. |
 
-Where the reader and our reference implementation differ today for the same prompt (the tests pin these):
+The web reader asks first for a mode ("Play the game" or "Just the workshop", saved as `kai.mode`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows `goal`, the commands, `check.prompt` and the state for each step. The goal cell is empty for a step with no `goal`.
 
-- `{tool}`, `{source}`, `{docs}`: the reader uses the tool of the stage for every step. We use the tool of the step when it has its own (AuroraBoot inside the kairos-lab stage).
-- `{expected}`: the reader writes the output block of the step, then the sentence of the check in brackets. For a step with a named check and no output block both write the same sentence. For a step with no named check the reader writes "You finished this step." and we write `the step finishes without errors`.
+### Where the reader and our reference differ
+
+Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{source}` and `{docs}` from the step (so a step that names its own tool, AuroraBoot in the kairos-lab stage, shows it), `{expected}` is `help.expect`, and it drops a line whose placeholders have no value. What is left (the tests pin it):
+
 - `{commands}`: the reader writes the commands without `$ ` and separates them with a blank line. We write one `$ ` line per command line.
-- A line with a placeholder that has no value: the reader keeps it ("Tool:  ()."), we drop it.
-- An unset fact: the reader writes `[YOUR OS]` and `[YOUR ARCHITECTURE]` (from the label of the fact) and, for virtualization, the placeholder for the name of the software. We write `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
-- The reader reads `ends` from nothing: it stops the loadout only through `askIf` (the compiler checks that this holds).
+- An unset fact: the reader writes `[YOUR OS]`, `[YOUR ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION]` (`unsetPlaceholder` and the label of the fact). We write `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
+- A step with no `help`: we have no prompt for it. The reader builds one, with the title of the step as its goal, no tool and docs lines, and the check sentence as the expected result.
+
+### Not used yet
+
+- **`stage.tipOnly`**: the reader offers the TIP to a Master learner only (`virtualization` is `own`). It does not read our condition.
+- **`ends`**: the reader stops the loadout only through `askIf` (the compiler checks that this holds). It does not read `ends` from `workshop.yaml`.
+- **`check.kind` values**: a reader that can run a check needs the values (the command, the image, the ISO), which `content.json` does not carry. The round 4 reader only names the kind.
+- **`step.goal` for every step**: only a step with `help` has one. The spreadsheet shows an empty goal cell for the others. The YAML does not hold a goal for them, and we do not write one for the reader.
+- **Dropped stages**: `theme.stages` leaves out `fleet` and `edgevpn` until those stages exist. The item `kairos-fleet`, the item `edgevpn` and part 2 of `auroraboot` are then granted by no stage.
+- **The overlay**: the base still holds copies of `welcome`, `loadout`, `prompts` and `stages`. The reader does not need them from the base, and the compiler replaces them. They can go from `theme.base.json` when the designer wants.

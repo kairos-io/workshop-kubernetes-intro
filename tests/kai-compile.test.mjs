@@ -507,7 +507,7 @@ test("kai/DATA.md names every field of the generated content and theme and has n
   for (const k of GENERATED_THEME_KEYS) { themeKeys.add(k); walk(theme[k]); }
   for (const k of ["welcome", "pages", "line", "md", "mentor", "badge", "help", "label", "code", "after", "title", "fail", "tip", "location", "nodes", "items", "notices", "questions", "options"]) assert.ok(themeKeys.has(k) || contentKeys.has(k), `theme key ${k} is not in the output`);
   for (const k of themeKeys) if (/^[a-zA-Z]+$/.test(k)) assert.match(doc, new RegExp(`\\b${k}\\b`), `DATA.md does not mention the theme key ${k}`);
-  for (const f of ["theme.base.json", "content.json", "theme.json", "kai/lines.yaml", "For the designer"]) assert.ok(doc.includes(f), f);
+  for (const f of ["theme.base.json", "content.json", "theme.json", "kai/lines.yaml", "What the reader reads", "Not used yet", "Where the reader and our reference differ"]) assert.ok(doc.includes(f), f);
   assert.ok(!doc.includes("\u2014"));
   for (const p of ["stage", "step", "os", "arch", "runtime", "virtualization", "goal", "tool", "source", "docs", "commands", "expect", "expected", "request", "ask", "logs"]) assert.ok(doc.includes(`\`{${p}}\``), `placeholder ${p}`);
   assert.ok(doc.includes("[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]"));
