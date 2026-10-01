@@ -11,7 +11,7 @@ The game reader loads three JSON files from `kai/web/`. Two of them are generate
 | `workshop.yaml`, `stages/*.yaml` | us | The source of every text the learner reads. |
 | everything else in `kai/` (`web/*.html`, `web/*.js`, `web/kai-sprites.json`, `tui/`, `assets/`, `STATES.md`, the designer's part of `README.md`) | the designer | The reader. We copy it from the export and never edit it. |
 
-The designer's export holds its own `web/theme.json` and `web/content.json`. We do not keep them, because ours are generated. In round 4 both are the same data as ours (the same values and the same key order), written with another indent and without the final newline.
+The designer's export holds its own `web/theme.json` and `web/content.json`. We do not keep them, because ours are generated. In round 5 the designer's `theme.json` is the same data as ours (the same values and the same key order), written with another indent and without the final newline. Its `content.json` is ours without `tipOnly`: the designer's data has no `tipOnly`, and the round 5 reader then offers no TIP at all, so ours keeps it (see "The TIP: `tip`").
 
 `npm run compile:kai -- --out kai/web` writes `content.json` and `theme.json`. Do not edit either by hand. `npm run compile:kai -- --check --out kai/web` fails when one of them is stale, and CI runs it. The output is stable: the same key order, a two-space indent, a newline at the end, no timestamps.
 
@@ -23,7 +23,7 @@ There is one source of truth for every text that is workshop content: our YAML. 
 
 ## theme.json
 
-`theme.json` is the base with four top-level keys generated. The base still holds a copy of our earlier output under these four keys (the designer built it from our files), and the compiler ignores that copy. Our data wins: whatever the base holds for these keys is discarded. Every other key is copied from the base without a change (`game`, `links`, `xp`, `player`, `mentors`, `mentorPick`, `items`, `mega`, `poses`, `messages`, `labels`, `footer`, and since round 4 `checkKinds`, `modes` and `sheet`), and the keys keep the order of the base.
+`theme.json` is the base with four top-level keys generated. The base still holds a copy of our earlier output under these four keys (the designer built it from our files), and the compiler ignores that copy. Our data wins: whatever the base holds for these keys is discarded. Every other key is copied from the base without a change (`game`, `links`, `xp`, `player`, `mentors`, `mentorPick`, `items`, `mega`, `poses`, `messages`, `labels`, `footer`, and since round 4 `checkKinds`, `modes` and `sheet`, and since round 5 `factPrompt`, `messages.boss_hint` and the labels `take_home`, `tip_banner` and `free_text_hint`), and the keys keep the order of the base. The `boss_hint`, `take_home`, `tip_banner` and `free_text_hint` texts are design copy that the reader shows, so the compiler only copies them through. `factPrompt` is design data: `{ <fact>: { <value>: <text> } }`, where the text replaces the value in a prompt and `"@freeText"` means "what the learner typed". It names the fact `virtualization` and its values `kairos-lab` and `own`, which the base cannot know are still right, so `tests/kai-theme.test.mjs` checks that every fact and value it names exists in `content.json`.
 
 | Key | Generated from |
 |---|---|
@@ -242,7 +242,7 @@ Each block has a `type` and may have an `only`. When `only` does not match, hide
 
 ## What the reader reads
 
-Round 4 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `content.json` and `theme.json` that we write, except the ones in "Not used yet". `tests/kai-engine.test.mjs`, `tests/kai-tui.test.mjs` and `tests/kai-theme.test.mjs` pin each use below.
+Round 5 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `content.json` and `theme.json` that we write, except the ones in "Not used yet". `tests/kai-engine.test.mjs`, `tests/kai-tui.test.mjs` and `tests/kai-theme.test.mjs` pin each use below.
 
 | Field of ours | What the reader does with it |
 |---|---|
@@ -252,6 +252,10 @@ Round 4 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `cont
 | `theme.welcome.pages` | The welcome pages and their short lines. |
 | `stage.id`, `title`, `goal`, `steps` | The route, the stage page and the mentor screen. The number of stages is the length of the list. |
 | `stage.tool`, `docs`, `tip` | The stage tip prompt: `{tool}`, `{source}`, `{docs}` and `{ask}`. |
+| `stage.tipOnly` | Who is offered the TIP (`E.tipFor`, the `t` key in the terminal, the banner in the web). A stage without `tipOnly` has no TIP. |
+| `theme.factPrompt` | The text that stands for a fact value in a prompt, and which value needs a free text (the name of the learner's own virtualization software). |
+| `theme.messages.boss_hint` | The line about the Esc key: on the mode chooser, on page 1 of the welcome in the game, and above the first step in "Just the workshop". Not in the terminal, which has no boss key. |
+| `theme.labels.take_home`, `tip_banner`, `free_text_hint` | The "Take KAI home" line at the end of the workshop, the text of the TIP banner, and the hint to type the name of the software. |
 | `stage.noSkip` | The reason shown when a Zen learner tries to skip stage 1. |
 | `step.line` | The text of the dialogue box. |
 | `step.only`, block `only` | Hide the item, or show it with an "Only if" label while the fact is unset. A step with `only` shows its label in the web and in the terminal. |
@@ -264,12 +268,13 @@ Round 4 of the reader (`kai/web/`, `kai/tui/main.go`) reads every field of `cont
 | `theme.prompts.fail`, `tip`, `unsetPlaceholder` | The prompt templates. An unset fact is written with `unsetPlaceholder`. |
 | `theme.stages` | The location, nodes and items of each stage of the route. |
 
-The web reader asks first for a mode ("Play the game" or "Just the workshop", saved as `kai.mode`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows `goal`, the commands, `check.prompt` and the state for each step. The goal cell is empty for a step with no `goal`.
+The web reader asks first for a mode ("Play the game" or "Just the workshop", saved as `kai.mode`) and opens a spreadsheet on Esc (the boss key). Both are built from data that we do not write: the labels and the sheet layout are in `modes` and `sheet` of `theme.base.json`, the rows come from the steps. The sheet shows the goal, the commands, `check.prompt` and the state for each step. The goal is `step.goal`, then the `goal` of the step help, then the title of the step, so no cell is empty. On a first visit with no saved mode the page always asks for the mode first (a mode saved in `kai.mode` skips the question).
 
 ### Where the reader and our reference differ
 
-Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{source}` and `{docs}` from the step (so a step that names its own tool, AuroraBoot in the kairos-lab stage, shows it), `{expected}` is `help.expect`, and it drops a line whose placeholders have no value. What is left (the tests pin it):
+Round 4 closed three differences of round 3, and round 5 adds one (the TIP and an unset fact): the reader now takes `{tool}`, `{source}` and `{docs}` from the step (so a step that names its own tool, AuroraBoot in the kairos-lab stage, shows it), `{expected}` is `help.expect`, and it drops a line whose placeholders have no value. What is left (the tests pin it):
 
+- The TIP and an unset `virtualization`: our rule (SPEC, "Stage tip") offers the TIP when the condition gives true or unknown, so a learner with no `virtualization` gets it. The reader offers it only when every fact in `tipOnly` is set and matches (`E.strict`, where "unsure" counts as unset), so that learner gets no TIP. The compiler cannot close this, because `only` has no way to say "or unset". It matters only for a learner who did not answer the question (the loadout asks it unless `os` forces it). `tests/kai-engine.test.mjs` pins both sides.
 - `{commands}`: the reader writes the commands without `$ ` and separates them with a blank line. We write one `$ ` line per command line.
 - An unset fact: the reader writes `[YOUR OS]`, `[YOUR ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION]` (`unsetPlaceholder` and the label of the fact). We write `[YOUR OPERATING SYSTEM]`, `[YOUR CPU ARCHITECTURE]`, `[YOUR CONTAINER RUNTIME]` and `[YOUR VIRTUALIZATION: kairos-lab OR YOUR OWN SOFTWARE]`.
 - A step with no `help`: we have no prompt for it. The reader builds one, with the title of the step as its goal, no tool and docs lines, and the check sentence as the expected result.
@@ -278,6 +283,18 @@ Round 4 closed three differences of round 3: the reader now takes `{tool}`, `{so
 
 - **`ends`**: the reader stops the loadout only through `askIf` (the compiler checks that this holds). It does not read `ends` from `workshop.yaml`.
 - **`check.kind` values**: a reader that can run a check needs the values (the command, the image, the ISO), which `content.json` does not carry. The round 4 reader only names the kind.
-- **`step.goal` for every step**: only a step with `help` has one. The spreadsheet shows an empty goal cell for the others. The YAML does not hold a goal for them, and we do not write one for the reader.
+- **`step.goal` for every step**: only a step with `help` has one. The spreadsheet uses the title of the step for the others. The YAML does not hold a goal for them, and we do not write one for the reader.
+- **`theme.links.plainView`**: the reader still reads it (the theme must have `links`), and no screen uses the address any more. "Plain view" opens "Just the workshop".
 - **Dropped stages**: `theme.stages` leaves out `fleet` and `edgevpn` until those stages exist. The item `kairos-fleet`, the item `edgevpn` and part 2 of `auroraboot` are then granted by no stage.
 - **The overlay**: the base still holds copies of `welcome`, `loadout`, `prompts` and `stages`. The reader does not need them from the base, and the compiler replaces them. They can go from `theme.base.json` when the designer wants.
+
+### Still hard-coded in the reader
+
+Checked in round 5 (`grep` over `kai/web/*.js`, `kai/web/*.html` and `kai/tui/main.go`). The reader no longer holds a fact id, a fact value, a stage id or a workshop sentence in its logic. What is left:
+
+- The free text field of the TIP has the placeholder `e.g. VirtualBox` in `KAI Workshop.dc.html`. It assumes that the free text is the name of a virtualization software.
+- The page title and the badge file name say "Kairos workshop" (`headTitle`, `kairos-workshop-badge-`), and the boss key sheet is called "Q4 budget" on purpose.
+- The variable `isMaster` (web) and the name `master` are still used for the result of `tipFor` and `freeTextFact`. Only the name is left.
+- Sample data in the design pages (`KAI Kit`, `KAI States`): `os: 'macos'`, `virtName: 'VirtualBox'` and a date. They are not part of the reader. The usage text of the terminal app names `--facts os=macos,...` and `--stage build-image`, which is now a real stage id.
+- The route is Europe and the mentors are four. Those are design assets in `kai-sprites.json` and `theme.base.json`.
+- `theme.base.json` still names the stages `fleet` and `edgevpn`, the items of those stages and "Provision a fleet" in a mega item. They are design data of stages that this workshop does not have, and the compiler leaves the stages out.

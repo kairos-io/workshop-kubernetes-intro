@@ -51,13 +51,15 @@ KAI, the Kairos armadillo, designed by Mauro Morales. Apache-2.0.
 
 The content in this repository is generated. Two files in `web/` come from `npm run compile:kai -- --out kai/web`, which reads `workshop.yaml`, `stages/*.yaml`, `kai/lines.yaml` (the short lines of the dialogue box) and `kai/theme.base.json`:
 
-- `web/content.json` holds the facts and the stages, with the step help and the check kinds. It is all ours.
+- `web/content.json` holds the facts and the stages, with the step help, the check kinds and `tipOnly` (who is offered the TIP: the `when` of the stage tip, or `{ virtualization: own }`). It is all ours. The designer's copy has no `tipOnly`, and the reader then shows no TIP.
 - `web/theme.json` is the designer's theme with four keys generated from our data: `welcome`, `loadout`, `prompts` and `stages`. Every other key is copied from `theme.base.json`.
 
 Do not edit either file by hand. CI fails when one is stale. [DATA.md](DATA.md) describes every field of both, who owns each key, what the reader does with each field, and what the reader does not use yet.
 
-`theme.base.json` is the designer's `web/theme.base.json` of the export. It is designer-owned, and we do not edit it. Its `welcome`, `loadout`, `prompts` and `stages` keys are copies of our earlier output and are not used: the compiler replaces them. The `stages` list of the generated file holds only the stages of `workshop.yaml`, so `fleet` and `edgevpn` come back when those stages exist.
+`theme.base.json` is the designer's `web/theme.base.json` of the export. It is designer-owned, and we do not edit it. It holds the design copy the reader shows, such as `messages.boss_hint`, `labels.take_home`, `labels.tip_banner` and `factPrompt`, and the compiler copies it into `theme.json`. Its `welcome`, `loadout`, `prompts` and `stages` keys are copies of our earlier output and are not used: the compiler replaces them. The `stages` list of the generated file holds only the stages of `workshop.yaml`, so `fleet` and `edgevpn` come back when those stages exist.
 
 The rest of this folder is the designer's round 5 export, unchanged, with these exceptions. The designer's `web/theme.json` and `web/content.json` are not kept, because ours are generated. The built binary `tui/kai` is not committed (build it with `cd tui && go build -o kai .`, with Go 1.21 or later). The files `DATA.md`, `lines.yaml` and this section are ours.
 
 `tests/kai-tui.test.mjs` builds `tui/` and renders the loadout, welcome, mentor, route and stage screens against the generated files.
+
+The terminal app and the web reader decide the TIP the same way, from `tipOnly`. A learner whose `virtualization` is not set gets no TIP, while schema/v0/SPEC.md offers it to that learner: [DATA.md](DATA.md) lists this under "Where the reader and our reference differ".
