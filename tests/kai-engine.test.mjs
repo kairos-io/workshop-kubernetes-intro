@@ -33,7 +33,7 @@ function shownByEngine(facts) {
     const rows = E.flatten(step.blocks, { key: `kairos-lab/${step.id}`, facts: engineFacts(facts), sel: {}, showAll: {}, layout: "stacked" });
     for (const r of rows) {
       if (r.type === "command" && !r.isFile) commands.push(r.code.trimEnd());
-      if (r.type === "callout") callouts.push({ kind: r.kind, paras: r.paras });
+      if (r.type === "callout") callouts.push({ kind: r.kind, blocks: r.blocks });
     }
   }
   return { commands, callouts };
@@ -45,7 +45,7 @@ function shownByModel(facts) {
   const commands = view(stageDoc, facts).filter((i) => i.kind === "command").map((i) => i.text.trimEnd());
   const callouts = [];
   const warn = (list) => {
-    for (const w of list ?? []) if (evaluate(w.when, facts) !== "false") callouts.push({ kind: CALLOUT[w.kind], paras: E.md(w.text.trimEnd()) });
+    for (const w of list ?? []) if (evaluate(w.when, facts) !== "false") callouts.push({ kind: CALLOUT[w.kind], blocks: E.md(w.text.trimEnd()) });
   };
   for (const s of stageDoc.sections) {
     if (evaluate(s.when, facts) === "false") continue;
@@ -116,5 +116,5 @@ test("the cross-check is not vacuous: commands and callouts are found, and they 
 
 test("the macOS warning about building AuroraBoot shows on macOS with your own software, even though the build steps are hidden", () => {
   const { callouts } = shownByEngine({ virtualization: "own", os: "macos", arch: "arm64", runtime: "docker" });
-  assert.ok(callouts.some((c) => c.kind === "warning" && JSON.stringify(c.paras).includes("Do not build AuroraBoot on macOS")));
+  assert.ok(callouts.some((c) => c.kind === "warning" && JSON.stringify(c.blocks).includes("Do not build AuroraBoot on macOS")));
 });

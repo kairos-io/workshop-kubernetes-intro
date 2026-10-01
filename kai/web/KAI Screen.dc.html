@@ -205,7 +205,8 @@ class Component extends DCLogic {
       pos.forEach((p0, i) => {
         const [nx, ny] = V(p0), state = (st[i] && st[i].state) || 'locked';
         if (!inView(nx, ny)) return;
-        E.draw(x, E.S.icons.town, Wc, nx - 4, ny - 4, state === 'locked' || state === 'skipped' ? { mono: 2 } : {});
+        if (state === 'cleared') { E.rect(x, U[3], nx - 6, ny - 6, 12, 12); E.draw(x, E.S.icons.town, Wc, nx - 4, ny - 4, { mono: 0 }); }
+        else E.draw(x, E.S.icons.town, Wc, nx - 4, ny - 4, state === 'locked' || state === 'skipped' ? { mono: 2 } : {});
         if (state === 'locked') E.draw(x, E.S.icons.lock, I, nx, ny - 1);
         if (state === 'cleared') E.draw(x, E.S.icons.check, I, nx - 4, ny - 13);
         if (state === 'skipped') { E.rect(x, U[3], nx - 5, ny - 12, 10, 2); }

@@ -70,32 +70,41 @@
     const G = T.glyphs(ui.ascii), L = E.W.labels, lines = [], bold = { b: true };
     const push = (segs, extra) => lines.push({ segs, ...(extra || {}) });
     const blank = () => { if (lines.length && lines[lines.length - 1].segs.length) push([]); };
-    const para = (paras, ind, first) => {
-      paras.forEach((pa, pi) => {
-        const words = [];
-        pa.forEach(g => String(g.v).split(/(\s+)/).forEach(w => { if (w && !/^\s+$/.test(w)) words.push({ s: g.t === 'a' ? w : w, st: g.t === 'b' || g.t === 'code' ? bold : null }); }));
-        if (pa.some(g => g.t === 'a')) pa.filter(g => g.t === 'a').forEach(g => words.push({ s: '<' + g.href + '>', st: null }));
-        let cur = [], n = 0, lead = pi === 0 && first ? first : '';
-        const max = width - ind;
-        if (lead) { cur.push({ s: lead, st: bold }); n = T.len(lead); }
-        words.forEach(w => {
-          const wl = T.len(w.s);
-          if (n && n + 1 + wl > max) { push([{ s: ' '.repeat(ind), st: null }, ...cur]); cur = []; n = 0; }
-          if (n) { cur.push({ s: ' ', st: null }); n++; }
-          cur.push(w); n += wl;
-        });
-        if (cur.length) push([{ s: ' '.repeat(ind), st: null }, ...cur]);
+    // blocks from E.md: paragraphs and lists, with a hanging indent under list markers
+    const words = segs => { const out = []; segs.forEach(g => String(g.v).split(/\s+/).forEach(w => { if (w) out.push({ s: w, st: g.t === 'b' || g.t === 'code' ? bold : null }); })); segs.filter(g => g.t === 'a').forEach(g => out.push({ s: '<' + g.href + '>', st: null })); return out; };
+    const flow = (ws, ind, lead, hang) => {
+      let cur = [], n = 0, first = true;
+      const max = width - ind;
+      if (lead) { cur.push({ s: lead, st: bold }); n = T.len(lead); }
+      ws.forEach(w => {
+        const wl = T.len(w.s), lim = first ? max : max - hang;
+        if (n && n + 1 + wl > lim) { push([{ s: ' '.repeat(first ? ind : ind + hang), st: null }, ...cur]); cur = []; n = 0; first = false; }
+        if (n) { cur.push({ s: ' ', st: null }); n++; }
+        cur.push(w); n += wl;
+      });
+      if (cur.length) push([{ s: ' '.repeat(first ? ind : ind + hang), st: null }, ...cur]);
+    };
+    const para = (blocks, ind, first) => {
+      blocks.forEach((b, bi) => {
+        const lead = bi === 0 ? first : '';
+        if (b.k === 'p') { flow(words(b.segs), ind, lead, 0); return; }
+        if (lead) push([{ s: ' '.repeat(ind), st: null }, { s: lead, st: bold }]);
+        b.items.forEach((it, i) => { const mk = b.k === 'ol' ? (b.start + i) + '.' : (ui.ascii ? '-' : '•'); flow(words(it), ind, mk, T.len(mk) + 1); });
       });
     };
+    const P = s => [{ k: 'p', segs: [{ t: 'text', v: s }] }];
     const opts = { key: sid + '/' + st.id, facts: p.facts, sel: {}, showAll: ui.showAll || {}, layout: 'stacked' };
     const rows = E.flatten(st.blocks, opts);
     if (ui.status === 'failed') { rows.push({ type: 'trouble', inset: 0 }); E.flatten(st.check.fail, { ...opts, key: opts.key + '/fail', inset: 1 }, rows); }
+    const aiRows = (kind, title) => { const code = E.prompt(kind, p, sid, kind === 'fail' ? st : null); rows.push({ type: 'heading', text: title, inset: 0 }); rows.push({ type: 'callout', kind: 'warning', blocks: E.md(E.W.prompts.warning), inset: 0 }); if (E.isMaster(p.facts) && !p.virtName) rows.push({ type: 'text', blocks: P('Press v to type the name of your virtualization software into the prompt.'), inset: 0 }); rows.push({ type: 'command', isFile: true, name: 'AI prompt', code, lines: E.cmdLines(code, true), inset: 0 }); };
+    if (ui.status === 'failed') aiRows('fail', L.ai_title);
+    if (ui.status === 'tip') { rows.length = 0; aiRows('tip', L.tip_title); }
     let ci = 0;
     rows.forEach(r => {
       const ind = 2 + (r.inset || 0) * 2;
       if (r.only && r.type !== 'altHeader') { blank(); push([{ s: ' '.repeat(ind), st: null }, { s: '[' + r.only + ']', st: null }]); }
       else if (!['altHeader'].includes(r.type)) blank();
-      if (r.type === 'text') para(r.paras, ind);
+      if (r.type === 'text') para(r.blocks, ind);
       else if (r.type === 'heading' && r.text) push([{ s: ' '.repeat(ind), st: null }, { s: r.text, st: bold }]);
       else if (r.type === 'altHeader') { blank(); push([{ s: ' '.repeat(ind), st: null }, { s: G.tri + ' ' + r.label, st: bold }, { s: r.only ? '  [' + r.only + ']' : '', st: null }]); }
       else if (r.type === 'command') {
@@ -116,12 +125,12 @@
         r.lines.forEach(l => push([{ s: ' '.repeat(ind + 4), st: null }, { s: T.clip(l, width - ind - 4), st: null }]));
       } else if (r.type === 'callout') {
         const ic = { note: '[i]', caution: '[!]', warning: '/!\\' }[r.kind] || '[i]';
-        para(r.paras, ind, ic + ' ' + (L[r.kind] || r.kind) + ':');
+        para(r.blocks, ind, ic + ' ' + (L[r.kind] || r.kind) + ':');
       } else if (r.type === 'empty') {
         push([{ s: ' '.repeat(ind), st: null }, { s: '? ' + L.empty, st: bold }]);
-        para([[{ t: 'text', v: 'Your loadout: ' + E.loadoutText(p.facts) + '. Press a to show all ' + r.total + ' options, l to change your loadout.' }]], ind + 2);
+        para(P('Your loadout: ' + E.loadoutText(p.facts) + '. Press a to show all ' + r.total + ' options, l to change your loadout.'), ind + 2);
       } else if (r.type === 'notice') push([{ s: ' '.repeat(ind), st: null }, { s: L.showing_all + ' (a: match my loadout)', st: null }]);
-      else if (r.type === 'trouble') push([{ s: ' '.repeat(ind), st: null }, { s: ' ' + G.fail + ' ' + L.troubleshooting + ' · ' + L.no_penalty + ' ', st: ui.sel }]);
+      else if (r.type === 'trouble') { push([{ s: ' '.repeat(ind), st: null }, { s: ' ' + G.fail + ' ' + L.troubleshooting + ' ', st: ui.sel }]); flow(words([{ t: 'text', v: L.common_fixes + ', or copy the AI prompt below (Tab to it, then c).' }]), ind, '', 0); }
     });
     return { lines, commands: ci };
   };
@@ -153,7 +162,7 @@
       if (h >= 40) { T.scene(g, E, Math.floor((w - 40) / 2), 14, 40, 'walk', mode, { kx: 12 }); y = 24; }
       const items = [['New game', ''], ['Continue', p.started ? name + ' ' + G.dot + ' ' + tot.done + '/' + tot.total + ' steps' : 'no save yet'], ['Plain view', W.links.plainView]];
       items.forEach(([l, d], i) => { const on = i === (o.cursor || 0), s = (on ? G.cur + ' ' : '  ') + l.padEnd(12) + d; g.put(Math.floor((w - 48) / 2), y + i * 2, s.padEnd(48), on ? sel : {}); });
-      g.put(2, h - 3, T.clip(W.attribution, w - 4));
+      g.put(2, h - 3, T.clip(W.footer, w - 4));
       keys('up/down move ' + G.dot + ' Enter select ' + G.dot + ' q quit');
     } else if (view === 'name') {
       g.bar(0, ' NEW GAME', 'kai ', barSt);
@@ -164,6 +173,16 @@
       g.put(2, 11, 'Empty is fine: KAI will call you ' + W.player.defaultName + '.');
       if (wide) g.sprite(w - 20, 2, E.frame('wave', 0, true).map, K, codes); else g.sprite(w - 18, 6, E.frame('wave', 0, true).map, K, codes);
       keys('type your name ' + G.dot + ' Enter confirm ' + G.dot + ' Esc back');
+    } else if (view === 'welcome') {
+      const WL = W.welcome, wm = W.mentors.find(m => m.id === WL.mentor), pi = Math.min(o.welcomePage || 0, WL.pages.length - 1), pg = WL.pages[pi], last = pi === WL.pages.length - 1;
+      g.bar(0, ' WELCOME ' + G.dot + ' ' + NAME, 'Page ' + (pi + 1) + ' of ' + WL.pages.length + ' ', barSt);
+      T.box(g, 1, 1, 28, 14, {}, G);
+      g.sprite(3, 2, E.S.portraits[wm.portrait], PO, codes);
+      g.put(31, 2, wm.name, { b: true }); g.put(31, 3, wm.country);
+      const txt = E.mdPlain(E.fill(pg.md, { name })).replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1 <$2>');
+      const ls = T.wrap(txt, w - 33); ls.slice(0, h - 8).forEach((l, i) => g.put(31, 5 + i, l));
+      g.put(31, Math.min(h - 3, 6 + ls.length), WL.pages.map((x, i) => i <= pi ? (ascii ? '#' : '■') : (ascii ? '-' : '□')).join(' '));
+      keys('Enter ' + (last ? WL.start.toLowerCase() : 'next') + ' ' + G.dot + ' left back ' + G.dot + ' q quit');
     } else if (view === 'character') {
       g.bar(0, ' NEW GAME ' + G.dot + ' ' + NAME, 'kai ', barSt);
       g.put(2, 2, 'Pick your look', { b: true });
@@ -177,18 +196,27 @@
       });
       keys('left/right choose ' + G.dot + ' Enter confirm ' + G.dot + ' Esc back');
     } else if (view === 'loadout') {
-      g.bar(0, ' LOADOUT ' + G.dot + ' ' + NAME, 'kai ', barSt);
-      g.put(2, 2, 'Choose your loadout', { b: true });
-      para(2, 3, "Your answers hide the steps that don't apply to you. Not sure yet shows every option, each with a label.", w - (wide ? 26 : 4));
+      const LO = W.loadout, qs = E.loadoutQuestions(p.facts), qi = Math.min(o.lq || 0, qs.length - 1), q = qs[qi];
+      g.bar(0, ' LOADOUT ' + G.dot + ' ' + NAME, E.fill(LO.progress, { n: qi + 1, total: qs.length }) + ' ', barSt);
+      const cw = w - (wide ? 26 : 4);
       if (wide) g.sprite(w - 20, 2, E.S.frames.front, K, codes);
-      E.C.facts.forEach((f, i) => {
-        const y = 7 + i * 3, on = i === (o.factCursor || 0);
-        g.put(1, y, (on ? G.cur : ' ') + ' ' + f.label, { b: true });
-        g.put(4 + T.len(f.label), y, ' ' + G.dot + ' ' + f.question);
-        let x = 4;
-        f.options.concat([{ id: 'unsure', label: 'Not sure yet' }]).forEach(opt => { const s = p.facts[f.id] === opt.id, t = s ? '[' + opt.label + ']' : ' ' + opt.label + ' '; g.put(x, y + 1, t, s ? sel : {}); x += T.len(t) + 2; });
-      });
-      keys('up/down choose ' + G.dot + ' left/right change ' + G.dot + ' Enter start ' + G.dot + ' q quit');
+      let y = 2;
+      const md = (s, x, st) => { const txt = E.mdPlain(s); T.wrap(txt, cw - (x - 2)).forEach(l => g.put(x, y++, l, st || {})); };
+      if (q.type === 'notice') { const nt = LO.notices[q.id]; g.put(2, y++, nt.title, { b: true }); y++; md(nt.md, 2); }
+      else {
+        const fd = E.fact(q.id), qd = LO.questions[q.id] || {};
+        g.put(2, y++, qd.title || fd.question, { b: true }); y++;
+        fd.options.forEach((op, i) => {
+          const od = (qd.options || {})[op.id] || {}, s = p.facts[q.id] === op.id, on = i === (o.optCursor ?? Math.max(0, fd.options.findIndex(x => x.id === p.facts[q.id])));
+          g.put(2, y++, ((on ? G.cur : ' ') + ' ' + (s ? (ascii ? '(*) ' : '● ') : (ascii ? '( ) ' : '○ ')) + op.label + (od.badge ? '  [' + od.badge + ']' : '')).padEnd(Math.min(cw, 40)), on ? sel : { b: true });
+          if (od.md && h >= 30) md(od.md, 8); else if (od.md) { g.put(8, y++, T.clip(E.mdPlain(od.md), cw - 6)); }
+        });
+        y++;
+        if (qd.md) md(qd.md, 2);
+        (qd.when || []).forEach(x => { if (E.strict(x.only, p.facts)) md(x.md, 2); });
+        if (qd.help) { y++; g.put(2, y++, qd.help.label + ' ' + E.mdPlain(qd.help.md), { b: true }); g.put(6, y++, qd.help.code, { b: true }); md(qd.help.after, 2); }
+      }
+      keys('up/down choose ' + G.dot + ' Enter ' + (qi === qs.length - 1 ? 'start' : 'next') + ' ' + G.dot + ' Esc back ' + G.dot + ' q quit');
     } else if (view === 'map') {
       g.bar(0, ' ' + M.map_title + ' ' + G.dot + ' ' + NAME, xp, barSt);
       const cur = o.mapCursor || 0;
@@ -208,8 +236,10 @@
       ids.slice(start, start + rowsN).forEach((id, j) => {
         const i = start + j, state = E.stageState(p, id), q = E.stageProgress(p, id), on = i === cur, y = y0 + 2 + j * 2, m2 = E.W.mentors.find(x => x.id === plan[id]);
         const head = (on ? G.cur : ' ') + ' ' + stGlyph(state) + ' ' + ((i + 1) + ' ' + E.themeStage(id).location).padEnd(17);
-        g.put(1, y, T.clip(head + E.stage(id).title, w - 2).padEnd(w - 2), on ? sel : { b: state !== 'locked' });
-        const tail = state === 'locked' ? 'locked ' + G.dot + ' finish or skip stop ' + i + ' first' : state + (q.side ? ' ' + G.dot + ' ' + G.side + ' ' + q.sideDone + '/' + q.side : '');
+        const pgc = E.page(mode), clr = ascii ? { b: true } : { fg: pgc.onCleared, bg: pgc.cleared, b: true };
+        g.put(1, y, T.clip(head + E.stage(id).title, w - 2).padEnd(w - 2), on ? sel : state === 'cleared' ? clr : { b: state !== 'locked' });
+        const nsk = state === 'current' ? E.skipBlock(p, id) : '';
+        const tail = state === 'locked' ? 'locked ' + G.dot + ' finish or skip stop ' + i + ' first' : state + (nsk ? ' ' + G.dot + ' ' + L.no_skip.toLowerCase() + ': ' + nsk : '') + (q.side ? ' ' + G.dot + ' ' + G.side + ' ' + q.sideDone + '/' + q.side : '');
         g.put(7, y + 1, T.clip(T.pbar(q.done, q.total, 8, G) + ' ' + q.done + '/' + q.total + ' ' + G.dot + ' with ' + E.first(m2) + ' ' + G.dot + ' ' + tail, w - 8));
       });
       if (start > 0) g.put(w - 2, y0 + 2, G.up, { b: true });
@@ -229,7 +259,7 @@
       g.bar(0, ' ST' + no + ' ' + th.location + ' ' + G.dot + ' ' + NAME, 'STEPS ' + T.pbar(gg.done, gg.total, gg.total, G) + ' ' + gg.done + '/' + gg.total + '  ' + xp, barSt);
       const ins = T.instructions(E, p, st, sid, wide ? w - 44 : w - 2, { ascii, sel, focus: o.focus || 0, status: o.status, showAll: o.showAll });
       const anim = failed ? 'sad' : ins.commands ? 'point' : 'read';
-      const dlg = failed ? [M.fail_head + ' ' + G.dot + ' ' + M.fail_sub, M.fail_line] : [st.title, st.line];
+      const dlg = failed ? [M.fail_head + ' ' + G.dot + ' ' + M.fail_sub, M.fail_line] : o.status === 'tip' ? [st.title, M.tip_line] : [st.title, st.line];
       const sub = ' Step ' + (si + 1) + ' of ' + steps.length + ' ' + G.dot + ' ' + st.title + (st.optional ? ' ' + G.dot + ' ' + G.side + ' side quest (optional)' : '');
       const scene2 = (x0, y0) => { T.scene(g, E, x0, y0, 40, anim, mode, { kx: 22 }); g.sprite(x0 + 4, y0, E.pframe(style, anim === 'sad' ? 'sad' : anim, 0, true).map, PL, codes); };
       let ix, iy, ih;
@@ -258,8 +288,9 @@
       if (scroll + ih < ins.lines.length) g.put(w - 1, iy + ih - 1, G.down, { b: true });
       const done = p.done[E.stepKey(sid, st.id)];
       g.put(wide ? 42 : 0, h - 2, T.clip(' Check: ' + st.check.prompt + (done ? '  ' + G.ok + ' cleared' : ''), wide ? w - 42 : w), { b: true });
-      keys(done ? 'Enter next step ' + G.dot + ' left/right steps ' + G.dot + ' up/down scroll ' + G.dot + ' Tab cmd ' + G.dot + ' c copy ' + G.dot + ' m route'
-        : 'y ' + L.did_it + ' ' + G.dot + ' n ' + L.did_not_work.toLowerCase() + ' ' + G.dot + ' up/down scroll ' + G.dot + ' Tab cmd ' + G.dot + ' c copy ' + G.dot + ' m route');
+      const tipK = E.isMaster(p.facts) ? ' ' + G.dot + ' t TIP' : '';
+      keys(done ? 'Enter next step ' + G.dot + ' left/right steps ' + G.dot + ' up/down scroll ' + G.dot + ' Tab cmd ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route'
+        : 'Enter ' + L.next_step.toLowerCase() + ' ' + G.dot + ' n ' + L.did_not_work.toLowerCase() + ' ' + G.dot + ' up/down ' + G.dot + ' Tab ' + G.dot + ' c copy' + tipK + ' ' + G.dot + ' m route');
     } else {
       const k = view;
       g.bar(0, ' ST' + no + ' ' + th.location + ' ' + G.dot + ' ' + NAME, xp, barSt);

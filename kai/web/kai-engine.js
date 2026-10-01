@@ -78,22 +78,46 @@
       });
       return out;
     },
-    md(s) {
-      return String(s || '').split(/\n\s*\n/).map(par => {
-        const segs = [], re = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
-        let last = 0, m;
-        while ((m = re.exec(par))) {
-          if (m.index > last) segs.push({ t: 'text', v: par.slice(last, m.index) });
-          const tok = m[0];
-          if (tok[0] === '*') segs.push({ t: 'b', v: tok.slice(2, -2) });
-          else if (tok[0] === '`') segs.push({ t: 'code', v: tok.slice(1, -1) });
-          else { const mm = tok.match(/\[([^\]]+)\]\(([^)]+)\)/); segs.push({ t: 'a', v: mm[1], href: mm[2] }); }
-          last = m.index + tok.length;
+    // Inline markdown: **bold**, \`code\`, [label](url). Link labels may contain \`code\`.
+    inline(par) {
+      const segs = [], re = /(\*\*[^*]+\*\*|\`[^\`]+\`|\[[^\]]+\]\([^)]+\))/g;
+      let last = 0, m;
+      while ((m = re.exec(par))) {
+        if (m.index > last) segs.push({ t: 'text', v: par.slice(last, m.index) });
+        const tok = m[0];
+        if (tok[0] === '*') segs.push({ t: 'b', v: tok.slice(2, -2) });
+        else if (tok[0] === '\`') segs.push({ t: 'code', v: tok.slice(1, -1) });
+        else {
+          const mm = tok.match(/\[([^\]]+)\]\(([^)]+)\)/), parts = mm[1].split(/(\`[^\`]+\`)/).filter(Boolean).map(x => x[0] === '\`' ? { v: x.slice(1, -1), code: true } : { v: x, code: false });
+          segs.push({ t: 'a', v: parts.map(x => x.v).join(''), href: mm[2], parts });
         }
-        if (last < par.length) segs.push({ t: 'text', v: par.slice(last) });
-        return segs;
-      });
+        last = m.index + tok.length;
+      }
+      if (last < par.length) segs.push({ t: 'text', v: par.slice(last) });
+      return segs;
     },
+    // Block markdown: paragraphs (blank line), "- " unordered and "1. " ordered lists.
+    // Returns [{k:'p', segs}] | [{k:'ul'|'ol', items:[segs], start}]
+    md(s) {
+      const out = [];
+      String(s || '').split(/\n\s*\n/).forEach(par => {
+        const lines = par.split('\n'), li = /^\s*(?:([-*])|(\d+)[.)])\s+(.*)$/;
+        let buf = [];
+        const flushP = () => { if (buf.length) { out.push({ k: 'p', segs: E.inline(buf.join(' ')) }); buf = []; } };
+        lines.forEach(l => {
+          const m = l.match(li);
+          if (!m) { const prev = out[out.length - 1]; if (!buf.length && prev && prev.k !== 'p' && /^\s+\S/.test(l)) { const it = prev.items[prev.items.length - 1]; it.push({ t: 'text', v: ' ' }, ...E.inline(l.trim())); } else buf.push(l.trim()); return; }
+          flushP();
+          const k = m[1] ? 'ul' : 'ol', prev = out[out.length - 1];
+          if (prev && prev.k === k && prev.open) prev.items.push(E.inline(m[3]));
+          else out.push({ k, items: [E.inline(m[3])], start: m[2] ? +m[2] : 1, open: true });
+        });
+        flushP();
+        out.forEach(b => { b.open = false; });
+      });
+      return out.filter(b => b.k !== 'p' || b.segs.length);
+    },
+    mdPlain(s) { return E.md(s).map(b => b.k === 'p' ? b.segs.map(g => g.v).join('') : b.items.map((it, i) => (b.k === 'ol' ? (b.start + i) + '. ' : '- ') + it.map(g => g.v).join('')).join('\n')).join('\n\n'); },
     cmdLines(code, isFile) {
       const ls = String(code).split('\n');
       return ls.map((text, i) => ({ text, cont: !isFile && i > 0 && /\\\s*$/.test(ls[i - 1]), prompt: !isFile && !(i > 0 && /\\\s*$/.test(ls[i - 1])) }));
@@ -111,6 +135,13 @@
       if (!only) return true;
       return Object.keys(only).every(k => { const v = facts && facts[k]; return !v || v === 'unsure' || only[k].includes(v); });
     },
+    unset(facts, k) { const v = facts && facts[k]; return !v || v === 'unsure'; },
+    onlyLabel(only, facts) {
+      if (!only) return '';
+      const keys = Object.keys(only).filter(k => E.unset(facts, k));
+      if (!keys.length) return '';
+      const o = {}; keys.forEach(k => o[k] = only[k]); return E.onlyText(o);
+    },
     onlyText(only) {
       if (!only) return '';
       return E.W.labels.only_if + ': ' + Object.keys(only).map(k => only[k].map(o => E.optLabel(k, o)).join(' or ')).join(', ');
@@ -127,11 +158,11 @@
       (blocks || []).forEach((b, bi) => {
         const key = opts.key + '/' + bi;
         if (b.type !== 'alternatives' && !E.matches(b.only, facts)) return;
-        const only = b.only ? E.onlyText(b.only) : '';
-        if (b.type === 'text') out.push({ type: 'text', key, inset, paras: E.md(b.md), only });
+        const only = E.onlyLabel(b.only, facts);
+        if (b.type === 'text') out.push({ type: 'text', key, inset, md: b.md, blocks: E.md(b.md), only });
         else if (b.type === 'command' || b.type === 'file') out.push({ type: 'command', key, inset, isFile: b.type === 'file', name: b.name || '', code: b.code, lines: E.cmdLines(b.code, b.type === 'file'), only });
         else if (b.type === 'output') out.push({ type: 'output', key, inset, lines: String(b.text).split('\n'), only });
-        else if (b.type === 'callout') out.push({ type: 'callout', key, inset, kind: b.kind, paras: E.md(b.md), only });
+        else if (b.type === 'callout') out.push({ type: 'callout', key, inset, kind: b.kind, md: b.md, blocks: E.md(b.md), only });
         else if (b.type === 'alternatives') {
           const all = !!(opts.showAll && opts.showAll[key]);
           const items = b.items.map((it, i) => ({ ...it, i, vis: all || E.matches(it.only, facts) })).filter(it => it.vis);
@@ -142,12 +173,12 @@
           if ((opts.layout || 'tabs') === 'tabs' && items.length > 1) {
             let sel = opts.sel && opts.sel[key];
             if (!items.some(it => it.i === sel)) sel = items[0].i;
-            out.push({ type: 'tabs', key, inset, tabs: items.map(it => ({ i: it.i, label: it.label, only: it.only ? E.onlyText(it.only) : '', selected: it.i === sel })) });
+            out.push({ type: 'tabs', key, inset, tabs: items.map(it => ({ i: it.i, label: it.label, only: E.onlyLabel(it.only, sub.facts), selected: it.i === sel })) });
             const it = b.items[sel];
             E.flatten(it.blocks, { ...sub, key: key + '/' + sel }, out);
           } else {
             items.forEach(it => {
-              out.push({ type: 'altHeader', key: key + '/' + it.i + '/h', inset: inset + 1, label: it.label, only: it.only ? E.onlyText(it.only) : '' });
+              out.push({ type: 'altHeader', key: key + '/' + it.i + '/h', inset: inset + 1, label: it.label, only: E.onlyLabel(it.only, sub.facts) });
               E.flatten(it.blocks, { ...sub, key: key + '/' + it.i }, out);
             });
           }
@@ -164,7 +195,7 @@
     steps(id, facts) { return E.stage(id).steps.filter(s => E.matches(s.only, facts)); },
     stepKey(sid, stepId) { return sid + '/' + stepId; },
     newProgress() {
-      return { v: 2, started: false, name: '', character: '', facts: E.defaultFacts(), done: {}, skipped: {}, xp: 0, completedAt: null,
+      return { v: 2, started: false, name: '', character: '', virtName: '', facts: E.defaultFacts(), done: {}, skipped: {}, xp: 0, completedAt: null,
         last: { stage: E.stageIds()[0], step: 0 }, settings: { palette: 'dmg', motion: 'system', text: 'm', layout: 'tabs' } };
     },
     loadProgress() {
@@ -179,6 +210,7 @@
       p.started = seed.started ?? true;
       p.name = seed.name ?? (p.started ? E.W.player.defaultName : '');
       p.character = seed.character ?? (p.started ? E.W.player.characters[0].id : '');
+      p.virtName = seed.virtName ?? '';
       Object.assign(p.facts, seed.facts || {});
       Object.assign(p.settings, seed.settings || {});
       E.C.stages.forEach((s, i) => { if (i < (seed.cleared || 0)) s.steps.forEach(st => { if (!st.optional) p.done[E.stepKey(s.id, st.id)] = true; }); });
@@ -301,6 +333,48 @@
       ctx.fillText(String(name || '').toUpperCase().slice(0, 12), x0 + 80, y0 + 54);
       ctx.fillText(date || '', x0 + 80, y0 + 68);
     },
+    // ---------- loadout: one question per screen, driven by content.facts (askIf, forces, notice) ----------
+    strict(when, facts) { return Object.keys(when || {}).every(k => !E.unset(facts, k) && when[k].includes(facts[k])); },
+    loadoutQuestions(facts) {
+      const out = [];
+      E.C.facts.forEach(f => {
+        if (f.askIf && !E.strict(f.askIf, facts)) return;
+        out.push({ type: 'fact', id: f.id });
+        const o = f.options.find(x => x.id === facts[f.id]);
+        if (o && o.notice) out.push({ type: 'notice', id: o.notice, fact: f.id });
+      });
+      return out;
+    },
+    // Apply option side effects (Windows forces Master) and clear answers a changed fact no longer allows.
+    withFact(facts, fid, oid) {
+      const f = { ...facts, [fid]: oid };
+      E.C.facts.forEach(ff => { const o = ff.options.find(x => x.id === f[ff.id]); if (o && o.forces) Object.assign(f, o.forces); });
+      const prev = E.fact(fid).options.find(x => x.id === facts[fid]);
+      if (prev && prev.forces) Object.keys(prev.forces).forEach(k => { if (!(E.fact(fid).options.find(x => x.id === oid) || {}).forces) f[k] = 'unsure'; });
+      E.C.facts.forEach(ff => { if (ff.askIf && !E.strict(ff.askIf, f) && !Object.values(E.C.facts).some(x => (x.options.find(o => o.id === f[x.id]) || {}).forces && (x.options.find(o => o.id === f[x.id]).forces[ff.id]))) f[ff.id] = 'unsure'; });
+      return f;
+    },
+    isMaster(facts) { return facts && facts.virtualization === 'own'; },
+    skipBlock(p, id) { const s = E.stage(id); return s.noSkip && E.strict(s.noSkip.when, p.facts) ? s.noSkip.reason : ''; },
+
+    // ---------- AI prompts (templates in theme.prompts; screens only fill placeholders) ----------
+    promptVars(p, sid, st, sel) {
+      const P = E.W.prompts, f = p.facts, sc = E.stage(sid);
+      const lab = id => E.unset(f, id) ? E.fill(P.unsetPlaceholder, { fact: E.fact(id).label.toUpperCase() }) : E.optLabel(id, f[id]);
+      const virt = f.virtualization === 'kairos-lab' ? 'kairos-lab' : (String(p.virtName || '').trim() || P.virtPlaceholder);
+      const v = { stage: sc.title, os: lab('os'), arch: lab('arch'), runtime: lab('runtime'), virtualization: virt,
+        tool: (sc.tool && sc.tool.name) || '', source: (sc.tool && sc.tool.url) || '', docs: sc.docs || '', logs: P.logsPlaceholder, goal: sc.goal || sc.title };
+      if (st) {
+        const rows = E.flatten(st.blocks, { key: sid + '/' + st.id, facts: f, sel: sel || {}, showAll: {}, layout: sel ? 'tabs' : 'stacked' });
+        const cmds = rows.filter(r => r.type === 'command' && !r.isFile).map(r => r.code);
+        const outs = rows.filter(r => r.type === 'output').map(r => r.lines.join('\n'));
+        Object.assign(v, { step: st.title, goal: st.goal || st.title, commands: cmds.join('\n\n') || P.noCommands, expected: outs.length ? outs.join('\n') + '\n(' + st.check.prompt + ')' : st.check.prompt });
+      }
+      v.ask = E.fill(sc.tip || '', v);
+      return v;
+    },
+    prompt(kind, p, sid, st, sel) { return E.W.prompts[kind].map(l => E.fill(l, E.promptVars(p, sid, st, sel))).join('\n'); },
+    promptSegs(text) { return String(text).split(/(\[[^\]\n]+\])/).filter(Boolean).map(v => ({ v, ph: /^\[[^\]]+\]$/.test(v) })); },
     today() { return new Date().toISOString().slice(0, 10); }
   };
   window.KAIE = E;

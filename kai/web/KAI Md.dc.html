@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="kai-engine.js"></script>
+</helmet>
+<div style="display:flex;flex-direction:column;gap:10px;min-width:0;max-width:68ch;line-height:1.6;">
+  <sc-for list="{{ blocks }}" as="b" hint-placeholder-count="1">
+    <sc-if value="{{ b.isP }}" hint-placeholder-val="{{ true }}">
+      <p style="margin:0;text-wrap:pretty;"><sc-for list="{{ b.segs }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isText }}" hint-placeholder-val="{{ true }}"><span>{{ g.v }}</span></sc-if><sc-if value="{{ g.isB }}" hint-placeholder-val="{{ false }}"><strong style="font-weight:600;">{{ g.v }}</strong></sc-if><sc-if value="{{ g.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;background:var(--surface2);border:2px solid var(--surface2);padding:0 4px;overflow-wrap:anywhere;">{{ g.v }}</code></sc-if><sc-if value="{{ g.isA }}" hint-placeholder-val="{{ false }}"><a href="{{ g.href }}" target="_blank" rel="noopener" style="color:var(--link,inherit);"><sc-for list="{{ g.parts }}" as="pt" hint-placeholder-count="1"><sc-if value="{{ pt.code }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;">{{ pt.v }}</code></sc-if><sc-if value="{{ pt.plain }}" hint-placeholder-val="{{ true }}"><span>{{ pt.v }}</span></sc-if></sc-for></a></sc-if></sc-for></p>
+    </sc-if>
+    <sc-if value="{{ b.isList }}" hint-placeholder-val="{{ false }}">
+      <div role="list" style="display:flex;flex-direction:column;gap:6px;margin:0;padding:0;">
+        <sc-for list="{{ b.items }}" as="it" hint-placeholder-count="2">
+          <div role="listitem" style="display:grid;grid-template-columns:2.2ch minmax(0,1fr);gap:8px;">
+            <span aria-hidden="true" style="font-family:'IBM Plex Mono',monospace;font-weight:600;text-align:right;">{{ it.marker }}</span>
+            <span style="text-wrap:pretty;"><sc-for list="{{ it.segs }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isText }}" hint-placeholder-val="{{ true }}"><span>{{ g.v }}</span></sc-if><sc-if value="{{ g.isB }}" hint-placeholder-val="{{ false }}"><strong style="font-weight:600;">{{ g.v }}</strong></sc-if><sc-if value="{{ g.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;background:var(--surface2);border:2px solid var(--surface2);padding:0 4px;overflow-wrap:anywhere;">{{ g.v }}</code></sc-if><sc-if value="{{ g.isA }}" hint-placeholder-val="{{ false }}"><a href="{{ g.href }}" target="_blank" rel="noopener" style="color:var(--link,inherit);"><sc-for list="{{ g.parts }}" as="pt" hint-placeholder-count="1"><sc-if value="{{ pt.code }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;">{{ pt.v }}</code></sc-if><sc-if value="{{ pt.plain }}" hint-placeholder-val="{{ true }}"><span>{{ pt.v }}</span></sc-if></sc-for></a></sc-if></sc-for></span>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:480,&quot;height&quot;:200},&quot;md&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Run the setup once. It checks:\n\n- your runtime\n- your PATH\n\n1. One\n2. Two\n\nSee the [`kairos-lab` README](https://github.com).&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;vars&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,string&gt;&quot;}}">
+class Component extends DCLogic {
+  segs(list, vars) {
+    return (list || []).map(g => ({ ...g, v: vars ? window.KAIE.fill(g.v, vars) : g.v, isText: g.t === 'text', isB: g.t === 'b', isCode: g.t === 'code', isA: g.t === 'a',
+      parts: (g.parts || []).map(p => ({ ...p, plain: !p.code })) }));
+  }
+  renderVals() {
+    const E = window.KAIE;
+    if (!E) return { blocks: [] };
+    const vars = this.props.vars || null;
+    const blocks = E.md(this.props.md || '').map(b => b.k === 'p'
+      ? { isP: true, isList: false, segs: this.segs(b.segs, vars), items: [] }
+      : { isP: false, isList: true, segs: [], items: b.items.map((it, i) => ({ marker: b.k === 'ol' ? (b.start + i) + '.' : '•', segs: this.segs(it, vars) })) });
+    return { blocks };
+  }
+}
+</script>
+</body>
+</html>

@@ -94,7 +94,7 @@
     <div>Web: embed a screen and pass the text and action.</div>
     <pre style="margin:0;padding:16px;background:#306230;color:#9bbc0f;overflow:auto;white-space:pre-wrap;">&lt;dc-import name="KAI Workshop"&gt;&lt;/dc-import&gt;   the full workshop app
 &lt;dc-import name="KAI Screen" screen="fail" headline="CHECK FAILED"
-  sub="NO PENALTY" dialog="Read the hint below."&gt;&lt;/dc-import&gt;</pre>
+  sub="LET'S FIX IT" dialog="KAI has a prompt ready."&gt;&lt;/dc-import&gt;</pre>
     <div>Terminal: the Go renderer in tui/ reads the same kai-sprites.json, theme.json and content.json.</div>
     <pre style="margin:0;padding:16px;background:#306230;color:#9bbc0f;overflow:auto;white-space:pre-wrap;">kai                      play (arrows, Enter, Tab, c, o, y, n, q)
 kai render --screen map --stage fleet --size 120x40 --name Ana
@@ -165,7 +165,7 @@ class Component extends DCLogic {
       S({ screen: 'stage', action: 'point', hud: { stage: 'first-node', done: 1, total: 3, xp: 150 }, dialog: 'Build a Kairos ISO\nAURORABOOT, forge us an ISO!', caption: 'Stage: point (commands)' }),
       S({ screen: 'stage', action: 'read', hud: { stage: 'build-image', done: 0, total: 2, xp: 250 }, dialog: 'Write a Dockerfile\nTime to forge your own OS!', caption: 'Stage: read (text)' }),
       S({ screen: 'stage', action: 'think', hud: { stage: 'kairos-lab', done: 0, total: 2, xp: 0 }, dialog: 'Install kairos-lab\n' + M.empty_line, caption: 'Stage: think (empty state)' }),
-      S({ screen: 'fail', headline: M.fail_head, sub: M.fail_sub, dialog: M.fail_line, caption: 'Check failed (sad, no penalty)' }),
+      S({ screen: 'fail', headline: M.fail_head, sub: M.fail_sub, dialog: M.fail_line, caption: 'Check failed (sad)' }),
       S({ screen: 'clear', kind: 'step', headline: M.step_clear, sub: '+50 XP', dialog: M.step_clear_line, action: 'celebrate', caption: 'Step cleared (celebrate)' }),
       S({ screen: 'clear', kind: 'stage', headline: M.stage_clear, sub: '3/3 STEPS', dialog: E.fill(M.stage_clear_line, { location: 'NODE VILLAGE' }), caption: 'Stage cleared (jump)' }),
       S({ screen: 'clear', kind: 'item', items: [{ icon: 'kairos-init' }, { icon: 'bootable-container' }, { icon: 'auroraboot', sub: '1/3' }], headline: M.item_head, dialog: E.fill(M.item_line, { item: 'KAIROS-INIT, BOOT IMAGE, AURORABOOT 1/3' }), caption: 'Items (mega item 1/3)' }),

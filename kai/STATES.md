@@ -2,11 +2,63 @@
 
 Every state is live in `web/KAI States.dc.html`, including the terminal frames at 80×24 and 120×40. Stage ids are slugs (`kairos-lab`, `first-node`, …). Numbers on screen ("Stop 3") come from the order in `content.json`, so you can insert a stage without renumbering anything.
 
+## Round 3: new screens and states
+
+### Name entry
+- The text field has focus when the screen opens, with a visible caret. Typing works at once. Clicking the game screen also focuses the field
+- Enter or "Continue" goes to Welcome
+
+### Welcome (theme.welcome)
+- Mentor: Mauro (portrait, name, country). The mentor is `theme.welcome.mentor`
+- 5 pages, one paragraph each, `{name}` filled. Page counter + dots, Back from page 2, Next, last page "Start your quest"
+- Page 5 links "Spectro Cloud" to the Kairos support page
+- Keyboard: Enter / → next, ← / Esc back. Terminal: same
+
+### Loadout (theme.loadout + content.facts: askIf, forces, notice)
+- One question per screen, "Question n of m". Next is disabled until the question is answered. Back / Esc goes back
+- a. OS: Linux, macOS, Windows
+- Windows: notice screen "This is not game over…". Virtualization is forced to Master, and the virtualization and architecture questions are skipped
+- b. Virtualization (Linux, macOS): Zen (recommended badge) or Master, each with its description. It never asks which software you use
+- c. Architecture (Linux, macOS): amd64 / arm64. "Not sure?" toggles the help: `uname -m` (copyable) and how to read the output
+- d. Runtime: Docker / Podman with the choice note. For Zen, an extra note about `kairos-lab setup`. All runtime explanation lives here
+- Changing the OS clears answers that no longer apply
+
+### "Only if" labels
+- Hidden on alternatives, tabs and callouts whenever the loadout answers that fact
+- Shown for unanswered facts (e.g. architecture on Windows) and for every item under "Show all options"
+
+### Check row and help
+- Buttons: "Next step" (marks the step done) and "It did not work"
+- It did not work: the viewport shows KAI sad ("LET'S FIX IT"), the step's common fixes, then the AI prompt panel: intro, warning ("Remove tokens…", warning icon, thick border), the prompt in monospace with placeholders highlighted, and Copy (idle / copied / failed)
+- Zen: `{virtualization}` = kairos-lab. Master: the placeholder `[NAME OF YOUR VIRTUALIZATION SOFTWARE, e.g. VirtualBox]` stays highlighted until you type the name in the field above the prompt (saved as `virtName`). Terminal: press v and type it
+- Unset facts (e.g. arch on Windows) become `[YOUR ARCHITECTURE]` placeholders
+- "What I ran" lists the commands shown for your setup (the selected tab on the web)
+- No "No penalty" line anywhere
+
+### Ask KAI for a TIP (Master only)
+- A banner on every stage: "Ask KAI for a TIP". It opens a stage prompt built from `theme.prompts.tip` + `content.stages[].tip`. Terminal: t
+
+### Skipping
+- `content.stages[].noSkip: {when, reason}`. kairos-lab can't be skipped when virtualization is Zen
+- Web: a disabled "Can't skip" button with the reason under it. Terminal: the reason on the row, and s shows it as a message
+
+### Route
+- Cleared stops: own color (page palette `cleared`/`onCleared`, at least 4.5:1) + ✓ label. In the viewport the town tile is inverted with a ✓ above it
+
+### Markdown
+- Ordered and unordered lists (`1.`, `-`), with a hanging indent in the terminal. Inline code inside link labels: `[\`kairos-lab\` README](…)`
+
+### Footer
+- "KAI, the Kairos armadillo, designed by Mauro Morales. Apache-2.0." (`theme.footer`), on the web footer and the terminal title screen. Plain view → workshop-kubernetes-intro
+
+## AI prompt templates (theme.prompts)
+`fail` and `tip` are arrays of lines with placeholders: {stage} {step} {os} {arch} {runtime} {virtualization} {goal} {tool} {source} {docs} {commands} {expected} {logs} {ask}. The screens only fill these. Stage data: `content.stages[].tool {name,url}`, `docs`, `tip`, `goal`; step data: `goal` (falls back to the title).
+
 ## Round 2: new screens and states
 
 ### Name entry
 - Empty: the placeholder shows the default name ("Friend", `theme.player.defaultName`)
-- Typing: web text input, capped at `theme.player.nameMax` (12). Terminal: printable keys, Backspace, Enter, Esc
+- Typing: web text input (focused on open), capped at `theme.player.nameMax` (12). Terminal: printable keys, Backspace, Enter, Esc
 - Confirming an empty name uses the default. The name appears in the HUD, the route header, the mentor lines and the badge
 
 ### Character choice

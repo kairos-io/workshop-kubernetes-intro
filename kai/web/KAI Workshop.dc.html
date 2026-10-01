@@ -36,7 +36,7 @@ button:disabled{cursor:not-allowed;}
 
   <main style="max-width:960px;margin:0 auto;padding:0 20px 40px;display:flex;flex-direction:column;gap:20px;box-sizing:border-box;">
     <div style="width:100%;">
-      <dc-import name="KAI Screen" screen="{{ vp.screen }}" palette="{{ vp.palette }}" reduce-motion="{{ vp.reduce }}" max-scale="{{ vp.maxScale }}" dialog="{{ vp.dialog }}" action="{{ vp.action }}" hud="{{ vp.hud }}" menu="{{ vp.menu }}" cursor="{{ vp.cursor }}" loadout="{{ vp.loadout }}" map="{{ vp.map }}" map-cursor="{{ vp.mapCursor }}" kind="{{ vp.kind }}" tool="{{ vp.tool }}" headline="{{ vp.headline }}" sub="{{ vp.sub }}" player="{{ vp.player }}" mentor="{{ vp.mentor }}" items="{{ vp.items }}" name-text="{{ vp.nameText }}" date="{{ vp.date }}" on-menu="{{ vp.onMenu }}" on-map="{{ vp.onMap }}" hint-size="100%,288px"></dc-import>
+      <dc-import name="KAI Screen" screen="{{ vp.screen }}" palette="{{ vp.palette }}" reduce-motion="{{ vp.reduce }}" max-scale="{{ vp.maxScale }}" dialog="{{ vp.dialog }}" action="{{ vp.action }}" hud="{{ vp.hud }}" menu="{{ vp.menu }}" cursor="{{ vp.cursor }}" loadout="{{ vp.loadout }}" map="{{ vp.map }}" map-cursor="{{ vp.mapCursor }}" kind="{{ vp.kind }}" tool="{{ vp.tool }}" headline="{{ vp.headline }}" sub="{{ vp.sub }}" player="{{ vp.player }}" mentor="{{ vp.mentor }}" items="{{ vp.items }}" name-text="{{ vp.nameText }}" date="{{ vp.date }}" on-menu="{{ vp.onMenu }}" on-advance="{{ vp.onAdvance }}" on-map="{{ vp.onMap }}" hint-size="100%,288px"></dc-import>
     </div>
 
     <section aria-live="polite" style="background:var(--surface,#E6EFC8);color:var(--ink,#0F380F);border:3px solid var(--ink,#0F380F);padding:24px clamp(16px,4vw,32px);display:flex;flex-direction:column;gap:20px;width:100%;max-width:820px;margin:0 auto;box-sizing:border-box;">
@@ -93,10 +93,31 @@ button:disabled{cursor:not-allowed;}
           <p style="margin:0;max-width:60ch;">KAI calls you by this name, and it goes on your badge. Up to {{ nameMax }} characters.</p>
           <label style="display:flex;flex-direction:column;gap:6px;max-width:420px;">
             <span style="font-weight:600;font-size:16px;">Your name</span>
-            <input value="{{ nameVal }}" onInput="{{ onName }}" onKeyDown="{{ onNameKey }}" maxlength="12" autocomplete="nickname" placeholder="{{ nameDefault }}" style="font:600 20px 'IBM Plex Mono',monospace;padding:12px 14px;border:3px solid var(--ink);background:var(--surface);color:var(--ink);min-height:48px;box-sizing:border-box;">
+            <input ref="{{ nameRef }}" value="{{ nameVal }}" onInput="{{ onName }}" onKeyDown="{{ onNameKey }}" maxlength="12" autocomplete="nickname" placeholder="{{ nameDefault }}" style="caret-color:var(--ink);outline-offset:3px;font:600 20px 'IBM Plex Mono',monospace;padding:12px 14px;border:3px solid var(--ink);background:var(--surface);color:var(--ink);min-height:48px;box-sizing:border-box;">
           </label>
           <div style="font-size:15px;">{{ nameHint }}</div>
           <div style="display:flex;flex-wrap:wrap;gap:10px;"><button onClick="{{ nameDone }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">Continue ▶</button></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ show.welcome }}" hint-placeholder-val="{{ false }}">
+        <div style="display:grid;grid-template-columns:auto minmax(0,1fr);gap:20px;align-items:start;">
+          <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;">
+            <canvas ref="{{ welcome.ref }}" width="24" height="24" aria-hidden="true" style="width:96px;height:96px;image-rendering:pixelated;border:3px solid var(--ink);"></canvas>
+            <div style="font-weight:600;font-size:16px;">{{ welcome.name }}</div>
+            <div style="font-size:15px;">{{ welcome.country }}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:14px;min-width:0;">
+            <div style="font-size:15px;font-weight:600;" aria-live="polite">{{ welcome.counter }}</div>
+            <dc-import name="KAI Md" md="{{ welcome.md }}" vars="{{ welcome.vars }}" hint-size="100%,96px"></dc-import>
+            <div aria-hidden="true" style="display:flex;gap:6px;">
+              <sc-for list="{{ welcome.dots }}" as="d" hint-placeholder-count="5"><span style="width:12px;height:12px;border:2px solid var(--ink);background:{{ d.bg }};box-sizing:border-box;"></span></sc-for>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;">
+              <sc-if value="{{ welcome.hasBack }}" hint-placeholder-val="{{ false }}"><button onClick="{{ welcome.back }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">◀ {{ welcome.backLabel }}</button></sc-if>
+              <button onClick="{{ welcome.next }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ welcome.nextLabel }} ▶</button>
+            </div>
+          </div>
         </div>
       </sc-if>
 
@@ -130,29 +151,52 @@ button:disabled{cursor:not-allowed;}
       </sc-if>
 
       <sc-if value="{{ show.loadout }}" hint-placeholder-val="{{ false }}">
-        <div style="display:flex;flex-direction:column;gap:22px;">
-          <div style="display:flex;flex-direction:column;gap:8px;">
-            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">Choose your loadout</h1>
-            <p style="margin:0;max-width:62ch;text-wrap:pretty;">Your answers hide the steps that don't apply to you. Pick “Not sure yet” to see every option, each with a label.</p>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            <div style="font-size:15px;font-weight:600;" aria-live="polite">{{ lq.counter }}</div>
+            <h1 style="margin:0;font-size:26px;font-weight:600;line-height:1.2;">{{ lq.title }}</h1>
           </div>
-          <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
-            <div role="radiogroup" aria-label="{{ f.label }}" style="display:flex;flex-direction:column;gap:8px;">
-              <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;">
-                <span style="font-weight:600;">{{ f.label }}</span>
-                <span style="font-size:15px;">{{ f.question }}</span>
-              </div>
-              <div style="display:flex;flex-wrap:wrap;gap:8px;">
-                <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="3">
-                  <button role="radio" aria-checked="{{ o.selected }}" onClick="{{ o.pick }}" style="display:flex;align-items:center;gap:8px;padding:10px 14px;min-height:44px;border:3px solid var(--ink);background:{{ o.bg }};color:{{ o.fg }};font:inherit;font-size:16px;cursor:pointer;">
-                    <span aria-hidden="true">{{ o.mark }}</span><span>{{ o.label }}</span>
-                  </button>
-                </sc-for>
-              </div>
+          <sc-if value="{{ lq.isNotice }}" hint-placeholder-val="{{ false }}">
+            <div role="note" style="display:flex;flex-direction:column;gap:8px;border:3px solid var(--ink);background:var(--surface2);padding:16px;">
+              <dc-import name="KAI Md" md="{{ lq.noticeMd }}" hint-size="100%,32px"></dc-import>
             </div>
-          </sc-for>
+          </sc-if>
+          <sc-if value="{{ lq.isFact }}" hint-placeholder-val="{{ true }}">
+            <div role="radiogroup" aria-label="{{ lq.title }}" style="display:flex;flex-direction:column;gap:10px;">
+              <sc-for list="{{ lq.options }}" as="o" hint-placeholder-count="3">
+                <button role="radio" aria-checked="{{ o.selected }}" onClick="{{ o.pick }}" style="display:flex;flex-direction:column;gap:6px;align-items:flex-start;text-align:left;padding:12px 16px;min-height:48px;border:3px solid var(--ink);background:{{ o.bg }};color:{{ o.fg }};font:inherit;cursor:pointer;">
+                  <span style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;font-weight:600;"><span aria-hidden="true">{{ o.mark }}</span><span>{{ o.label }}</span><sc-if value="{{ o.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="border:2px solid currentColor;padding:0 6px;font-size:14px;">{{ o.badge }}</span></sc-if></span>
+                  <sc-if value="{{ o.hasMd }}" hint-placeholder-val="{{ false }}"><span style="font-size:16px;line-height:1.5;max-width:64ch;text-wrap:pretty;">{{ o.desc }}</span></sc-if>
+                </button>
+              </sc-for>
+            </div>
+            <sc-for list="{{ lq.notes }}" as="n" hint-placeholder-count="0">
+              <div style="border-left:3px solid var(--ink);padding-left:14px;"><dc-import name="KAI Md" md="{{ n.md }}" hint-size="100%,32px"></dc-import></div>
+            </sc-for>
+            <sc-if value="{{ lq.hasHelp }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <button onClick="{{ lq.toggleHelp }}" aria-expanded="{{ lq.helpOpen }}" style="align-self:flex-start;background:transparent;color:var(--ink);border:2px solid var(--ink);padding:8px 12px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">{{ lq.helpMark }} {{ lq.helpLabel }}</button>
+                <sc-if value="{{ lq.helpOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;flex-direction:column;gap:10px;border:3px dashed var(--ink);padding:14px 16px;">
+                    <dc-import name="KAI Md" md="{{ lq.helpMd }}" hint-size="100%,24px"></dc-import>
+                    <div style="border:3px solid var(--ink);background:var(--codeBg);color:var(--codeInk);">
+                      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 6px 0 16px;">
+                        <span style="font-size:14px;font-family:'IBM Plex Mono',monospace;">Terminal</span>
+                        <button onClick="{{ lq.help.copy }}" aria-label="{{ lq.help.copyAria }}" style="font:600 15px 'IBM Plex Sans',sans-serif;padding:8px 14px;min-height:44px;border:2px solid var(--codeInk);background:{{ lq.help.copyBg }};color:{{ lq.help.copyFg }};cursor:pointer;">{{ lq.help.copyLabel }}</button>
+                      </div>
+                      <div ref="{{ lq.help.preRef }}" style="padding:8px 16px 16px;font-family:'IBM Plex Mono',monospace;font-size:var(--fsCode);line-height:1.6;white-space:pre-wrap;"><sc-for list="{{ lq.help.lines }}" as="l" hint-placeholder-count="1"><div><span aria-hidden="true" style="user-select:none;-webkit-user-select:none;">{{ l.pfx }}</span>{{ l.text }}</div></sc-for></div>
+                    </div>
+                    <dc-import name="KAI Md" md="{{ lq.helpAfter }}" hint-size="100%,24px"></dc-import>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-if>
+          </sc-if>
           <div style="display:flex;flex-wrap:wrap;gap:10px;">
-            <button onClick="{{ loadoutDone }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ loadoutDoneLabel }}</button>
+            <button onClick="{{ lq.back }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">◀ {{ lq.backLabel }}</button>
+            <button onClick="{{ lq.next }}" disabled="{{ lq.blocked }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ lq.nextLabel }} ▶</button>
           </div>
+          <div style="font-size:15px;">Keyboard: ↑ ↓ choose, Enter next, Esc back.</div>
         </div>
       </sc-if>
 
@@ -171,17 +215,18 @@ button:disabled{cursor:not-allowed;}
           </sc-if>
           <ol style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
             <sc-for list="{{ stages }}" as="s" hint-placeholder-count="9">
-              <li aria-current="{{ s.ariaCurrent }}" style="display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border:3px solid var(--ink);background:{{ s.bg }};">
+              <li aria-current="{{ s.ariaCurrent }}" style="display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;padding:12px 14px;border:{{ s.bw }}px solid var(--ink);background:{{ s.bg }};color:{{ s.fg }};">
                 <canvas ref="{{ s.iconRef }}" width="24" height="24" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;"></canvas>
-                <button onClick="{{ s.open }}" disabled="{{ s.locked }}" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;padding:0;border:0;background:transparent;color:var(--ink);font:inherit;cursor:{{ s.cursor }};">
+                <button onClick="{{ s.open }}" disabled="{{ s.locked }}" style="display:flex;flex-direction:column;gap:2px;min-width:0;text-align:left;padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:{{ s.cursor }};">
                   <span style="font-size:14px;font-weight:600;letter-spacing:.04em;">Stop {{ s.no }} · {{ s.location }}</span>
                   <span style="font-weight:600;text-wrap:pretty;text-decoration:underline;text-underline-offset:3px;">{{ s.title }}</span>
                   <span style="font-size:15px;">{{ s.detail }}</span>
                 </button>
                 <span style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-                  <span style="border:2px solid var(--ink);padding:2px 8px;font-size:14px;font-weight:600;white-space:nowrap;">{{ s.stateLabel }}</span>
-                  <span aria-hidden="true" style="display:block;width:88px;height:10px;border:2px solid var(--ink);box-sizing:border-box;background:var(--surface);"><span style="display:block;height:100%;width:{{ s.pct }}%;background:var(--ink);"></span></span>
+                  <span style="border:2px solid currentColor;padding:2px 8px;font-size:14px;font-weight:600;white-space:nowrap;background:{{ s.labelBg }};color:{{ s.labelFg }};">{{ s.stateLabel }}</span>
+                  <span aria-hidden="true" style="display:block;width:88px;height:10px;border:2px solid currentColor;box-sizing:border-box;"><span style="display:block;height:100%;width:{{ s.pct }}%;background:currentColor;"></span></span>
                   <span style="font-size:14px;white-space:nowrap;">{{ s.count }}</span>
+                  <sc-if value="{{ s.noSkip }}" hint-placeholder-val="{{ false }}"><span style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;max-width:240px;"><button disabled="{{ true }}" aria-describedby="{{ s.reasonId }}" style="background:transparent;color:inherit;border:2px dashed currentColor;padding:6px 10px;min-height:40px;font:inherit;font-size:14px;">{{ s.noSkipLabel }}</button><span id="{{ s.reasonId }}" style="font-size:14px;text-align:right;text-wrap:pretty;">{{ s.skipReason }}</span></span></sc-if>
                   <sc-if value="{{ s.canSkip }}" hint-placeholder-val="{{ false }}"><button onClick="{{ s.skip }}" style="background:transparent;color:var(--ink);border:2px solid var(--ink);padding:6px 10px;min-height:40px;font:inherit;font-size:14px;cursor:pointer;">{{ s.skipLabel }}</button></sc-if>
                 </span>
               </li>
@@ -201,6 +246,13 @@ button:disabled{cursor:not-allowed;}
             </div>
           </div>
 
+          <sc-if value="{{ isMaster }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;border:3px dashed var(--ink);padding:10px 14px;">
+              <span style="font-size:16px;flex:1;min-width:min(100%,240px);">You play Master: KAI can write a prompt for this stage for your AI assistant.</span>
+              <button onClick="{{ toggleTip }}" aria-expanded="{{ tipOpen }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ askTipLabel }}</button>
+            </div>
+          </sc-if>
+
           <div style="display:flex;flex-direction:column;gap:8px;">
             <sc-if value="{{ isOptional }}" hint-placeholder-val="{{ false }}">
               <div style="align-self:flex-start;border:2px dashed var(--ink);padding:4px 10px;font-size:15px;font-weight:600;">☆ {{ sideQuestLabel }}</div>
@@ -216,9 +268,7 @@ button:disabled{cursor:not-allowed;}
                 <sc-if value="{{ r.isText }}" hint-placeholder-val="{{ true }}">
                   <div style="display:flex;flex-direction:column;gap:10px;max-width:68ch;">
                     <sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><div style="align-self:flex-start;border:2px dashed var(--ink);padding:2px 8px;font-size:15px;font-weight:600;">{{ r.only }}</div></sc-if>
-                    <sc-for list="{{ r.paras }}" as="pa" hint-placeholder-count="1">
-                      <p style="margin:0;line-height:1.6;text-wrap:pretty;"><sc-for list="{{ pa }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isText }}" hint-placeholder-val="{{ true }}"><span>{{ g.v }}</span></sc-if><sc-if value="{{ g.isB }}" hint-placeholder-val="{{ false }}"><strong style="font-weight:600;">{{ g.v }}</strong></sc-if><sc-if value="{{ g.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;background:var(--surface2);border:2px solid var(--surface2);padding:0 4px;overflow-wrap:anywhere;">{{ g.v }}</code></sc-if><sc-if value="{{ g.isA }}" hint-placeholder-val="{{ false }}"><a href="{{ g.href }}" target="_blank" rel="noopener">{{ g.v }}</a></sc-if></sc-for></p>
-                    </sc-for>
+                    <dc-import name="KAI Md" md="{{ r.md }}" hint-size="100%,24px"></dc-import>
                   </div>
                 </sc-if>
 
@@ -270,9 +320,7 @@ button:disabled{cursor:not-allowed;}
                     <canvas ref="{{ r.iconRef }}" width="8" height="8" aria-hidden="true" style="width:32px;height:32px;image-rendering:pixelated;margin-top:2px;"></canvas>
                     <div style="display:flex;flex-direction:column;gap:6px;min-width:0;">
                       <div style="font-weight:600;">{{ r.kindLabel }}<sc-if value="{{ r.hasOnly }}" hint-placeholder-val="{{ false }}"><span style="font-weight:400;font-size:15px;"> · {{ r.only }}</span></sc-if></div>
-                      <sc-for list="{{ r.paras }}" as="pa" hint-placeholder-count="1">
-                        <p style="margin:0;line-height:1.55;text-wrap:pretty;"><sc-for list="{{ pa }}" as="g" hint-placeholder-count="1"><sc-if value="{{ g.isText }}" hint-placeholder-val="{{ true }}"><span>{{ g.v }}</span></sc-if><sc-if value="{{ g.isB }}" hint-placeholder-val="{{ false }}"><strong style="font-weight:600;">{{ g.v }}</strong></sc-if><sc-if value="{{ g.isCode }}" hint-placeholder-val="{{ false }}"><code style="font-family:'IBM Plex Mono',monospace;font-size:.92em;overflow-wrap:anywhere;">{{ g.v }}</code></sc-if><sc-if value="{{ g.isA }}" hint-placeholder-val="{{ false }}"><a href="{{ g.href }}" target="_blank" rel="noopener">{{ g.v }}</a></sc-if></sc-for></p>
-                      </sc-for>
+                      <dc-import name="KAI Md" md="{{ r.md }}" hint-size="100%,24px"></dc-import>
                     </div>
                   </div>
                 </sc-if>
@@ -319,7 +367,7 @@ button:disabled{cursor:not-allowed;}
             </div>
             <sc-if value="{{ notDone }}" hint-placeholder-val="{{ true }}">
               <div style="display:flex;flex-wrap:wrap;gap:10px;">
-                <button onClick="{{ didIt }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">✓ {{ didItLabel }}</button>
+                <button onClick="{{ didIt }}" style="background:var(--ink);color:var(--surface);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-weight:600;font-size:16px;cursor:pointer;">{{ didItLabel }} ▶</button>
                 <button onClick="{{ didNot }}" aria-pressed="{{ isFailed }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:12px 20px;min-height:48px;font:inherit;font-size:16px;cursor:pointer;">✗ {{ didNotLabel }}</button>
               </div>
             </sc-if>
@@ -330,6 +378,36 @@ button:disabled{cursor:not-allowed;}
               </div>
             </sc-if>
           </div>
+
+          <sc-for list="{{ aiPanels }}" as="ai" hint-placeholder-count="0">
+            <div ref="{{ ai.ref }}" role="region" aria-label="{{ ai.title }}" style="display:flex;flex-direction:column;gap:14px;border:3px solid var(--ink);padding:16px;background:var(--surface2);">
+              <div style="display:grid;grid-template-columns:48px minmax(0,1fr) auto;gap:14px;align-items:center;">
+                <canvas ref="{{ ai.iconRef }}" width="16" height="16" aria-hidden="true" style="width:48px;height:48px;image-rendering:pixelated;background:var(--surface);border:2px solid var(--ink);"></canvas>
+                <h2 style="margin:0;font-size:calc(var(--fs) * 1.15);font-weight:600;line-height:1.25;">{{ ai.title }}</h2>
+                <button onClick="{{ ai.close }}" style="background:transparent;color:var(--ink);border:2px solid var(--ink);padding:6px 12px;min-height:44px;font:inherit;font-size:15px;cursor:pointer;">{{ ai.closeLabel }}</button>
+              </div>
+              <p style="margin:0;max-width:68ch;text-wrap:pretty;">{{ ai.intro }}</p>
+              <sc-if value="{{ ai.hasVirt }}" hint-placeholder-val="{{ false }}">
+                <label style="display:flex;flex-direction:column;gap:6px;max-width:420px;">
+                  <span style="font-weight:600;">{{ ai.virtLabel }}</span>
+                  <input value="{{ ai.virtVal }}" onInput="{{ ai.onVirt }}" placeholder="e.g. VirtualBox" autocomplete="off" style="font:600 18px 'IBM Plex Mono',monospace;padding:10px 12px;border:3px dashed var(--ink);background:var(--surface);color:var(--ink);caret-color:var(--ink);min-height:48px;box-sizing:border-box;">
+                  <span style="font-size:15px;">{{ ai.virtHint }}</span>
+                </label>
+              </sc-if>
+              <div role="note" style="display:grid;grid-template-columns:32px minmax(0,1fr);gap:12px;align-items:center;border:5px solid var(--ink);background:var(--surface);padding:10px 14px;">
+                <canvas ref="{{ ai.warnRef }}" width="8" height="8" aria-hidden="true" style="width:32px;height:32px;image-rendering:pixelated;"></canvas>
+                <div><strong style="font-weight:600;">{{ ai.warnLabel }}:</strong> {{ ai.warning }}</div>
+              </div>
+              <div style="border:3px solid var(--ink);background:var(--codeBg);color:var(--codeInk);min-width:0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 6px 0 16px;">
+                  <span style="font-size:14px;font-family:'IBM Plex Mono',monospace;">AI prompt</span>
+                  <button onClick="{{ ai.copy }}" aria-label="{{ ai.copyAria }}" style="font:600 15px 'IBM Plex Sans',sans-serif;padding:8px 14px;min-height:44px;border:2px solid var(--codeInk);background:{{ ai.copyBg }};color:{{ ai.copyFg }};cursor:pointer;white-space:nowrap;">{{ ai.copyLabel }}</button>
+                </div>
+                <div ref="{{ ai.preRef }}" style="padding:8px 16px 16px;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:calc(var(--fsCode) * .92);line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;"><sc-for list="{{ ai.segs }}" as="sg" hint-placeholder-count="1"><sc-if value="{{ sg.ph }}" hint-placeholder-val="{{ false }}"><mark style="background:var(--codeInk);color:var(--codeBg);outline:2px dashed var(--codeInk);outline-offset:2px;padding:0 3px;font-weight:600;">{{ sg.v }}</mark></sc-if><sc-if value="{{ sg.plain }}" hint-placeholder-val="{{ true }}"><span>{{ sg.v }}</span></sc-if></sc-for></div>
+              </div>
+              <sc-if value="{{ ai.failed }}" hint-placeholder-val="{{ false }}"><div role="status" style="font-size:15px;font-weight:600;">✗ {{ ai.failMsg }}</div></sc-if>
+            </div>
+          </sc-for>
 
           <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;">
             <button onClick="{{ prevStep }}" disabled="{{ noPrev }}" style="background:transparent;color:var(--ink);border:3px solid var(--ink);padding:10px 16px;min-height:44px;font:inherit;font-size:16px;cursor:pointer;">◀ Previous step</button>
@@ -433,17 +511,18 @@ button:disabled{cursor:not-allowed;}
     </section>
   </main>
 
-  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ attribution }}</span><a href="{{ plainUrl }}" style="color:var(--onBg);">Plain view</a></footer>
+  <footer style="max-width:960px;margin:0 auto;padding:0 20px 28px;font-size:14px;box-sizing:border-box;display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;"><span>{{ footer }}</span><a href="{{ plainUrl }}" style="color:var(--onBg);">Plain view</a></footer>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;title&quot;,&quot;name&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:&quot;title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kairos-lab&quot;,&quot;first-node&quot;,&quot;build-image&quot;,&quot;fleet&quot;,&quot;pipelines&quot;,&quot;manual-upgrade&quot;,&quot;multi-node&quot;,&quot;operator-upgrade&quot;,&quot;edgevpn&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{name?:string,character?:string,cleared?:number,skipped?:string[],done?:string[],facts?:object,xp?:number,started?:boolean,settings?:object,completedAt?:string}&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,'copied'|'failed'&gt;&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,boolean&gt;&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;view&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;title&quot;,&quot;name&quot;,&quot;welcome&quot;,&quot;character&quot;,&quot;loadout&quot;,&quot;map&quot;,&quot;mentor&quot;,&quot;stage&quot;,&quot;clear-step&quot;,&quot;clear-stage&quot;,&quot;items&quot;,&quot;complete&quot;,&quot;badge&quot;],&quot;default&quot;:&quot;title&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;palette&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dmg&quot;,&quot;kairos&quot;,&quot;gbc&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;reduceMotion&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:null,&quot;tsType&quot;:&quot;boolean&quot;},&quot;stage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;kairos-lab&quot;,&quot;first-node&quot;,&quot;build-image&quot;,&quot;fleet&quot;,&quot;pipelines&quot;,&quot;manual-upgrade&quot;,&quot;multi-node&quot;,&quot;operator-upgrade&quot;,&quot;edgevpn&quot;],&quot;default&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;step&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:5,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;todo&quot;,&quot;failed&quot;],&quot;default&quot;:&quot;todo&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;settingsOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;persist&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keys&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;welcomePage&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:4,&quot;tsType&quot;:&quot;number&quot;},&quot;lq&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:0,&quot;min&quot;:0,&quot;max&quot;:4,&quot;tsType&quot;:&quot;number&quot;},&quot;archHelp&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;tipOpen&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;seed&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{name?:string,character?:string,cleared?:number,skipped?:string[],done?:string[],facts?:object,xp?:number,started?:boolean,settings?:object,completedAt?:string,virtName?:string}&quot;},&quot;copy&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,'copied'|'failed'&gt;&quot;},&quot;showAll&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;Record&lt;string,boolean&gt;&quot;},&quot;clear&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;nameDraft&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;},&quot;skipAsk&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string&quot;}}">
 class Component extends DCLogic {
   state = {
     ready: false, p: null,
     view: this.props.view ?? 'title', stage: this.props.stage ?? null, step: this.props.step ?? 0,
     status: this.props.status ?? 'todo', alt: {}, showAll: this.props.showAll ?? {}, copy: this.props.copy ?? {},
     cursor: 0, factCursor: 0, mapCursor: 0, settingsOpen: !!this.props.settingsOpen,
-    returnView: null, clear: this.props.clear ?? null, resetArmed: false, nameDraft: this.props.nameDraft ?? null, charCursor: 0, skipAsk: this.props.skipAsk ?? null
+    returnView: null, clear: this.props.clear ?? null, resetArmed: false, nameDraft: this.props.nameDraft ?? null, charCursor: 0, skipAsk: this.props.skipAsk ?? null,
+    welcomePage: this.props.welcomePage ?? 0, lq: this.props.lq ?? 0, archHelp: !!this.props.archHelp, tipOpen: !!this.props.tipOpen
   };
   pres = {}; ct = {};
 
@@ -456,10 +535,13 @@ class Component extends DCLogic {
       if (!clear && ['clear-step', 'clear-stage', 'items'].includes(this.state.view)) clear = { xp: E.W.xp.step, optional: false, stageCleared: this.state.view !== 'clear-step' };
       const ci = Math.max(0, E.W.player.characters.findIndex(c => c.id === p.character));
       this.setState({ ready: true, p, stage, clear, mapCursor: Math.max(0, E.stageIds().indexOf(stage)), charCursor: ci, nameDraft: this.state.nameDraft ?? p.name });
+      if (this.state.view === 'name') this.focusName();
     }).catch(e => console.error('KAI load', e));
     this.onKey = e => this.key(e);
     window.addEventListener('keydown', this.onKey);
   }
+  componentDidUpdate(pp, ps) { if (this.state.view === 'name' && ps.view !== 'name') this.focusName(); }
+  focusName() { if (this.props.keys === false) return; setTimeout(() => { const el = this.nameEl; if (el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) {} } }, 40); }
   componentWillUnmount() { window.removeEventListener('keydown', this.onKey); Object.values(this.ct).forEach(clearTimeout); }
 
   persist() { return this.props.persist !== false && !this.props.seed; }
@@ -501,23 +583,30 @@ class Component extends DCLogic {
   nameDone() {
     const W = window.KAIE.W, n = String(this.state.nameDraft || '').trim().slice(0, W.player.nameMax) || W.player.defaultName;
     this.setP(p => { p.name = n; p.started = true; return p; });
-    this.go('character');
+    this.go('welcome', { welcomePage: 0 });
   }
+  welcomeNext() { const n = window.KAIE.W.welcome.pages.length; if (this.state.welcomePage + 1 < n) this.setState({ welcomePage: this.state.welcomePage + 1 }); else this.go('character'); }
+  welcomeBack() { if (this.state.welcomePage > 0) this.setState({ welcomePage: this.state.welcomePage - 1 }); else this.go('name', { nameDraft: this.state.p.name }); }
   characterDone() {
     const id = window.KAIE.W.player.characters[this.state.charCursor].id;
     this.setP(p => { p.character = id; return p; });
-    this.go('loadout', { returnView: null });
+    this.go('loadout', { returnView: null, lq: 0 });
   }
-  setFact(fid, oid) { this.setP(p => { p.facts[fid] = oid; p.started = true; return p; }); }
+  setFact(fid, oid) { this.setP(p => { p.facts = window.KAIE.withFact(p.facts, fid, oid); p.started = true; return p; }); }
+  questions() { return window.KAIE.loadoutQuestions(this.state.p.facts); }
+  curQ() { const qs = this.questions(); return qs[Math.min(this.state.lq, qs.length - 1)]; }
+  qAnswered(q) { return !q || q.type !== 'fact' || !window.KAIE.unset(this.state.p.facts, q.id); }
+  loadoutNext() { const qs = this.questions(), q = this.curQ(); if (!this.qAnswered(q)) return; if (this.state.lq + 1 < qs.length) this.setState({ lq: this.state.lq + 1, archHelp: false }); else this.loadoutDone(); }
+  loadoutBack() { if (this.state.lq > 0) this.setState({ lq: this.state.lq - 1, archHelp: false }); else { const rv = this.state.returnView; if (rv && !['title', 'loadout', 'name', 'character', 'welcome'].includes(rv)) this.go(rv); else this.go('character'); } }
   cycleFact(dir) {
-    const E = window.KAIE, f = E.C.facts[this.state.factCursor], ids = f.options.map(o => o.id).concat(['unsure']);
-    const i = ids.indexOf(this.facts()[f.id]);
-    this.setFact(f.id, ids[(i + dir + ids.length) % ids.length]);
+    const E = window.KAIE, q = this.curQ(); if (!q || q.type !== 'fact') return;
+    const ids = E.fact(q.id).options.map(o => o.id), i = ids.indexOf(this.facts()[q.id]);
+    this.setFact(q.id, ids[i < 0 ? (dir > 0 ? 0 : ids.length - 1) : (i + dir + ids.length) % ids.length]);
   }
-  goLoadout() { this.go('loadout', { returnView: this.state.view === 'loadout' ? this.state.returnView : this.state.view }); }
+  goLoadout() { this.go('loadout', { lq: 0, returnView: this.state.view === 'loadout' ? this.state.returnView : this.state.view }); }
   loadoutDone() {
     const rv = this.state.returnView;
-    if (rv && !['title', 'loadout', 'map', 'name', 'character'].includes(rv)) this.go(rv, { status: 'todo' });
+    if (rv && !['title', 'loadout', 'map', 'name', 'character', 'welcome'].includes(rv)) this.go(rv, { status: 'todo' });
     else this.goMap();
   }
   goMap() {
@@ -530,7 +619,7 @@ class Component extends DCLogic {
     if (E.stageState(p, id) === 'locked') return;
     this.go('mentor', { stage: id, step: E.firstOpenStep(p, id), status: 'todo', mapCursor: E.stageIds().indexOf(id) });
   }
-  askSkip(id) { this.setState({ skipAsk: id }); }
+  askSkip(id) { if (window.KAIE.skipBlock(this.state.p, id)) return; this.setState({ skipAsk: id }); }
   doSkip() {
     const E = window.KAIE, id = this.state.skipAsk;
     const p2 = JSON.parse(JSON.stringify(this.state.p));
@@ -541,7 +630,7 @@ class Component extends DCLogic {
     if (E.allDone(p2)) this.go('complete');
     else { const cur = E.currentStage(p2); this.setState({ mapCursor: Math.max(0, E.stageIds().indexOf(cur)) }); }
   }
-  goStep(i) { this.setState({ step: i, status: 'todo' }); if (this.props.keys !== false) window.scrollTo(0, 0); }
+  goStep(i) { this.setState({ step: i, status: 'todo', tipOpen: false }); if (this.props.keys !== false) window.scrollTo(0, 0); }
   didIt() {
     const E = window.KAIE, st = this.curStep(), sid = this.state.stage, key = E.stepKey(sid, st.id);
     const was = E.stageCleared(this.state.p, sid);
@@ -556,7 +645,9 @@ class Component extends DCLogic {
     this.setState({ p: p2 });
     this.go('clear-step', { status: 'done', clear: { xp: gain, optional: !!st.optional, stageCleared } });
   }
-  didNot() { this.setState({ status: 'failed' }); }
+  didNot() { this.setState({ status: 'failed' }); this.scrollToAi = 'fail'; }
+  toggleTip() { const o = !this.state.tipOpen; this.setState({ tipOpen: o }); if (o) this.scrollToAi = 'tip'; }
+  aiRef(kind) { return el => { if (el && this.scrollToAi === kind && this.props.keys !== false) { this.scrollToAi = null; setTimeout(() => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 16), 30); } }; }
   nextIndex() {
     const E = window.KAIE, st = this.steps(), p = this.state.p, sid = this.state.stage;
     for (let i = this.state.step + 1; i < st.length; i++) if (!p.done[E.stepKey(sid, st[i].id)]) return i;
@@ -631,11 +722,13 @@ class Component extends DCLogic {
       const n = E.W.player.characters.length;
       if (k === 'ArrowLeft' || k === 'ArrowRight') { this.setState({ charCursor: (this.state.charCursor + (k === 'ArrowRight' ? 1 : n - 1)) % n }); e.preventDefault(); }
       else if (k === 'Enter' && !onCtl) this.characterDone();
+    } else if (v === 'welcome') {
+      if ((k === 'Enter' && !onCtl) || k === 'ArrowRight') { this.welcomeNext(); e.preventDefault(); }
+      else if (k === 'ArrowLeft' || k === 'Escape') this.welcomeBack();
     } else if (v === 'loadout') {
-      const n = E.C.facts.length;
-      if (k === 'ArrowDown' || k === 'ArrowUp') { this.setState({ factCursor: (this.state.factCursor + (k === 'ArrowDown' ? 1 : n - 1)) % n }); e.preventDefault(); }
-      else if (k === 'ArrowLeft' || k === 'ArrowRight') { this.cycleFact(k === 'ArrowRight' ? 1 : -1); e.preventDefault(); }
-      else if (k === 'Enter' && !onCtl) this.loadoutDone();
+      if (arrows.includes(k)) { this.cycleFact(k === 'ArrowDown' || k === 'ArrowRight' ? 1 : -1); e.preventDefault(); }
+      else if (k === 'Enter' && !onCtl) this.loadoutNext();
+      else if (k === 'Escape') this.loadoutBack();
     } else if (v === 'map') {
       if (arrows.includes(k)) { const n = E.stageIds().length, d = (k === 'ArrowRight' || k === 'ArrowDown') ? 1 : -1; this.setState({ mapCursor: Math.max(0, Math.min(n - 1, this.state.mapCursor + d)), skipAsk: null }); e.preventDefault(); }
       else if (k === 'Enter' && !onCtl) this.openStage(E.stageIds()[this.state.mapCursor]);
@@ -670,7 +763,6 @@ class Component extends DCLogic {
       isText: r.type === 'text', isHeading: r.type === 'heading' && !!r.text, isTabs: r.type === 'tabs', isAltHeader: r.type === 'altHeader',
       isCommand: r.type === 'command', isOutput: r.type === 'output', isCallout: r.type === 'callout', isEmpty: r.type === 'empty',
       isNotice: r.type === 'notice', isTrouble: r.type === 'trouble' };
-    if (r.paras) base.paras = this.segs(r.paras);
     if (r.type === 'command') Object.assign(base, this.cmdModel(r.key, r.code, r.lines, r.isFile ? 'File: ' + r.name : 'Terminal'));
     if (r.type === 'output') { base.text = r.lines.join('\n'); base.outLabel = '⤷ ' + L.expected_output; }
     if (r.type === 'callout') { base.kindLabel = L[r.kind] || r.kind; base.bw = r.kind === 'warning' ? 5 : 3; base.iconRef = el => E.drawIcon(el, r.kind, mode); }
@@ -681,7 +773,7 @@ class Component extends DCLogic {
       showAll: () => this.setState(s => ({ showAll: { ...s.showAll, [r.key]: true } }))
     });
     if (r.type === 'notice') { const k = r.key.replace(/\/n$/, ''); base.text = L.showing_all; base.hideAll = () => this.setState(s => { const a = { ...s.showAll }; delete a[k]; return { showAll: a }; }); }
-    if (r.type === 'trouble') Object.assign(base, { text: L.troubleshooting, detail: 'It did not work. ' + L.no_penalty + ': fix it and check again.', iconRef: el => E.drawIcon(el, 'sad', mode) });
+    if (r.type === 'trouble') Object.assign(base, { text: L.troubleshooting, detail: L.common_fixes + ', or copy the prompt below into your AI assistant.', iconRef: el => E.drawIcon(el, 'sad', mode) });
     return base;
   }
   stageItemsView(sid) {
@@ -701,13 +793,15 @@ class Component extends DCLogic {
     const vp = { palette: this.palette(), reduce: red, maxScale: 3, dialog: null, action: null, hud: null, menu: null, cursor: 0, loadout: null, map: null, mapCursor: 0, kind: 'step', headline: '', sub: '',
       player: { style: p.character || W.player.characters[this.state.charCursor].id, name }, mentor: null, items: null, nameText: '', date: '',
       onMenu: i => { if (v === 'title') { this.setState({ cursor: i }); this.menuSelect(i); } else if (v === 'loadout') this.setState({ factCursor: i }); else if (v === 'character') this.setState({ charCursor: i }); },
+      onAdvance: () => { if (v === 'name' && this.nameEl) this.nameEl.focus(); },
       onMap: i => { this.setState({ mapCursor: i }); const id = E.stageIds()[i]; if (E.stageState(p, id) !== 'locked') this.openStage(id); } };
     const tall = typeof window !== 'undefined' && window.innerHeight >= 1000;
     const sid = this.state.stage, th = E.themeStage(sid), g = E.stageProgress(p, sid), mm = E.mentor(name, sid);
     if (v === 'title') Object.assign(vp, { screen: 'title', menu: M.title_menu.map((l, i) => ({ label: l, disabled: i === 1 && !p.started })), cursor: this.state.cursor });
     else if (v === 'name') Object.assign(vp, { screen: 'name', nameText: this.state.nameDraft || '', dialog: M.name_line, action: W.poses.name });
     else if (v === 'character') Object.assign(vp, { screen: 'character', cursor: this.state.charCursor, dialog: E.fill(M.character_line, { name }) });
-    else if (v === 'loadout') Object.assign(vp, { screen: 'loadout', dialog: E.fill(M.loadout, { name }), cursor: this.state.factCursor, loadout: E.C.facts.map(f => ({ fact: f.id, value: p.facts[f.id] === 'unsure' ? M.unsure : E.optLabel(f.id, p.facts[f.id]) })) });
+    else if (v === 'welcome') { const pg = W.welcome.pages[this.state.welcomePage] || W.welcome.pages[0]; Object.assign(vp, { screen: 'mentor', mentor: W.mentors.find(m => m.id === W.welcome.mentor), dialog: E.fill(pg.line, { name }), action: 'wave' }); }
+    else if (v === 'loadout') Object.assign(vp, { screen: 'loadout', dialog: (() => { const q = this.curQ(); return q && q.type === 'notice' ? W.loadout.notices[q.id].line : E.fill(M.loadout, { name }); })(), cursor: (() => { const q = this.curQ(); return Math.max(0, E.C.facts.findIndex(f => f.id === (q && q.type === 'notice' ? 'virtualization' : q && q.id))); })(), loadout: E.C.facts.map(f => ({ fact: f.id, value: E.unset(p.facts, f.id) ? '---' : E.optLabel(f.id, p.facts[f.id]) })) });
     else if (v === 'map') {
       const ids = E.stageIds(), plan = E.mentorPlan(name);
       const map = ids.map(id => ({ id, state: E.stageState(p, id), mentor: plan[id], ...E.stageProgress(p, id) }));
@@ -720,6 +814,7 @@ class Component extends DCLogic {
       const hasCmd = rows.some(r => r.type === 'command'), hasEmpty = rows.some(r => r.type === 'empty');
       vp.maxScale = tall ? 3 : 2;
       if (this.state.status === 'failed') Object.assign(vp, { screen: 'fail', headline: M.fail_head, sub: M.fail_sub, dialog: M.fail_line, action: 'sad' });
+      else if (this.state.tipOpen) Object.assign(vp, { screen: 'stage', hud: { stage: sid, done: g.done, total: g.total, xp: p.xp }, dialog: st.title + '\n' + M.tip_line, action: 'think' });
       else Object.assign(vp, { screen: 'stage', hud: { stage: sid, done: g.done, total: g.total, xp: p.xp }, dialog: st.title + '\n' + (hasEmpty ? M.empty_line : st.line), action: hasEmpty ? W.poses.empty : hasCmd ? W.poses.command : W.poses.text });
     } else if (v === 'clear-step') {
       const st = this.curStep(), c = this.state.clear || {};
@@ -752,7 +847,9 @@ class Component extends DCLogic {
       nameDone: () => this.nameDone(), characterDone: () => this.characterDone(), mentorDone: () => this.go('stage'), goBadge: () => this.go('badge'), downloadBadge: () => this.downloadBadge(),
       onName: e => this.setState({ nameDraft: e.target.value.slice(0, (E.W && E.W.player.nameMax) || 12) }), onNameKey: e => { if (e.key === 'Enter') this.nameDone(); },
       settingsOpen: s.settingsOpen, show: {}, vp: {}, rows: [], pills: [], stages: [], facts: [], recap: [], ctaCmds: [], settingGroups: [], clear: {}, characters: [], inventory: [],
-      skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', attribution: '', resetLabel: 'Reset progress', nameVal: '', playerName: ''
+      skipAsk: { open: false }, mentorCard: {}, crumb: '', rootVars: '', plainUrl: '#', footer: '', resetLabel: 'Reset progress', nameVal: '', playerName: '',
+      welcome: { dots: [] }, lq: { options: [], notes: [], help: { lines: [] } }, aiPanels: [], isMaster: false, tipOpen: false, askTipLabel: '', toggleTip: () => this.toggleTip(),
+      nameRef: el => { this.nameEl = el; }
     };
     if (!s.ready || !E.ready() || !s.p) return base;
     const W = E.W, L = W.labels, M = W.messages, p = s.p, v = s.view, mode = this.palette(), pg = E.page(mode), name = this.pname();
@@ -760,20 +857,39 @@ class Component extends DCLogic {
     const rootVars = Object.entries(pg).map(([k, c]) => '--' + k + ':' + c + ';').join('') + '--fs:' + fsz[0] + 'px;--fsCode:' + fsz[1] + 'px;';
     const sid = s.stage, th = E.themeStage(sid), sc = E.stage(sid), g = E.stageProgress(p, sid), tot = E.totals(p), ids = E.stageIds(), plan = E.mentorPlan(name);
     const so = !s.settingsOpen;
-    const show = { title: v === 'title' && so, name: v === 'name' && so, character: v === 'character' && so, loadout: v === 'loadout' && so, map: v === 'map' && so, mentor: v === 'mentor' && so, stage: v === 'stage' && so,
+    const show = { title: v === 'title' && so, name: v === 'name' && so, welcome: v === 'welcome' && so, character: v === 'character' && so, loadout: v === 'loadout' && so, map: v === 'map' && so, mentor: v === 'mentor' && so, stage: v === 'stage' && so,
       clearStep: v === 'clear-step' && so, clearStage: v === 'clear-stage' && so, items: v === 'items' && so, complete: v === 'complete' && so, badge: v === 'badge' && so };
-    const out = { ...base, rootVars, show, vp: this.vpProps(), plainUrl: W.links.plainView, attribution: W.attribution + ' Kairos is a CNCF sandbox project.', playerName: name };
+    const out = { ...base, rootVars, show, vp: this.vpProps(), plainUrl: W.links.plainView, footer: W.footer, playerName: name };
     const steps = this.steps(), st = this.curStep(), no = E.stageNo(sid);
-    out.crumb = { title: 'Title screen', name: 'New game · your name', character: 'New game · your look', loadout: 'Loadout', map: 'Route · ' + (tot.cleared + tot.skipped) + ' of ' + tot.stages + ' stops done',
+    out.crumb = { title: 'Title screen', name: 'New game · your name', welcome: 'Welcome · page ' + (s.welcomePage + 1) + ' of ' + W.welcome.pages.length, character: 'New game · your look', loadout: 'Loadout', map: 'Route · ' + (tot.cleared + tot.skipped) + ' of ' + tot.stages + ' stops done',
       mentor: 'Stop ' + no + ' · ' + th.location + ' · your mentor', stage: 'Stop ' + no + ' · ' + th.location + ' · step ' + (Math.min(s.step, steps.length - 1) + 1) + ' of ' + steps.length,
       'clear-step': 'Stop ' + no + ' · step cleared', 'clear-stage': 'Stop ' + no + ' cleared', items: 'New items', complete: 'Workshop complete', badge: 'Your badge' }[v] || '';
-    out.showMapBtn = !['title', 'name', 'character', 'map'].includes(v) && p.started && !!p.character;
+    out.showMapBtn = !['title', 'name', 'welcome', 'character', 'map'].includes(v) && p.started && !!p.character;
 
     out.noSave = !p.started; out.continueLabel = p.started ? 'Continue as ' + name + ' · ' + tot.done + '/' + tot.total + ' steps' : 'Continue';
     // name + character
     out.nameVal = s.nameDraft ?? ''; out.nameMax = W.player.nameMax; out.nameDefault = W.player.defaultName;
     out.nameHint = 'Leave it empty and KAI calls you “' + W.player.defaultName + '”.';
     out.characters = W.player.characters.map((c, i) => { const sel = i === s.charCursor; return { label: c.label, desc: c.desc, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', pick: () => this.setState({ charCursor: i }), ref: el => { if (!el) return; const x = el.getContext('2d'); x.clearRect(0, 0, 16, 16); E.draw(x, E.S.frames['p-' + c.id + '-down'], E.pal(mode, 'player'), 0, 0); } }; });
+    // welcome
+    const WL = W.welcome, wm = W.mentors.find(m => m.id === WL.mentor) || W.mentors[0], wp = Math.min(s.welcomePage, WL.pages.length - 1), last = wp === WL.pages.length - 1;
+    out.welcome = { name: wm.name, country: wm.country, ref: el => E.drawPortrait(el, wm.id, mode), md: WL.pages[wp].md, vars: { name },
+      counter: 'Page ' + (wp + 1) + ' of ' + WL.pages.length, dots: WL.pages.map((x, i) => ({ bg: i <= wp ? 'var(--ink)' : 'transparent' })),
+      hasBack: wp > 0, back: () => this.welcomeBack(), backLabel: WL.back, next: () => this.welcomeNext(), nextLabel: last ? WL.start : WL.next };
+    // loadout: one question per screen
+    const LO = W.loadout, qs = E.loadoutQuestions(p.facts), qi = Math.min(s.lq, qs.length - 1), q = qs[qi] || qs[0];
+    const lqm = { counter: E.fill(LO.progress, { n: qi + 1, total: qs.length }), isFact: q.type === 'fact', isNotice: q.type === 'notice', options: [], notes: [], hasHelp: false, help: { lines: [] },
+      back: () => this.loadoutBack(), backLabel: LO.back, next: () => this.loadoutNext(), nextLabel: qi === qs.length - 1 ? LO.done : LO.next, blocked: !this.qAnswered(q) };
+    if (q.type === 'notice') { const nt = LO.notices[q.id]; Object.assign(lqm, { title: nt.title, noticeMd: nt.md }); }
+    else {
+      const fd = E.fact(q.id), qd = LO.questions[q.id] || {};
+      lqm.title = qd.title || fd.question;
+      lqm.options = fd.options.map(o => { const od = (qd.options || {})[o.id] || {}, sel = p.facts[q.id] === o.id; return { label: o.label, selected: sel, mark: sel ? '●' : '○', bg: sel ? 'var(--ink)' : 'transparent', fg: sel ? 'var(--surface)' : 'var(--ink)', hasBadge: !!od.badge, badge: od.badge || '', hasMd: !!od.md, desc: od.md ? E.mdPlain(od.md) : '', pick: () => this.setFact(q.id, o.id) }; });
+      if (qd.md) lqm.notes.push({ md: qd.md });
+      (qd.when || []).forEach(x => { if (E.strict(x.only, p.facts)) lqm.notes.push({ md: x.md }); });
+      if (qd.help) Object.assign(lqm, { hasHelp: true, helpOpen: s.archHelp, helpMark: s.archHelp ? '▾' : '▸', helpLabel: qd.help.label, helpMd: qd.help.md, helpAfter: qd.help.after, toggleHelp: () => this.setState({ archHelp: !this.state.archHelp }), help: this.cmdModel('help/' + q.id, qd.help.code, E.cmdLines(qd.help.code), '') });
+    }
+    out.lq = lqm;
     // loadout
     out.facts = E.C.facts.map(f => ({ label: f.label, question: f.question, options: f.options.concat([{ id: 'unsure', label: 'Not sure yet' }]).map(o => {
       const sel = p.facts[f.id] === o.id;
@@ -793,8 +909,10 @@ class Component extends DCLogic {
         stateLabel: { cleared: '✓ Cleared', current: '▶ Current', skipped: '» Skipped', locked: 'Locked' }[state],
         detail: 'with ' + m2.name + (state === 'locked' ? ' · finish or skip stop ' + i + ' first' : state === 'skipped' ? ' · come back any time' : (gg.side ? ' · ' + gg.sideDone + '/' + gg.side + ' side quests' : '')),
         count: gg.done + '/' + gg.total + ' steps', pct: gg.total ? Math.round(100 * gg.done / gg.total) : 0,
-        bg: i === s.mapCursor ? 'var(--surface2)' : 'var(--surface)', cursor: state === 'locked' ? 'not-allowed' : 'pointer',
-        canSkip: state === 'current', skipLabel: L.skip, skip: () => this.askSkip(id),
+        bg: state === 'cleared' ? 'var(--cleared)' : i === s.mapCursor ? 'var(--surface2)' : 'var(--surface)', fg: state === 'cleared' ? 'var(--onCleared)' : 'var(--ink)', bw: i === s.mapCursor ? 5 : 3,
+        labelBg: state === 'cleared' ? 'var(--onCleared)' : 'transparent', labelFg: state === 'cleared' ? 'var(--cleared)' : 'inherit',
+        cursor: state === 'locked' ? 'not-allowed' : 'pointer',
+        canSkip: state === 'current' && !E.skipBlock(p, id), noSkip: state === 'current' && !!E.skipBlock(p, id), skipReason: E.skipBlock(p, id), noSkipLabel: L.no_skip, reasonId: 'noskip-' + id, skipLabel: L.skip, skip: () => this.askSkip(id),
         open: () => this.openStage(id), iconRef: el => E.drawPortrait(el, m2.id, mode)
       };
     });
@@ -813,7 +931,20 @@ class Component extends DCLogic {
       out.checkPrompt = st.check.prompt;
       const isDone = !!p.done[E.stepKey(sid, st.id)];
       out.isDone = isDone; out.notDone = !isDone; out.isFailed = s.status === 'failed';
-      out.didItLabel = L.did_it; out.didNotLabel = L.did_not_work;
+      out.didItLabel = L.next_step; out.didNotLabel = L.did_not_work;
+      const master = E.isMaster(p.facts);
+      out.isMaster = master; out.tipOpen = s.tipOpen; out.askTipLabel = (s.tipOpen ? '▾ ' : '') + L.ask_tip;
+      const panel = (kind, text, title, intro) => {
+        const key = 'ai/' + kind, cm = this.cmdModel(key, text, [], '');
+        return { ...cm, title, intro, closeLabel: L.close, warnLabel: L.warning, warning: W.prompts.warning, segs: E.promptSegs(text).map(x => ({ ...x, plain: !x.ph })),
+          copyLabel: this.state.copy[key] === 'copied' ? '✓ ' + L.copied : this.state.copy[key] === 'failed' ? '✗ Copy failed' : L.copy_prompt, copyAria: 'Copy AI prompt',
+          hasVirt: master, virtLabel: L.virt_field, virtHint: L.virt_hint, virtVal: p.virtName || '', onVirt: e => { const val = e.target.value.slice(0, 40); this.setP(q2 => { q2.virtName = val; return q2; }); },
+          ref: this.aiRef(kind), iconRef: el => E.drawIcon(el, kind === 'fail' ? 'sad' : 'think1', mode), warnRef: el => E.drawIcon(el, 'warning', mode),
+          close: () => kind === 'fail' ? this.setState({ status: 'todo' }) : this.setState({ tipOpen: false }) };
+      };
+      out.aiPanels = [];
+      if (s.tipOpen && master) out.aiPanels.push(panel('tip', E.prompt('tip', p, sid, null), L.tip_title, L.tip_intro));
+      if (s.status === 'failed') out.aiPanels.push(panel('fail', E.prompt('fail', p, sid, st, this.settings().layout === 'tabs' ? s.alt : null), L.ai_title, L.ai_intro));
       out.nextLabel = s.step < steps.length - 1 ? 'Next step ▶' : 'Route ▶';
       out.nextStep = () => s.step < steps.length - 1 ? this.goStep(s.step + 1) : this.goMap();
       out.prevStep = () => this.goStep(Math.max(0, s.step - 1)); out.skipNext = () => this.goStep(Math.min(steps.length - 1, s.step + 1));
