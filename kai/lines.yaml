@@ -12,7 +12,7 @@
 # A key that matches nothing is an error.
 welcome:
   - "Hi {name}! Welcome aboard."
-  - "Immutable means image-based."
+  - "Immutable Linux?"
   - "Predictable. Instant. Identical."
   - "Open source, CNCF Sandbox."
   - "Thanks to our patron!"

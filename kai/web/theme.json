@@ -341,7 +341,7 @@
         "md": "Hi {name}! I'm Mauro, one of the maintainers of Kairos, and this is KAI, our armadillo mascot. In this workshop you build and run an immutable Kubernetes cluster, one stage at a time. You type every command yourself, because that is how it sticks. KAI helps when you get stuck."
       },
       {
-        "line": "Immutable means image-based.",
+        "line": "Immutable Linux?",
         "md": "An immutable system treats the operating system like an application image. You never patch it in place. You build a new image, boot into it, and go back to the previous one if it misbehaves."
       },
       {
