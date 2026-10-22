@@ -119,8 +119,8 @@ You should see both nodes:
 
 ```
 NAME                     STATUS   ROLES           AGE     VERSION        INTERNAL-IP      OS-IMAGE
-kairos-xxxx              Ready    control-plane   1d      v1.35.0+k3s1   192.168.20.150   Ubuntu 22.04.5 LTS
-kairos-worker-xxxx       Ready    <none>          5m      v1.35.0+k3s1   192.168.20.151   Fedora Linux 40
+kairos-xxxx              Ready    control-plane   1d      v1.36.4+k3s1   192.168.20.150   Ubuntu 24.04.5 LTS
+kairos-worker-xxxx       Ready    <none>          5m      v1.36.4+k3s1   192.168.20.151   Ubuntu 24.04.5 LTS
 ```
 
 ### Test workload distribution

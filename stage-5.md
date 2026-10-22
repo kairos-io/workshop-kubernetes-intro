@@ -31,11 +31,11 @@ cat /etc/kairos-release | grep -E "KAIROS_VERSION|KAIROS_FLAVOR|KAIROS_SOFTWARE_
 
 Example output:
 ```
-KAIROS_FLAVOR="ubuntu"
-KAIROS_FLAVOR_RELEASE="22.04"
-KAIROS_SOFTWARE_VERSION="v1.35.0+k3s1"
+KAIROS_FLAVOR="hadron"
+KAIROS_FLAVOR_RELEASE="v0.5.1"
+KAIROS_SOFTWARE_VERSION="v1.35.8+k3s1"
 KAIROS_SOFTWARE_VERSION_PREFIX="k3s"
-KAIROS_VERSION="v0.0.1"
+KAIROS_VERSION="v4.3.0"
 ```
 
 ## Choose an upgrade source
@@ -48,24 +48,23 @@ List available upgrade images directly from the VM:
 sudo kairos-agent upgrade list-releases
 ```
 
-Example output:
+Example output, from an amd64 node that runs an older K3s version than the latest image (on an arm64 node the image names say `arm64`):
 ```
 Using registry: quay.io/kairos
 Current image:
-quay.io/kairos/ubuntu:22.04-standard-arm64-generic-v0.0.1-k3sv1.35.0-k3s1
+quay.io/kairos/hadron:v0.5.1-standard-amd64-generic-v4.3.0-k3sv1.35.8-k3s1
 
 Available releases with higher version:
-quay.io/kairos/ubuntu:22.04-standard-arm64-generic-v3.7.2-k3s-v1.35.0-k3s3
-quay.io/kairos/ubuntu:22.04-standard-arm64-generic-v3.7.1-k3s-v1.35.0-k3s1
-quay.io/kairos/ubuntu:22.04-standard-arm64-generic-v3.6.0-k3s-v1.34.1-k3s1
 ...
 ```
+
+If the node already runs the newest release, the command prints `No newer releases found`. Pick the image tag by hand then, as in the next section.
 
 Browse all images at: https://quay.io/organization/kairos
 
 ### Option 2: Your custom image from Stage 3/4
 
-If you built a custom image in [Stage 3](stage-3.md) and pushed it via [Stage 4](stage-4.md)'s pipeline, use that image reference, e.g. `ttl.sh/kairos-custom-fedora:2h`.
+If you built a custom image in [Stage 3](stage-3.md) and pushed it via [Stage 4](stage-4.md)'s pipeline, use that image reference, e.g. `ttl.sh/stage-3:24h`.
 
 > **Note:** because of the "all or nothing" nature of Kairos upgrades, an upgrade is just a full OS replacement — so it can as well be a downgrade to an older image.
 
@@ -81,10 +80,10 @@ ssh kairos@<VM_IP>
 
 ```bash
 # Upgrade to a Kairos official image (example)
-sudo kairos-agent upgrade --source oci:quay.io/kairos/ubuntu:22.04-standard-arm64-generic-v3.7.2-k3s-v1.35.0-k3s3
+sudo kairos-agent upgrade --source oci:quay.io/kairos/hadron:v0.5.1-standard-arm64-generic-v4.3.0-k3s-v1.36.4-k3s1
 
 # Or upgrade to your custom image
-sudo kairos-agent upgrade --source oci:ttl.sh/kairos-custom-fedora:2h
+sudo kairos-agent upgrade --source oci:ttl.sh/stage-3:24h
 sudo reboot
 ```
 

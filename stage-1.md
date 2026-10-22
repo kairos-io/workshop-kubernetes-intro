@@ -90,14 +90,14 @@ Pull the image:
 docker pull quay.io/kairos/auroraboot:latest
 ```
 
-Then run it. This is the same as `auroraboot build-iso --output ./build stage-2:v1.0.0`:
+Then run it. This is the same as `auroraboot build-iso --output ./build stage-3:v1.0.0`:
 
 ```bash
 mkdir -p build && docker run -it --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $PWD/build:/result \
   quay.io/kairos/auroraboot:latest \
-  build-iso --output /result stage-2:v1.0.0
+  build-iso --output /result stage-3:v1.0.0
 ```
 
 The Docker socket lets AuroraBoot find the image you built locally, and
@@ -121,7 +121,7 @@ mkdir -p build && sudo podman run -it --rm \
   -v /var/run/docker.sock:/var/run/docker.sock:Z \
   -v $PWD/build:/result \
   quay.io/kairos/auroraboot:latest \
-  build-iso --output /result ttl.sh/stage-2:24h
+  build-iso --output /result ttl.sh/stage-3:24h
 ```
 
 ### Build it locally (Linux only)
@@ -164,7 +164,7 @@ Run it as root, because it changes file ownership to root while it unpacks the
 image. This is the same as the container command above:
 
 ```bash
-sudo ./auroraboot build-iso --output ./build stage-2:v1.0.0
+sudo ./auroraboot build-iso --output ./build stage-3:v1.0.0
 ```
 
 The files in `./build` belong to root.
